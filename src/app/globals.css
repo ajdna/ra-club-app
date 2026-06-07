@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+/*
+  Ruby Ankur Wellness — warm-earth design system.
+  Tokens lifted from the HTML prototypes (ruby_ankur_app_level1a_v2.html /
+  ruby_ankur_admin_console.html) so the real app matches the look-and-feel.
+*/
+:root {
+  --cream: #f6efe3;
+  --cream-2: #ede3d0;
+  --card: #fffdf8;
+  --terra: #c2643a;
+  --terra-d: #9a4a25;
+  --sage: #8a9a7b;
+  --sage-d: #5e6e52;
+  --emerald: #1f3d2b;
+  --emerald-2: #2d5a3e;
+  --ink: #2a1f15;
+  --gold: #c89a3c;
+  --good: #4d7a4a;
+  --warn: #c8902b;
+  --bad: #b04830;
+  --line: #e6dcc6;
+  --shadow: 0 1px 2px rgba(42, 31, 21, 0.05), 0 8px 28px rgba(42, 31, 21, 0.09);
+  --shadow-sm: 0 1px 3px rgba(42, 31, 21, 0.08);
+
+  --background: var(--cream);
+  --foreground: var(--ink);
+}
+
+/* Expose tokens to Tailwind utilities (bg-terra, text-sage, etc.). */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-cream: var(--cream);
+  --color-cream-2: var(--cream-2);
+  --color-card: var(--card);
+  --color-terra: var(--terra);
+  --color-terra-d: var(--terra-d);
+  --color-sage: var(--sage);
+  --color-sage-d: var(--sage-d);
+  --color-emerald: var(--emerald);
+  --color-emerald-2: var(--emerald-2);
+  --color-ink: var(--ink);
+  --color-gold: var(--gold);
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --color-line: var(--line);
+
+  --font-sans: var(--font-manrope);
+  --font-display: var(--font-fraunces);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-manrope), "Manrope", system-ui, sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-fraunces), "Fraunces", Georgia, serif;
+}
