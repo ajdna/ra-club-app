@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { BottomNav } from "@/components/BottomNav";
+import { PushPermission } from "@/components/PushPermission";
 import { getUnreadCount } from "@/modules/notifications";
 import { createClient } from "@/lib/supabase/server";
 
@@ -32,6 +33,7 @@ export default async function AppLayout({
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-cream">
+      <PushPermission />
       <div className="flex-1 overflow-y-auto">{children}</div>
       <BottomNav unreadAlerts={unread} unreadMessages={unreadMessages} />
     </div>
