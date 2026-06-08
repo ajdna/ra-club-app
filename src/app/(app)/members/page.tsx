@@ -35,7 +35,7 @@ export default async function MembersPage() {
     supabase.from("users").select("id, name"),
     supabase
       .from("members")
-      .select("user_id, membership_type, stage, current_weight, ideal_weight"),
+      .select("user_id, coach_id, membership_type, stage, current_weight, ideal_weight"),
     supabase
       .from("follow_up_tasks")
       .select("member_id, due_date, status"),
@@ -43,7 +43,7 @@ export default async function MembersPage() {
     getConfigValue<MembershipLabels>("membership_labels", {}),
   ]);
 
-  const title = labels.members_title ?? "Mere Members";
+  const title = labels.members_title ?? "Members";
 
   const nameById = new Map((usersRes.data ?? []).map((u) => [u.id, u.name as string]));
   const tasks = tasksRes.data ?? [];
@@ -59,6 +59,8 @@ export default async function MembersPage() {
     const { status, label } = computeHealth({ overdue, dueToday });
     return {
       id: m.user_id,
+      coachId: m.coach_id ?? "",
+      coachName: nameById.get(m.coach_id ?? "") ?? "Unknown",
       name: nameById.get(m.user_id) ?? "Member",
       membershipType: m.membership_type,
       membershipLabel: membershipLabel(m.membership_type, memLabels),
@@ -83,7 +85,7 @@ export default async function MembersPage() {
           + Add
         </Link>
       </header>
-      <MembersList members={rows} />
+      <MembersList members={rows} myId={typeof me === "object" ? me.id : ""} />
     </main>
   );
 }
