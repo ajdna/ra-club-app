@@ -162,9 +162,16 @@ export async function getThread(threadId: string) {
   const memberName = data.member?.name ?? null;
 
   let title: string;
-  if (data.type === "broadcast") title = data.subject ?? `${coachName} — Team Broadcast`;
-  else if (data.coach_id === me.id) title = memberName ?? "Member";
-  else title = coachName;
+  if (data.type === "broadcast") {
+    title = data.subject ?? `${coachName} — Team Broadcast`;
+  } else {
+    // Direct thread: show the OTHER person's name
+    if (data.coach_id === me.id) {
+      title = memberName ?? coachName;
+    } else {
+      title = coachName;
+    }
+  }
 
   return { id: data.id, type: data.type, title, coachId: data.coach_id, memberId: data.member_id };
 }
@@ -201,30 +208,34 @@ export async function markThreadRead(threadId: string) {
   revalidatePath("/messages");
 }
 
-// ── Start a direct thread (or return existing) ───────────────────────────────
-export async function startDirectThread(memberId: string): Promise<{ threadId?: string; error?: string }> {
+// ── Start a direct thread between me and any other user ──────────────────────
+// Works regardless of role — club_owner↔member, coach↔jco, etc.
+// Uses canonical ordering: least(uuid) always goes into coach_id so the
+// unique index fires correctly even if thread is created from either end.
+export async function startDirectThread(otherUserId: string): Promise<{ threadId?: string; error?: string }> {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return { error: "Not signed in" };
 
   const supabase = await createClient();
 
-  // Coach starts with member, or member starts with their coach
-  const coachId = me.id;
+  // Canonical pair: smaller UUID in coach_id
+  const [aId, bId] =
+    me.id < otherUserId ? [me.id, otherUserId] : [otherUserId, me.id];
 
-  // Check existing
+  // Look for existing thread in either direction
   const { data: existing } = await supabase
     .from("chat_threads")
     .select("id")
     .eq("type", "direct")
-    .eq("coach_id", coachId)
-    .eq("member_id", memberId)
-    .single();
+    .eq("coach_id", aId)
+    .eq("member_id", bId)
+    .maybeSingle();
 
   if (existing) return { threadId: existing.id };
 
   const { data, error } = await supabase
     .from("chat_threads")
-    .insert({ type: "direct", coach_id: coachId, member_id: memberId })
+    .insert({ type: "direct", coach_id: aId, member_id: bId })
     .select("id")
     .single();
 
@@ -261,77 +272,77 @@ export async function sendBroadcast(subject: string, body: string): Promise<{ er
   return {};
 }
 
-// ── Get my members list (for starting conversations) ─────────────────────────
-export async function getMyMembers() {
+// ── Get contacts I'm allowed to message ──────────────────────────────────────
+// Upline  = ancestors in hierarchy_closure (people above me)
+// Downline = descendants in hierarchy_closure (people below me)
+// Members see only their direct coach (depth 1 upline).
+// Everyone else sees their full upline chain + all downline.
+export async function getMyContacts(): Promise<{
+  id: string;
+  name: string;
+  role: string;
+  group: "upline" | "downline";
+}[]> {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return [];
 
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("members")
-    .select("user_id, user:user_id(name)")
-    .eq("coach_id", me.id);
 
-  return (data ?? []).map((m) => ({
-    id: m.user_id,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    name: (m.user as any)?.name ?? "Member",
-  }));
+  type RawUser = { id: string; name: string; role: string };
+
+  if (me.role === "member") {
+    // Members can only message their direct coach
+    const { data: upline } = await supabase
+      .from("hierarchy_closure")
+      .select("ancestor:ancestor_id(id, name, role)")
+      .eq("descendant_id", me.id)
+      .eq("depth", 1);
+
+    type RawUp = { ancestor: RawUser | null };
+    return ((upline ?? []) as unknown as RawUp[])
+      .filter((r) => r.ancestor)
+      .map((r) => ({ ...r.ancestor!, group: "upline" as const }));
+  }
+
+  // Everyone else: full upline + full downline (excluding self)
+  const [uplineRes, downlineRes] = await Promise.all([
+    supabase
+      .from("hierarchy_closure")
+      .select("ancestor:ancestor_id(id, name, role)")
+      .eq("descendant_id", me.id)
+      .gt("depth", 0),
+    supabase
+      .from("hierarchy_closure")
+      .select("descendant:descendant_id(id, name, role)")
+      .eq("ancestor_id", me.id)
+      .gt("depth", 0),
+  ]);
+
+  type RawUp   = { ancestor:   RawUser | null };
+  type RawDown = { descendant: RawUser | null };
+
+  const upline = ((uplineRes.data ?? []) as unknown as RawUp[])
+    .filter((r) => r.ancestor)
+    .map((r) => ({ ...r.ancestor!, group: "upline" as const }));
+
+  const downline = ((downlineRes.data ?? []) as unknown as RawDown[])
+    .filter((r) => r.descendant)
+    .map((r) => ({ ...r.descendant!, group: "downline" as const }));
+
+  // Dedup (a user might appear via multiple paths in a DAG)
+  const seen = new Set<string>();
+  return [...upline, ...downline].filter((u) => {
+    if (seen.has(u.id)) return false;
+    seen.add(u.id);
+    return true;
+  });
 }
 
-// ── Get my coach (for members initiating conversation) ───────────────────────
-export async function getMyCoach(): Promise<{ id: string; name: string } | null> {
-  const me = await getCurrentUser();
-  if (!me || typeof me === "string") return null;
-
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("members")
-    .select("coach_id, coach:coach_id(name)")
-    .eq("user_id", me.id)
-    .maybeSingle();
-
-  if (!data?.coach_id) return null;
-  type RawCoach = { coach_id: string; coach: { name: string } | null };
-  const row = data as unknown as RawCoach;
-  return { id: row.coach_id, name: row.coach?.name ?? "Coach" };
-}
-
-// ── Member starts a thread with their coach ───────────────────────────────────
-export async function startThreadWithMyCoach(): Promise<{ threadId?: string; error?: string }> {
-  const me = await getCurrentUser();
-  if (!me || typeof me === "string") return { error: "Not signed in" };
-
-  const supabase = await createClient();
-
-  const { data: memberRow } = await supabase
-    .from("members")
-    .select("coach_id")
-    .eq("user_id", me.id)
-    .maybeSingle();
-
-  if (!memberRow?.coach_id) return { error: "Coach not found" };
-  const coachId = memberRow.coach_id;
-
-  // Return existing thread if any
-  const { data: existing } = await supabase
-    .from("chat_threads")
-    .select("id")
-    .eq("type", "direct")
-    .eq("coach_id", coachId)
-    .eq("member_id", me.id)
-    .maybeSingle();
-
-  if (existing) return { threadId: existing.id };
-
-  const { data, error } = await supabase
-    .from("chat_threads")
-    .insert({ type: "direct", coach_id: coachId, member_id: me.id })
-    .select("id")
-    .single();
-
-  if (error) return { error: error.message };
-  revalidatePath("/messages");
-  return { threadId: data.id };
+// ── Kept for backward compat (broadcast page uses this) ──────────────────────
+export async function getMyMembers() {
+  const contacts = await getMyContacts();
+  return contacts
+    .filter((c) => c.group === "downline")
+    .map((c) => ({ id: c.id, name: c.name }));
 }
 

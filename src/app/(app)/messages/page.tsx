@@ -29,7 +29,8 @@ export default async function MessagesPage() {
   const broadcasts = threads.filter((t) => t.type === "broadcast");
   const directs = threads.filter((t) => t.type === "direct");
 
-  const canBroadcast = ["club_owner", "coach", "supervisor", "nco", "jco"].includes(me.role);
+  // Anyone with a downline can broadcast; only members cannot
+  const canBroadcast = me.role !== "member" && me.role !== "guest";
 
   return (
     <main className="px-4 pb-24 pt-5">
