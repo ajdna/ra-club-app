@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { BottomNav } from "@/components/BottomNav";
 import { getUnreadCount } from "@/modules/notifications";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function AppLayout({
   children,
@@ -22,12 +23,17 @@ export default async function AppLayout({
   // Signed in but auth_id not yet linked to a users row
   // (handled gracefully inside each page — show "almost there" message)
 
-  const unread = await getUnreadCount();
+  const supabase = await createClient();
+  const [unread, msgResult] = await Promise.all([
+    getUnreadCount(),
+    supabase.rpc("unread_message_count"),
+  ]);
+  const unreadMessages = (msgResult.data as number) ?? 0;
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-cream">
       <div className="flex-1 overflow-y-auto">{children}</div>
-      <BottomNav unreadAlerts={unread} />
+      <BottomNav unreadAlerts={unread} unreadMessages={unreadMessages} />
     </div>
   );
 }

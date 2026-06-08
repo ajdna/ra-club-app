@@ -185,6 +185,26 @@ export default async function CommandCenter() {
             <div className="text-xs text-ink/50">List & details</div>
           </div>
         </Link>
+        <Link
+          href="/messages"
+          className="flex items-center gap-2 rounded-2xl border border-line bg-card px-3 py-3 transition hover:bg-cream-2"
+        >
+          <span className="text-xl">💬</span>
+          <div>
+            <div className="text-sm font-semibold text-ink">Messages</div>
+            <div className="text-xs text-ink/50">Chat & broadcast</div>
+          </div>
+        </Link>
+        <Link
+          href="/calendar"
+          className="flex items-center gap-2 rounded-2xl border border-line bg-card px-3 py-3 transition hover:bg-cream-2"
+        >
+          <span className="text-xl">📅</span>
+          <div>
+            <div className="text-sm font-semibold text-ink">Calendar</div>
+            <div className="text-xs text-ink/50">Home visits</div>
+          </div>
+        </Link>
       </div>
 
       {/* Aaj ka plan — today's tasks */}

@@ -159,6 +159,71 @@ export type Database = {
           },
         ];
       };
+      chat_threads: {
+        Row: {
+          id: string;
+          type: "direct" | "broadcast";
+          coach_id: string;
+          member_id: string | null;
+          subject: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          type: "direct" | "broadcast";
+          coach_id: string;
+          member_id?: string | null;
+          subject?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          type?: "direct" | "broadcast";
+          coach_id?: string;
+          member_id?: string | null;
+          subject?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      chat_messages: {
+        Row: {
+          id: string;
+          thread_id: string;
+          sender_id: string;
+          body: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          thread_id: string;
+          sender_id: string;
+          body: string;
+          created_at?: string;
+        };
+        Update: {
+          body?: string;
+        };
+        Relationships: [];
+      };
+      chat_reads: {
+        Row: {
+          thread_id: string;
+          user_id: string;
+          last_read_at: string;
+        };
+        Insert: {
+          thread_id: string;
+          user_id: string;
+          last_read_at?: string;
+        };
+        Update: {
+          last_read_at?: string;
+        };
+        Relationships: [];
+      };
       role_mappings: {
         Row: {
           id: string;
@@ -201,6 +266,9 @@ export type Database = {
           due_date: string;
           status: Database["public"]["Enums"]["followup_status"];
           completed_at: string | null;
+          scheduled_at: string | null;
+          meeting_link: string | null;
+          notes: string | null;
           created_at: string;
         };
         Insert: {
@@ -214,6 +282,9 @@ export type Database = {
           due_date: string;
           status?: Database["public"]["Enums"]["followup_status"];
           completed_at?: string | null;
+          scheduled_at?: string | null;
+          meeting_link?: string | null;
+          notes?: string | null;
           created_at?: string;
         };
         Update: {
@@ -227,6 +298,9 @@ export type Database = {
           due_date?: string;
           status?: Database["public"]["Enums"]["followup_status"];
           completed_at?: string | null;
+          scheduled_at?: string | null;
+          meeting_link?: string | null;
+          notes?: string | null;
           created_at?: string;
         };
         Relationships: [
@@ -573,6 +647,14 @@ export type Database = {
       };
       can_see: {
         Args: { target: string };
+        Returns: boolean;
+      };
+      unread_message_count: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
+      can_see_thread: {
+        Args: { p_thread_id: string };
         Returns: boolean;
       };
       bulk_upsert_user: {

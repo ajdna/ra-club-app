@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { ACTIVITY_LABEL } from "@/lib/followup-planner";
 import { ClearAllButton } from "./ClearAllButton";
+import { HomeVisitActions } from "./HomeVisitActions";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,7 @@ export default async function FollowupPage() {
   const { data: tasks } = await supabase
     .from("follow_up_tasks")
     .select(
-      `id, due_date, day_number, cycle, activity, title, status,
+      `id, due_date, day_number, cycle, activity, title, status, scheduled_at, meeting_link,
        member:member_id ( user_id, coach_id,
          user:user_id ( name, phone ) )`,
     )
@@ -50,7 +51,7 @@ export default async function FollowupPage() {
   const { data: overdue } = await supabase
     .from("follow_up_tasks")
     .select(
-      `id, due_date, day_number, cycle, activity, title, status,
+      `id, due_date, day_number, cycle, activity, title, status, scheduled_at, meeting_link,
        member:member_id ( user_id, coach_id,
          user:user_id ( name, phone ) )`,
     )
@@ -73,12 +74,18 @@ export default async function FollowupPage() {
       ACTIVITY_LABEL[task.activity as keyof typeof ACTIVITY_LABEL] ??
       task.activity;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const scheduledAt = (task as any).scheduled_at ?? null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const meetingLink = (task as any).meeting_link ?? null;
+    const isHomeVisit = task.activity === "home_visit";
+
     return (
       <div
         className={`rounded-2xl border px-4 py-3 ${STATUS_STYLES[task.status] ?? STATUS_STYLES.pending}`}
       >
         <div className="flex items-start justify-between gap-2">
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="font-semibold text-ink">{memberName}</div>
             <div className="mt-0.5 text-sm">{label}</div>
             {task.title && (
@@ -88,6 +95,15 @@ export default async function FollowupPage() {
               {formatDate(task.due_date)} · Cycle {task.cycle}, Day{" "}
               {task.day_number}
             </div>
+            {/* Home visit scheduling actions */}
+            {isHomeVisit && task.status !== "done" && (
+              <HomeVisitActions
+                taskId={task.id}
+                scheduledAt={scheduledAt}
+                meetingLink={meetingLink}
+                memberName={memberName}
+              />
+            )}
           </div>
           <div className="flex flex-col items-end gap-1 shrink-0">
             {memberPhone && (

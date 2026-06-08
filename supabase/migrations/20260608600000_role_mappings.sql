@@ -11,6 +11,9 @@
 -- needed when new roles are added.
 -- ─────────────────────────────────────────────────────────────────────────────
 
+-- Ensure supervisor exists in the enum (safe to re-run)
+alter type user_role add value if not exists 'supervisor';
+
 create table if not exists role_mappings (
   id               uuid primary key default gen_random_uuid(),
   display_name     text not null,          -- label used in Excel / UI
