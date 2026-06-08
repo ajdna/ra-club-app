@@ -137,7 +137,7 @@ export default async function CommandCenter() {
           {dateLabel}
         </p>
         <h1 className="font-display mt-1 text-3xl font-semibold text-emerald">
-          Namaste, {me.name.split(" ")[0]} 👋
+          Namaste, {me.name.split(" ")[0]} 🙏
         </h1>
         {dmoTotal !== null && (
           <p className="mt-1 text-sm text-ink/60">

@@ -46,19 +46,19 @@ const config: CapacitorConfig = {
     allowMixedContent: !isProd,
 
     // Match your warm-earth theme colour for the native status bar overlay.
-    backgroundColor: "#f6efe3",
+    backgroundColor: "#f5f0e6",
   },
 
   plugins: {
     SplashScreen: {
       launchShowDuration: 1200,
-      backgroundColor: "#1f3d2b", // emerald
+      backgroundColor: "#1a5e32", // RA forest green
       androidSplashResourceName: "splash",
       showSpinner: false,
     },
     StatusBar: {
       style: "Dark", // dark icons on cream background
-      backgroundColor: "#f6efe3",
+      backgroundColor: "#f5f0e6",
     },
     PushNotifications: {
       presentationOptions: ["badge", "sound", "alert"],
