@@ -7,14 +7,14 @@ import type { CapacitorConfig } from "@capacitor/cli";
  * Because the app uses Next.js SSR (Server Components, Server Actions), we
  * cannot ship a fully static bundle — the WebView loads the live server instead.
  *
- * DEV   → http://192.168.29.247:3000  (your LAN IP, already in next.config.ts)
- * PROD  → your Vercel URL             (update VERCEL_URL below after deploy)
+ * DEV   → http://192.168.29.247:3000       (LAN IP for local dev server)
+ * PROD  → https://ra-club-app.vercel.app  (live Vercel deployment)
  *
  * To switch between dev and prod builds, change the `server.url` value below,
  * then run: npx cap sync android
  */
 
-const VERCEL_URL = "https://ra-club-app.vercel.app"; // ← update after deploy
+const VERCEL_URL = "https://ra-club-app.vercel.app";
 const DEV_URL = "http://192.168.29.247:3000";
 
 const isProd = process.env.NODE_ENV === "production";
