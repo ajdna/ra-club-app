@@ -1,14 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import {
-  addRoleMapping,
-  updateRoleMapping,
-  deleteRoleMapping,
-  SYSTEM_ROLES,
-  type RoleMappingRow,
-  type SystemRole,
-} from "./actions";
+import { addRoleMapping, updateRoleMapping, deleteRoleMapping } from "./actions";
+import { SYSTEM_ROLES, type RoleMappingRow, type SystemRole } from "./types";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 const BOOL_LABEL = (v: boolean) => (v ? "✅ Yes" : "—");

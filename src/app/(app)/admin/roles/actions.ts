@@ -3,23 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-
-export type SystemRole =
-  | "upline" | "club_owner" | "nco" | "jco" | "coach"
-  | "supervisor" | "member" | "privilege" | "guest";
-
-export const SYSTEM_ROLES: SystemRole[] = [
-  "member", "coach", "supervisor", "jco", "nco", "upline", "privilege", "guest",
-];
-
-export interface RoleMappingRow {
-  id: string;
-  display_name: string;
-  system_role: SystemRole;
-  gets_members_row: boolean;
-  gets_followup: boolean;
-  sort_order: number;
-}
+import { SYSTEM_ROLES } from "./types";
+import type { SystemRole, RoleMappingRow } from "./types";
 
 async function assertOwner() {
   const me = await getCurrentUser();
