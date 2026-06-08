@@ -95,7 +95,7 @@ begin
 end;
 $$;
 
-grant execute on function register_user(text, text, user_role, text, uuid)
+grant execute on function register_user(text, text, text, user_role, uuid)
   to authenticated;
 
 -- ── 4. approve_user() — club_owner only ──────────────────────────────────────
