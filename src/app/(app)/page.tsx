@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getConfigValue } from "@/modules/rules-engine";
 import { membershipLabel, type MembershipLabels } from "@/lib/membership";
+import { ClearAllButton } from "./followup/ClearAllButton";
 
 export const dynamic = "force-dynamic";
 
@@ -208,7 +209,12 @@ export default async function CommandCenter() {
       </div>
 
       {/* Action required — overdue follow-ups */}
-      <SectionHeader>⚠️ Action required</SectionHeader>
+      <div className="mb-2 mt-6 flex items-center justify-between px-1">
+        <h2 className="font-display text-sm font-semibold uppercase tracking-[0.08em] text-sage-d">
+          ⚠️ Action required
+        </h2>
+        {overdue.length > 0 && <ClearAllButton count={overdue.length} />}
+      </div>
       <div className="rounded-2xl border border-line bg-card p-2 shadow-sm">
         {overdue.length ? (
           overdue.map((t) => {

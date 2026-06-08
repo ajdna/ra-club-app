@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { ACTIVITY_LABEL } from "@/lib/followup-planner";
+import { ClearAllButton } from "./ClearAllButton";
 
 export const dynamic = "force-dynamic";
 
@@ -120,9 +121,12 @@ export default async function FollowupPage() {
       {/* Overdue */}
       {(overdue?.length ?? 0) > 0 && (
         <section className="mt-6">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-bad mb-2">
-            ⚠️ Overdue ({overdue!.length})
-          </h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-bad">
+              ⚠️ Overdue ({overdue!.length})
+            </h2>
+            <ClearAllButton count={overdue!.length} />
+          </div>
           <div className="space-y-3">
             {overdue!.map((t) => (
               <TaskCard key={t.id} task={t} />
