@@ -279,3 +279,59 @@ export async function getMyMembers() {
   }));
 }
 
+// ── Get my coach (for members initiating conversation) ───────────────────────
+export async function getMyCoach(): Promise<{ id: string; name: string } | null> {
+  const me = await getCurrentUser();
+  if (!me || typeof me === "string") return null;
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("members")
+    .select("coach_id, coach:coach_id(name)")
+    .eq("user_id", me.id)
+    .maybeSingle();
+
+  if (!data?.coach_id) return null;
+  type RawCoach = { coach_id: string; coach: { name: string } | null };
+  const row = data as unknown as RawCoach;
+  return { id: row.coach_id, name: row.coach?.name ?? "Coach" };
+}
+
+// ── Member starts a thread with their coach ───────────────────────────────────
+export async function startThreadWithMyCoach(): Promise<{ threadId?: string; error?: string }> {
+  const me = await getCurrentUser();
+  if (!me || typeof me === "string") return { error: "Not signed in" };
+
+  const supabase = await createClient();
+
+  const { data: memberRow } = await supabase
+    .from("members")
+    .select("coach_id")
+    .eq("user_id", me.id)
+    .maybeSingle();
+
+  if (!memberRow?.coach_id) return { error: "Coach not found" };
+  const coachId = memberRow.coach_id;
+
+  // Return existing thread if any
+  const { data: existing } = await supabase
+    .from("chat_threads")
+    .select("id")
+    .eq("type", "direct")
+    .eq("coach_id", coachId)
+    .eq("member_id", me.id)
+    .maybeSingle();
+
+  if (existing) return { threadId: existing.id };
+
+  const { data, error } = await supabase
+    .from("chat_threads")
+    .insert({ type: "direct", coach_id: coachId, member_id: me.id })
+    .select("id")
+    .single();
+
+  if (error) return { error: error.message };
+  revalidatePath("/messages");
+  return { threadId: data.id };
+}
+

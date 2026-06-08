@@ -38,7 +38,12 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
       </header>
 
       {/* Chat */}
-      <ChatClient threadId={id} initialMessages={messages} />
+      <ChatClient
+        threadId={id}
+        initialMessages={messages}
+        myId={me.id}
+        otherName={thread.title}
+      />
     </div>
   );
 }

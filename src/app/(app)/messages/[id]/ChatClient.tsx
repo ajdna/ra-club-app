@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { sendMessage, markThreadRead } from "../actions";
+import { createClient } from "@/lib/supabase/client";
 
 type Message = {
   id: string;
@@ -32,9 +33,13 @@ function formatDay(iso: string) {
 export function ChatClient({
   threadId,
   initialMessages,
+  myId,
+  otherName,
 }: {
   threadId: string;
   initialMessages: Message[];
+  myId: string;
+  otherName: string;
 }) {
   const [messages, setMessages] = useState(initialMessages);
   const [text, setText] = useState("");
@@ -51,6 +56,76 @@ export function ChatClient({
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // ── Supabase Realtime subscription ──────────────────────────────────────────
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`thread:${threadId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "chat_messages",
+          filter: `thread_id=eq.${threadId}`,
+        },
+        (payload) => {
+          const row = payload.new as {
+            id: string;
+            sender_id: string;
+            body: string;
+            created_at: string;
+          };
+          const isMe = row.sender_id === myId;
+
+          setMessages((prev) => {
+            // Already in list? (e.g. server component re-render delivered it)
+            if (prev.some((m) => m.id === row.id)) return prev;
+
+            // For my own messages: replace the matching optimistic bubble
+            if (isMe) {
+              const optIdx = prev.findIndex(
+                (m) => m.id.startsWith("opt-") && m.body === row.body && m.isMe,
+              );
+              if (optIdx !== -1) {
+                const next = [...prev];
+                next[optIdx] = {
+                  id: row.id,
+                  senderId: row.sender_id,
+                  senderName: "You",
+                  body: row.body,
+                  createdAt: row.created_at,
+                  isMe: true,
+                };
+                return next;
+              }
+            }
+
+            // Incoming message from the other party
+            return [
+              ...prev,
+              {
+                id: row.id,
+                senderId: row.sender_id,
+                senderName: isMe ? "You" : otherName,
+                body: row.body,
+                createdAt: row.created_at,
+                isMe,
+              },
+            ];
+          });
+
+          // Mark thread read immediately when incoming message arrives
+          if (!isMe) markThreadRead(threadId);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [threadId, myId, otherName]);
 
   function handleSend(e: React.FormEvent) {
     e.preventDefault();
