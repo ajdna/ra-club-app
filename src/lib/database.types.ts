@@ -545,10 +545,11 @@ export type Database = {
         Args: { target: string };
         Returns: boolean;
       };
-      bulk_import_member: {
+      bulk_import_user: {
         Args: {
           p_name: string;
-          p_coach_id: string;
+          p_upline_id: string;
+          p_role?: Database["public"]["Enums"]["user_role"];
           p_phone?: string | null;
           p_email?: string | null;
           p_membership?: Database["public"]["Enums"]["membership_type"];
@@ -620,6 +621,7 @@ export type Database = {
         | "nco"
         | "jco"
         | "coach"
+        | "supervisor"
         | "member"
         | "privilege"
         | "guest";

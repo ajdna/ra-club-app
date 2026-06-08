@@ -6,12 +6,30 @@ import { generateFollowupTasks } from "@/lib/followup-planner";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const XLSX = require("xlsx") as typeof import("xlsx");
 
+/**
+ * Valid roles for bulk import.
+ * To add a new role in future:
+ *  1. Run: ALTER TYPE user_role ADD VALUE 'new_role'; in Supabase
+ *  2. Add the new role to this array
+ *  3. Add it to the Roles sheet in src/app/api/template/route.ts
+ */
+export const VALID_IMPORT_ROLES = [
+  "member",
+  "coach",
+  "supervisor",
+  "jco",
+  "nco",
+] as const;
+
+export type ImportRole = typeof VALID_IMPORT_ROLES[number];
+
 export interface ImportRow {
   name: string;
+  role?: string;
+  upline_name: string;
   phone?: string;
   email?: string;
-  start_date: string; // DD/MM/YYYY
-  coach_name: string;
+  start_date: string;
   membership_type?: string;
   current_weight_kg?: string;
   ideal_weight_kg?: string;
@@ -26,16 +44,13 @@ export interface ImportResult {
 function parseDate(raw: string | number | undefined): Date | null {
   if (!raw) return null;
   if (typeof raw === "number") {
-    // Excel serial date
     const d = XLSX.SSF.parse_date_code(raw);
     if (d) return new Date(d.y, d.m - 1, d.d);
     return null;
   }
   const s = String(raw).trim();
-  // DD/MM/YYYY
   const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
-  // Try native
   const d = new Date(s);
   return isNaN(d.getTime()) ? null : d;
 }
@@ -51,7 +66,7 @@ export async function importMembers(formData: FormData): Promise<ImportResult> {
     return { total: 0, success: 0, errors: [{ row: 0, name: "-", error: "No file uploaded." }] };
   }
 
-  // Parse Excel
+  // Parse Excel — read first sheet (Import sheet)
   const buf = Buffer.from(await file.arrayBuffer());
   const wb = XLSX.read(buf, { type: "buffer", cellDates: false });
   const ws = wb.Sheets[wb.SheetNames[0]];
@@ -60,11 +75,12 @@ export async function importMembers(formData: FormData): Promise<ImportResult> {
     raw: true,
   });
 
-  // Filter out empty rows and NOTE rows
+  // Filter out blank rows and NOTE/header rows
   const rows = rawRows.filter(
     (r) =>
       r["name"] &&
       String(r["name"]).trim() !== "" &&
+      String(r["name"]).toUpperCase() !== "NOTES →" &&
       String(r["name"]).toUpperCase() !== "NOTES",
   ) as unknown as ImportRow[];
 
@@ -75,42 +91,49 @@ export async function importMembers(formData: FormData): Promise<ImportResult> {
   const supabase = await createClient();
   const result: ImportResult = { total: rows.length, success: 0, errors: [] };
 
-  // Pre-load all coaches for name lookup (case-insensitive)
-  const { data: coaches } = await supabase
+  // Pre-load ALL active users for upline name lookup (case-insensitive)
+  const { data: allUsers } = await supabase
     .from("users")
     .select("id, name")
-    .in("role", ["club_owner", "nco", "jco", "coach"])
     .eq("status", "active");
 
-  const coachMap = new Map<string, string>(); // lowercase name → id
-  for (const c of coaches ?? []) {
-    coachMap.set(c.name.toLowerCase().trim(), c.id);
+  const uplineMap = new Map<string, string>(); // lowercase name → id
+  for (const u of allUsers ?? []) {
+    uplineMap.set(u.name.toLowerCase().trim(), u.id);
   }
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
-    const rowNum = i + 2; // 1-indexed, header is row 1
+    const rowNum = i + 2;
     const name = String(row.name ?? "").trim();
 
     try {
-      // Validate required fields
       if (!name) throw new Error("Name is required");
 
-      const coachName = String(row.coach_name ?? "").trim();
-      if (!coachName) throw new Error("Coach name is required");
+      // Role — default to 'member' if blank
+      const roleRaw = String(row.role ?? "").trim().toLowerCase() || "member";
+      if (!VALID_IMPORT_ROLES.includes(roleRaw as ImportRole)) {
+        throw new Error(
+          `Invalid role: "${roleRaw}". Valid roles: ${VALID_IMPORT_ROLES.join(", ")}`,
+        );
+      }
+      const role = roleRaw as ImportRole;
 
-      const coachId = coachMap.get(coachName.toLowerCase());
-      if (!coachId) throw new Error(`Coach not found: "${coachName}"`);
+      // Upline
+      const uplineName = String(row.upline_name ?? "").trim();
+      if (!uplineName) throw new Error("upline_name is required");
+      const uplineId = uplineMap.get(uplineName.toLowerCase());
+      if (!uplineId) throw new Error(`Upline not found: "${uplineName}"`);
 
+      // Start date
       const startDate = parseDate(row.start_date as string | number);
       if (!startDate) throw new Error(`Invalid start_date: "${row.start_date}"`);
 
-      // Membership type
+      // Membership (members only)
       const validMemberships = ["basic", "elite", "privilege"];
-      const membership = validMemberships.includes(
-        String(row.membership_type ?? "").toLowerCase(),
-      )
-        ? (String(row.membership_type).toLowerCase() as "basic" | "elite" | "privilege")
+      const membershipRaw = String(row.membership_type ?? "").toLowerCase();
+      const membership = validMemberships.includes(membershipRaw)
+        ? (membershipRaw as "basic" | "elite" | "privilege")
         : "basic";
 
       const curWeight = row.current_weight_kg
@@ -120,42 +143,44 @@ export async function importMembers(formData: FormData): Promise<ImportResult> {
         ? parseFloat(String(row.ideal_weight_kg))
         : null;
 
-      // Create member via RPC
-      const { data: memberId, error: rpcErr } = await supabase.rpc(
-        "bulk_import_member",
+      // Create user via RPC
+      const { data: userId, error: rpcErr } = await supabase.rpc(
+        "bulk_import_user",
         {
           p_name: name,
-          p_coach_id: coachId,
+          p_upline_id: uplineId,
+          p_role: role,
           p_phone: String(row.phone ?? "").trim() || null,
           p_email: String(row.email ?? "").trim() || null,
           p_membership: membership,
           p_join_date: startDate.toISOString().split("T")[0],
-          p_ideal_weight: isNaN(idealWeight!) ? null : idealWeight,
-          p_cur_weight: isNaN(curWeight!) ? null : curWeight,
+          p_ideal_weight: curWeight !== null && isNaN(curWeight) ? null : (idealWeight !== null && isNaN(idealWeight) ? null : idealWeight),
+          p_cur_weight: curWeight !== null && isNaN(curWeight) ? null : curWeight,
         },
       );
 
       if (rpcErr) throw new Error(rpcErr.message);
 
-      // Generate follow-up tasks (12 months)
-      const tasks = generateFollowupTasks(startDate, 12);
-      const taskRows = tasks.map((t) => ({
-        member_id: memberId as string,
-        coach_id: coachId,
-        day_number: t.day_number,
-        cycle: t.cycle,
-        activity: t.activity,
-        title: t.title,
-        due_date: t.due_date,
-        status: "pending" as const,
-      }));
+      // Generate follow-up tasks only for members
+      if (role === "member") {
+        const tasks = generateFollowupTasks(startDate, 12);
+        const taskRows = tasks.map((t) => ({
+          member_id: userId as string,
+          coach_id: uplineId,
+          day_number: t.day_number,
+          cycle: t.cycle,
+          activity: t.activity,
+          title: t.title,
+          due_date: t.due_date,
+          status: "pending" as const,
+        }));
 
-      // Bulk insert tasks in one shot
-      const { error: taskErr } = await supabase
-        .from("follow_up_tasks")
-        .insert(taskRows);
+        const { error: taskErr } = await supabase
+          .from("follow_up_tasks")
+          .insert(taskRows);
 
-      if (taskErr) throw new Error(`Tasks insert failed: ${taskErr.message}`);
+        if (taskErr) throw new Error(`Follow-up tasks failed: ${taskErr.message}`);
+      }
 
       result.success++;
     } catch (err) {

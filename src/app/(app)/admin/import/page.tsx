@@ -17,11 +17,11 @@ export default async function ImportPage() {
       </Link>
 
       <h1 className="font-display mt-3 text-2xl font-semibold text-emerald">
-        Import Members
+        Import Members &amp; Team
       </h1>
       <p className="mt-1 text-sm text-ink/60">
-        Excel se ek saath kai members import karo. Har member ke liye 12
-        mahine ke follow-up tasks auto-generate honge.
+        Excel se ek saath members, coaches, supervisors, JCO, NCO — sab import
+        karo. Members ke liye 12 mahine ke follow-up tasks auto-generate honge.
       </p>
 
       {/* Download template */}
@@ -47,24 +47,22 @@ export default async function ImportPage() {
           Template Instructions
         </p>
         <ul className="space-y-1 text-sm text-ink/70 list-disc list-inside">
+          <li><strong>name</strong> — poora naam (required)</li>
           <li>
-            <strong>name</strong> — member ka poora naam (required)
+            <strong>role</strong> — member / coach / supervisor / jco / nco
+            (see Roles sheet in template)
           </li>
           <li>
-            <strong>phone</strong> — 10-digit number, no spaces
+            <strong>upline_name</strong> — unka upline/coach ka naam, exactly
+            as in system
           </li>
-          <li>
-            <strong>start_date</strong> — 1st order ki date, DD/MM/YYYY format
-          </li>
-          <li>
-            <strong>coach_name</strong> — exactly as registered in the system
-          </li>
+          <li><strong>start_date</strong> — DD/MM/YYYY format</li>
           <li>
             <strong>membership_type</strong> — basic / elite / privilege
+            (members only)
           </li>
           <li>
-            <strong>current_weight_kg</strong> &amp;{" "}
-            <strong>ideal_weight_kg</strong> — optional, numbers only
+            <strong>weights</strong> — optional, members only, numbers only
           </li>
         </ul>
       </div>
