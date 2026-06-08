@@ -63,7 +63,7 @@ export async function markAllRead(): Promise<Result> {
  */
 export async function generateNotifications(): Promise<Result> {
   const me = await getCurrentUser();
-  if (!me || me === "unlinked") return { ok: false, error: "Not signed in." };
+  if (!me || typeof me === "string") return { ok: false, error: "Not signed in." };
   const meId = me.id;
 
   const supabase = await createClient();

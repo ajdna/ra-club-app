@@ -17,7 +17,7 @@ function todayISO() {
 /** Mark a member present in today's club (idempotent per day). */
 export async function markPresent(memberId: string): Promise<ActionResult> {
   const me = await getCurrentUser();
-  if (!me || me === "unlinked") return { ok: false, error: "Not signed in." };
+  if (!me || typeof me === "string") return { ok: false, error: "Not signed in." };
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -40,7 +40,7 @@ export async function logWeight(
   weight: number,
 ): Promise<ActionResult> {
   const me = await getCurrentUser();
-  if (!me || me === "unlinked") return { ok: false, error: "Not signed in." };
+  if (!me || typeof me === "string") return { ok: false, error: "Not signed in." };
   if (!Number.isFinite(weight) || weight <= 0 || weight > 500)
     return { ok: false, error: "Enter a valid weight (kg)." };
 
@@ -67,7 +67,7 @@ function isValidMembership(v: string): v is ValidMembership {
 /** Add a new member under the current user (as their coach). */
 export async function addMember(formData: FormData): Promise<ActionResult> {
   const me = await getCurrentUser();
-  if (!me || me === "unlinked") return { ok: false, error: "Not signed in." };
+  if (!me || typeof me === "string") return { ok: false, error: "Not signed in." };
 
   const name = String(formData.get("name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim() || null;
@@ -102,7 +102,7 @@ export async function saveIntake(
   formData: FormData,
 ): Promise<ActionResult> {
   const me = await getCurrentUser();
-  if (!me || me === "unlinked") return { ok: false, error: "Not signed in." };
+  if (!me || typeof me === "string") return { ok: false, error: "Not signed in." };
 
   const supabase = await createClient();
 

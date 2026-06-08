@@ -11,6 +11,7 @@ function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next") || "/";
+  const rejected = params.get("error") === "rejected";
 
   // Phone OTP is hidden until enabled (needs an SMS provider configured in
   // Supabase). Flip NEXT_PUBLIC_ENABLE_PHONE_OTP=true to show it.
@@ -211,17 +212,30 @@ function LoginForm() {
               >
                 {loading ? "Login ho raha hai…" : "Login"}
               </button>
-              <p className="text-center text-sm">
+              <div className="flex flex-col items-center gap-1.5 text-sm">
                 <Link
                   href="/auth/reset-password"
                   className="text-sage-d underline"
                 >
                   Password bhool gaye?
                 </Link>
-              </p>
+                <span className="text-ink/30">·</span>
+                <Link
+                  href="/auth/register"
+                  className="font-semibold text-terra-d underline"
+                >
+                  Naya account banao →
+                </Link>
+              </div>
             </div>
           )}
 
+          {rejected && (
+            <p role="alert" className="mt-3 rounded-lg bg-bad/10 px-3 py-2 text-sm text-bad">
+              Aapki registration reject ho gayi. Zyada jaankari ke liye apne
+              coach se baat karein.
+            </p>
+          )}
           {error && (
             <p role="alert" className="mt-3 rounded-lg bg-bad/10 px-3 py-2 text-sm text-bad">
               {error}

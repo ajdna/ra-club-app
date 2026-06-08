@@ -16,7 +16,7 @@ export async function setConfig(
   value: unknown,
 ): Promise<ActionResult> {
   const me = await getCurrentUser();
-  if (!me || me === "unlinked")
+  if (!me || typeof me === "string")
     return { ok: false, error: "Not signed in." };
   if (me.role !== "club_owner")
     return { ok: false, error: "Only the Club Owner can change settings." };

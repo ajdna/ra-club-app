@@ -551,6 +551,51 @@ export type Database = {
         };
         Returns: string;
       };
+      get_coaches_for_registration: {
+        Args: Record<string, never>;
+        Returns: { id: string; name: string; role: Database["public"]["Enums"]["user_role"] }[];
+      };
+      register_user: {
+        Args: {
+          p_name: string;
+          p_email: string;
+          p_role: Database["public"]["Enums"]["user_role"];
+          p_phone: string;
+          p_parent_id: string;
+        };
+        Returns: string;
+      };
+      approve_user: {
+        Args: { p_user_id: string };
+        Returns: void;
+      };
+      reject_user: {
+        Args: { p_user_id: string };
+        Returns: void;
+      };
+      update_user_role: {
+        Args: {
+          p_user_id: string;
+          p_new_role: Database["public"]["Enums"]["user_role"];
+          p_new_parent_id?: string | null;
+          p_membership?: Database["public"]["Enums"]["membership_type"] | null;
+          p_status?: string | null;
+        };
+        Returns: void;
+      };
+      update_user_details: {
+        Args: {
+          p_user_id: string;
+          p_name?: string | null;
+          p_phone?: string | null;
+          p_address?: string | null;
+        };
+        Returns: void;
+      };
+      sync_current_weight: {
+        Args: Record<string, never>;
+        Returns: unknown;
+      };
     };
     Enums: {
       user_role:

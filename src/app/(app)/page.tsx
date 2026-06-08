@@ -44,6 +44,8 @@ function todayISO() {
 export default async function CommandCenter() {
   const me = await getCurrentUser();
   if (me === null) redirect("/login");
+  if (me === "pending") redirect("/pending");
+  if (me === "rejected") redirect("/login?error=rejected");
 
   if (me === "unlinked") {
     return (

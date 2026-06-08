@@ -1,17 +1,17 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import { getConfigMap } from "@/modules/rules-engine";
 import { SECTIONS } from "@/modules/rules-engine/registry";
 import { AdminConsole } from "./AdminConsole";
 
-// Admin config rarely changes — cache for 5 minutes, revalidated on setConfig().
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
   const me = await getCurrentUser();
   if (me === null) redirect("/login");
-  if (me === "unlinked") redirect("/");
+  if (me === "unlinked" || me === "pending" || me === "rejected") redirect("/");
 
   if (me.role !== "club_owner") {
     return (
@@ -32,6 +32,13 @@ export default async function AdminPage() {
     );
   }
 
+  // Pending registration count (shown as urgent alert)
+  const supabase = await createClient();
+  const { count: pendingCount } = await supabase
+    .from("users")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "pending");
+
   const values = await getConfigMap(SECTIONS.map((s) => s.key));
 
   return (
@@ -42,9 +49,46 @@ export default async function AdminPage() {
       <h1 className="font-display mt-3 text-2xl font-semibold text-emerald">
         Admin Console
       </h1>
+
+      {/* Pending approvals alert */}
+      {(pendingCount ?? 0) > 0 && (
+        <Link
+          href="/admin/users"
+          className="mt-4 flex items-center gap-3 rounded-2xl border border-warn/40 bg-warn/10 px-4 py-3 shadow-sm transition hover:bg-warn/15"
+        >
+          <span className="text-2xl">⏳</span>
+          <div className="flex-1">
+            <div className="font-semibold text-ink">
+              {pendingCount} pending registration{pendingCount === 1 ? "" : "s"}
+            </div>
+            <div className="text-sm text-ink/60">
+              Approve karne ke liye User Management kholo →
+            </div>
+          </div>
+        </Link>
+      )}
+
+      {/* User management link */}
+      <Link
+        href="/admin/users"
+        className="mt-4 flex items-center gap-3 rounded-2xl border border-line bg-card px-4 py-3 shadow-sm transition hover:bg-cream-2"
+      >
+        <span className="text-2xl">👥</span>
+        <div className="flex-1">
+          <div className="font-semibold text-ink">User Management</div>
+          <div className="text-sm text-ink/60">
+            Roles, membership, upline, soft-delete →
+          </div>
+        </div>
+      </Link>
+
+      {/* Rules engine */}
+      <h2 className="font-display mt-8 text-lg font-semibold text-emerald">
+        Rules Engine
+      </h2>
       <p className="mt-1 text-sm text-ink/60">
-        Rules Engine — change pricing, labels, notifications & workflows. Saves
-        apply instantly across the app, no deploy.
+        Change pricing, labels, notifications & workflows. Saves apply
+        instantly, no deploy.
       </p>
       <AdminConsole sections={SECTIONS} values={values} />
     </main>
