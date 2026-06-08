@@ -80,8 +80,8 @@ begin
   )
   returning id into v_id;
 
-  -- Insert members row only for member role (health track data).
-  if p_role = 'member' then
+  -- Insert members row for member + supervisor (both on the health track).
+  if p_role in ('member', 'supervisor') then
     insert into members (
       user_id, coach_id, membership_type, join_date,
       ideal_weight, current_weight

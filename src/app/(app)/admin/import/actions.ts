@@ -161,8 +161,8 @@ export async function importMembers(formData: FormData): Promise<ImportResult> {
 
       if (rpcErr) throw new Error(rpcErr.message);
 
-      // Generate follow-up tasks only for members
-      if (role === "member") {
+      // Generate follow-up tasks for members + supervisors (both on health track)
+      if (role === "member" || role === "supervisor") {
         const tasks = generateFollowupTasks(startDate, 12);
         const taskRows = tasks.map((t) => ({
           member_id: userId as string,

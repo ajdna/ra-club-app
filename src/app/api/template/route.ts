@@ -56,7 +56,7 @@ const ROLES_SHEET = [
   ["Role",        "Description",                                          "Gets follow-up tasks?", "Gets members row?"],
   ["member",      "Regular club member — health track",                   "Yes (12 months)",       "Yes"],
   ["coach",       "Coach — manages members, runs follow-ups",             "No",                    "No"],
-  ["supervisor",  "Supervisor — oversees coaches",                        "No",                    "No"],
+  ["supervisor",  "Supervisor-Coach — on health program + coaches others", "Yes (12 months)",       "Yes"],
   ["jco",         "Junior Club Officer",                                  "No",                    "No"],
   ["nco",         "National Club Officer",                                "No",                    "No"],
   [],
