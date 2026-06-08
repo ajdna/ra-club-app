@@ -22,7 +22,7 @@ self.addEventListener("push", (event) => {
       body,
       icon: "/icon-192.png",
       badge: "/icon-72.png",
-      tag: tag ?? url,           // collapse duplicate notifications for same thread
+      tag: tag ?? url,
       renotify: true,
       data: { url },
       vibrate: [150, 60, 150],
@@ -30,28 +30,35 @@ self.addEventListener("push", (event) => {
   );
 });
 
-// ── Notification tapped — open / focus the app at the right page ──────────────
+// ── Notification tapped ───────────────────────────────────────────────────────
+// Strategy:
+//   1. If the app is already open in a tab/PWA → postMessage so Next.js router
+//      handles the navigation (reliable on all platforms including iOS).
+//   2. If not open → openWindow with the full URL.
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = event.notification.data?.url ?? "/";
-  const fullUrl = new URL(url, self.location.origin).href;
+
+  const path = event.notification.data?.url ?? "/";
+  const fullUrl = new URL(path, self.location.origin).href;
 
   event.waitUntil(
     self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clientList) => {
-        // If the app is already open in a tab, focus it and navigate there
-        for (const client of clientList) {
-          if ("focus" in client && "navigate" in client) {
-            client.focus();
-            // @ts-ignore
-            return client.navigate(fullUrl);
-          }
+        // Find any open window belonging to this origin
+        const appClient = clientList.find(
+          (c) => new URL(c.url).origin === self.location.origin,
+        );
+
+        if (appClient) {
+          // App is open — tell it to navigate via the router
+          appClient.focus();
+          appClient.postMessage({ type: "PUSH_NAV", url: path });
+          return;
         }
-        // Otherwise open a new tab / bring the PWA to front
-        if (self.clients.openWindow) {
-          return self.clients.openWindow(fullUrl);
-        }
+
+        // App is closed — open it at the right page
+        return self.clients.openWindow(fullUrl);
       }),
   );
 });
