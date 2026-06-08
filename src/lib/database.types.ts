@@ -159,6 +159,36 @@ export type Database = {
           },
         ];
       };
+      role_mappings: {
+        Row: {
+          id: string;
+          display_name: string;
+          system_role: Database["public"]["Enums"]["user_role"];
+          gets_members_row: boolean;
+          gets_followup: boolean;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          display_name: string;
+          system_role: Database["public"]["Enums"]["user_role"];
+          gets_members_row?: boolean;
+          gets_followup?: boolean;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          display_name?: string;
+          system_role?: Database["public"]["Enums"]["user_role"];
+          gets_members_row?: boolean;
+          gets_followup?: boolean;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       follow_up_tasks: {
         Row: {
           id: string;
@@ -550,6 +580,7 @@ export type Database = {
           p_name: string;
           p_upline_id: string;
           p_role?: Database["public"]["Enums"]["user_role"];
+          p_gets_members_row?: boolean;
           p_phone?: string | null;
           p_email?: string | null;
           p_membership?: Database["public"]["Enums"]["membership_type"];

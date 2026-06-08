@@ -96,6 +96,20 @@ export default async function AdminPage() {
         </div>
       </Link>
 
+      {/* Role Mappings */}
+      <Link
+        href="/admin/roles"
+        className="mt-4 flex items-center gap-3 rounded-2xl border border-line bg-card px-4 py-3 shadow-sm transition hover:bg-cream-2"
+      >
+        <span className="text-2xl">🏷️</span>
+        <div className="flex-1">
+          <div className="font-semibold text-ink">Role Mappings</div>
+          <div className="text-sm text-ink/60">
+            Custom role labels · system role · follow-up tasks toggle →
+          </div>
+        </div>
+      </Link>
+
       {/* Rules engine */}
       <h2 className="font-display mt-8 text-lg font-semibold text-emerald">
         Rules Engine
