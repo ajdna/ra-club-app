@@ -20,7 +20,9 @@ export interface ImportRow {
 
 export interface ImportResult {
   total: number;
-  success: number;
+  inserted: number;
+  updated: number;
+  skipped: number;
   errors: Array<{ row: number; name: string; error: string }>;
 }
 
@@ -64,12 +66,12 @@ async function loadRoleMappings(
 export async function importMembers(formData: FormData): Promise<ImportResult> {
   const me = await getCurrentUser();
   if (!me || typeof me === "string" || me.role !== "club_owner") {
-    return { total: 0, success: 0, errors: [{ row: 0, name: "-", error: "Club owner only." }] };
+    return { total: 0, inserted: 0, updated: 0, skipped: 0, errors: [{ row: 0, name: "-", error: "Club owner only." }] };
   }
 
   const file = formData.get("file") as File | null;
   if (!file) {
-    return { total: 0, success: 0, errors: [{ row: 0, name: "-", error: "No file uploaded." }] };
+    return { total: 0, inserted: 0, updated: 0, skipped: 0, errors: [{ row: 0, name: "-", error: "No file uploaded." }] };
   }
 
   // Parse Excel — read first sheet (Import sheet)
@@ -91,11 +93,11 @@ export async function importMembers(formData: FormData): Promise<ImportResult> {
   ) as unknown as ImportRow[];
 
   if (rows.length === 0) {
-    return { total: 0, success: 0, errors: [{ row: 1, name: "-", error: "No data rows found in file." }] };
+    return { total: 0, inserted: 0, updated: 0, skipped: 0, errors: [{ row: 1, name: "-", error: "No data rows found in file." }] };
   }
 
   const supabase = await createClient();
-  const result: ImportResult = { total: rows.length, success: 0, errors: [] };
+  const result: ImportResult = { total: rows.length, inserted: 0, updated: 0, skipped: 0, errors: [] };
 
   // Load role mappings from DB
   const roleMappings = await loadRoleMappings(supabase);
@@ -139,7 +141,7 @@ export async function importMembers(formData: FormData): Promise<ImportResult> {
       const startDate = parseDate(row.start_date as string | number);
       if (!startDate) throw new Error(`Invalid start_date: "${row.start_date}"`);
 
-      // Membership (members only)
+      // Membership
       const validMemberships = ["basic", "elite", "privilege"];
       const membershipRaw = String(row.membership_type ?? "").toLowerCase();
       const membership = validMemberships.includes(membershipRaw)
@@ -153,9 +155,9 @@ export async function importMembers(formData: FormData): Promise<ImportResult> {
         ? parseFloat(String(row.ideal_weight_kg))
         : null;
 
-      // Create user via RPC — pass gets_members_row from mapping
-      const { data: userId, error: rpcErr } = await supabase.rpc(
-        "bulk_import_user",
+      // Upsert via RPC — returns { id, action, date_changed }
+      const { data: upsertResult, error: rpcErr } = await supabase.rpc(
+        "bulk_upsert_user",
         {
           p_name: name,
           p_upline_id: uplineId,
@@ -172,28 +174,36 @@ export async function importMembers(formData: FormData): Promise<ImportResult> {
 
       if (rpcErr) throw new Error(rpcErr.message);
 
-      // Generate follow-up tasks based on mapping flag
+      const { id: userId, action, date_changed } = upsertResult as {
+        id: string;
+        action: "inserted" | "updated" | "skipped";
+        date_changed: boolean;
+      };
+
+      // Tally counts
+      if (action === "inserted") result.inserted++;
+      else if (action === "updated") result.updated++;
+      else result.skipped++;
+
+      // Follow-up tasks
       if (mapping.gets_followup) {
-        const tasks = generateFollowupTasks(startDate, 12);
-        const taskRows = tasks.map((t) => ({
-          member_id: userId as string,
-          coach_id: uplineId,
-          day_number: t.day_number,
-          cycle: t.cycle,
-          activity: t.activity,
-          title: t.title,
-          due_date: t.due_date,
-          status: "pending" as const,
-        }));
+        if (action === "inserted") {
+          // New user — generate full 12-month schedule
+          await generateAndInsertTasks(supabase, userId, uplineId, startDate);
 
-        const { error: taskErr } = await supabase
-          .from("follow_up_tasks")
-          .insert(taskRows);
+        } else if (action === "updated" && date_changed) {
+          // Start date changed — delete pending tasks and regenerate
+          await supabase
+            .from("follow_up_tasks")
+            .delete()
+            .eq("member_id", userId)
+            .eq("status", "pending");
 
-        if (taskErr) throw new Error(`Follow-up tasks failed: ${taskErr.message}`);
+          await generateAndInsertTasks(supabase, userId, uplineId, startDate);
+        }
+        // action === "skipped" or updated with no date change → leave tasks alone
       }
 
-      result.success++;
     } catch (err) {
       result.errors.push({
         row: rowNum,
@@ -204,4 +214,26 @@ export async function importMembers(formData: FormData): Promise<ImportResult> {
   }
 
   return result;
+}
+
+async function generateAndInsertTasks(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  memberId: string,
+  coachId: string,
+  startDate: Date,
+) {
+  const tasks = generateFollowupTasks(startDate, 12);
+  const taskRows = tasks.map((t) => ({
+    member_id: memberId,
+    coach_id: coachId,
+    day_number: t.day_number,
+    cycle: t.cycle,
+    activity: t.activity,
+    title: t.title,
+    due_date: t.due_date,
+    status: "pending" as const,
+  }));
+
+  const { error } = await supabase.from("follow_up_tasks").insert(taskRows);
+  if (error) throw new Error(`Follow-up tasks failed: ${error.message}`);
 }

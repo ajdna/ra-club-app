@@ -25,6 +25,9 @@ export function ImportForm() {
     });
   }
 
+  const processed = result ? result.inserted + result.updated + result.skipped : 0;
+  const allOk = result && result.errors.length === 0;
+
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {/* Drop zone */}
@@ -54,42 +57,54 @@ export function ImportForm() {
         disabled={!file || isPending}
         className="w-full rounded-2xl bg-emerald py-3 font-semibold text-white transition disabled:opacity-40"
       >
-        {isPending ? "Importing…" : "Import Members"}
+        {isPending ? "Importing…" : "Import / Sync Members"}
       </button>
 
       {/* Results */}
       {result && (
-        <div className="rounded-2xl border border-line bg-card p-4 space-y-3">
+        <div className="rounded-2xl border border-line bg-card p-4 space-y-4">
+          {/* Summary header */}
           <div className="flex items-center gap-3">
-            <span className="text-2xl">
-              {result.errors.length === 0 ? "✅" : "⚠️"}
-            </span>
+            <span className="text-2xl">{allOk ? "✅" : "⚠️"}</span>
             <div>
               <div className="font-semibold text-ink">
-                {result.success} / {result.total} members imported
+                {processed} / {result.total} rows processed
               </div>
-              {result.errors.length === 0 ? (
-                <div className="text-sm text-good">
-                  Sab successfully import ho gaye 🎉
-                </div>
-              ) : (
-                <div className="text-sm text-warn">
-                  {result.errors.length} rows mein error hai — neeche dekho
-                </div>
-              )}
+              <div className="text-sm text-ink/60">
+                {allOk
+                  ? "Sab successfully import/sync ho gaye 🎉"
+                  : `${result.errors.length} row${result.errors.length === 1 ? "" : "s"} mein error — neeche dekho`}
+              </div>
             </div>
           </div>
 
+          {/* Counts */}
+          <div className="grid grid-cols-3 gap-2 text-center text-sm">
+            <div className="rounded-xl bg-emerald/10 py-2">
+              <div className="text-lg font-bold text-emerald">{result.inserted}</div>
+              <div className="text-xs text-ink/60">New</div>
+            </div>
+            <div className="rounded-xl bg-blue-50 py-2">
+              <div className="text-lg font-bold text-blue-600">{result.updated}</div>
+              <div className="text-xs text-ink/60">Updated</div>
+            </div>
+            <div className="rounded-xl bg-ink/5 py-2">
+              <div className="text-lg font-bold text-ink/40">{result.skipped}</div>
+              <div className="text-xs text-ink/60">No change</div>
+            </div>
+          </div>
+
+          {/* Errors */}
           {result.errors.length > 0 && (
-            <div className="rounded-xl bg-bad/10 p-3 space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-bad">
+            <div className="rounded-xl bg-red-50 p-3 space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-red-600">
                 Errors
               </p>
               {result.errors.map((e, i) => (
                 <div key={i} className="text-sm text-ink">
                   <span className="font-semibold">Row {e.row}</span>
                   {e.name ? ` · ${e.name}` : ""} —{" "}
-                  <span className="text-bad">{e.error}</span>
+                  <span className="text-red-600">{e.error}</span>
                 </div>
               ))}
             </div>

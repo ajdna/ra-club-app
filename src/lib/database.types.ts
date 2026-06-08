@@ -575,6 +575,21 @@ export type Database = {
         Args: { target: string };
         Returns: boolean;
       };
+      bulk_upsert_user: {
+        Args: {
+          p_name: string;
+          p_upline_id: string;
+          p_role?: Database["public"]["Enums"]["user_role"];
+          p_gets_members_row?: boolean;
+          p_phone?: string | null;
+          p_email?: string | null;
+          p_membership?: Database["public"]["Enums"]["membership_type"];
+          p_join_date?: string;
+          p_ideal_weight?: number | null;
+          p_cur_weight?: number | null;
+        };
+        Returns: { id: string; action: "inserted" | "updated" | "skipped"; date_changed: boolean };
+      };
       bulk_import_user: {
         Args: {
           p_name: string;
