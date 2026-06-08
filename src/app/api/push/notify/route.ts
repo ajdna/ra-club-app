@@ -3,13 +3,9 @@
  *
  * Called by Supabase Database Webhooks on:
  *   - chat_messages INSERT   → notify recipient(s)
- *   - follow_up_tasks INSERT or UPDATE (scheduled_at set) → notify member
+ *   - follow_up_tasks UPDATE (scheduled_at first set) → notify member
  *
- * The request must include:
- *   Authorization: Bearer <PUSH_WEBHOOK_SECRET>
- *
- * Supabase webhook payload shape:
- *   { type: "INSERT"|"UPDATE", table: string, record: {...}, old_record: {...} }
+ * Authorization: Bearer <PUSH_WEBHOOK_SECRET>
  */
 
 import { NextResponse } from "next/server";
@@ -25,16 +21,26 @@ export async function POST(req: Request) {
   const authHeader = req.headers.get("authorization") ?? "";
   const expected = `Bearer ${process.env.PUSH_WEBHOOK_SECRET}`;
   if (authHeader !== expected) {
+    console.error("[push/notify] Unauthorized — header:", authHeader);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const payload = await req.json();
+  let payload: Record<string, unknown>;
+  try {
+    payload = await req.json();
+  } catch {
+    console.error("[push/notify] Bad JSON body");
+    return NextResponse.json({ error: "Bad body" }, { status: 400 });
+  }
+
   const { type, table, record, old_record } = payload as {
     type: "INSERT" | "UPDATE";
     table: string;
     record: Record<string, unknown>;
     old_record?: Record<string, unknown>;
   };
+
+  console.log(`[push/notify] ${type} on ${table}`);
 
   const supabase = createServiceClient();
 
@@ -46,8 +52,7 @@ export async function POST(req: Request) {
       body: string;
     };
 
-    // Fetch thread + sender name
-    const [{ data: thread }, { data: sender }] = await Promise.all([
+    const [{ data: thread, error: threadErr }, { data: sender }] = await Promise.all([
       supabase
         .from("chat_threads")
         .select("type, coach_id, member_id")
@@ -60,16 +65,20 @@ export async function POST(req: Request) {
         .single(),
     ]);
 
-    if (!thread) return NextResponse.json({ ok: true });
+    if (threadErr || !thread) {
+      console.error("[push/notify] Thread not found:", threadErr?.message);
+      return NextResponse.json({ ok: true });
+    }
 
     const senderName = (sender?.name as string | null) ?? "Someone";
     const deepUrl = `/messages/${thread_id}`;
 
     if (thread.type === "direct") {
-      // Notify the other party only
+      // Recipient is whichever participant is NOT the sender
       const recipientId =
         thread.coach_id === sender_id ? thread.member_id : thread.coach_id;
       if (recipientId) {
+        console.log(`[push/notify] direct → sending to ${recipientId}`);
         await sendPushToUser(recipientId, {
           title: `💬 ${senderName}`,
           body: truncate(body as string),
@@ -78,15 +87,20 @@ export async function POST(req: Request) {
         });
       }
     } else if (thread.type === "broadcast") {
-      // Notify all members of the coach (except the sender)
-      const { data: members } = await supabase
-        .from("members")
-        .select("user_id")
-        .eq("coach_id", thread.coach_id);
+      // All hierarchy descendants of the broadcaster (not the sender themselves)
+      const { data: descendants, error: descErr } = await supabase
+        .from("hierarchy_closure")
+        .select("descendant_id")
+        .eq("ancestor_id", thread.coach_id)
+        .gt("depth", 0);
 
-      const recipientIds = (members ?? [])
-        .map((m) => m.user_id)
+      if (descErr) console.error("[push/notify] hierarchy_closure error:", descErr.message);
+
+      const recipientIds = (descendants ?? [])
+        .map((d) => d.descendant_id)
         .filter((id) => id !== sender_id);
+
+      console.log(`[push/notify] broadcast → ${recipientIds.length} recipients`);
 
       if (recipientIds.length) {
         await sendPushToUsers(recipientIds, {
@@ -99,7 +113,7 @@ export async function POST(req: Request) {
     }
   }
 
-  // ── Home visit scheduled (follow_up_tasks scheduled_at set) ───────────────
+  // ── Home visit scheduled ───────────────────────────────────────────────────
   if (
     table === "follow_up_tasks" &&
     type === "UPDATE" &&
@@ -114,55 +128,17 @@ export async function POST(req: Request) {
     };
 
     const dateStr = new Date(scheduled_at).toLocaleDateString("en-IN", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-      hour: "numeric",
-      minute: "2-digit",
+      weekday: "short", day: "numeric", month: "short",
+      hour: "numeric", minute: "2-digit",
     });
 
+    console.log(`[push/notify] home_visit scheduled → member ${member_id}`);
     await sendPushToUser(member_id, {
       title: "🏠 Home Visit Scheduled",
-      body: `Your coach scheduled a visit: ${dateStr}${meeting_link ? " — meeting link added" : ""}`,
+      body: `Coach ne visit schedule kiya: ${dateStr}${meeting_link ? " — meeting link added" : ""}`,
       url: `/followup`,
       tag: `visit-${id}`,
     });
-  }
-
-  // ── Follow-up task due today (for overdue alerts) ─────────────────────────
-  // (This hook is for INSERT only — the daily reminder cron is separate)
-  if (table === "follow_up_tasks" && type === "INSERT") {
-    const { coach_id, activity, due_date, member_id, id } = record as {
-      coach_id: string;
-      activity: string;
-      due_date: string;
-      member_id: string;
-      id: string;
-    };
-
-    const today = new Date().toISOString().split("T")[0];
-    if (due_date === today) {
-      // Get member name
-      const { data: user } = await supabase
-        .from("users")
-        .select("name")
-        .eq("id", member_id)
-        .single();
-
-      const memberName = (user?.name as string | null) ?? "a member";
-      const activityLabel: Record<string, string> = {
-        call: "Call",
-        home_visit: "Home visit",
-        reminder: "Reminder call",
-      };
-
-      await sendPushToUser(coach_id, {
-        title: "📋 Task due today",
-        body: `${activityLabel[activity as string] ?? activity} with ${memberName}`,
-        url: `/followup`,
-        tag: `task-${id}`,
-      });
-    }
   }
 
   return NextResponse.json({ ok: true });
