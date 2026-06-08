@@ -139,9 +139,10 @@ export async function generateNotifications(): Promise<Result> {
     ),
   );
 
+  type NotifType = "milestone" | "recharge_due" | "drop_off" | "info";
   type NewNotif = {
     user_id: string;
-    type: string;
+    type: NotifType;
     title: string;
     body: string;
     data: { member_id: string };
@@ -149,7 +150,7 @@ export async function generateNotifications(): Promise<Result> {
   const toInsert: NewNotif[] = [];
   const pushed = new Set<string>();
 
-  function add(type: string, memberId: string, body: string) {
+  function add(type: NotifType, memberId: string, body: string) {
     const key = `${type}:${memberId}`;
     if (existing.has(key) || pushed.has(key)) return;
     pushed.add(key);

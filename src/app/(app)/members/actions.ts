@@ -46,16 +46,12 @@ export async function logWeight(
 
   const supabase = await createClient();
 
+  // Single insert — the DB trigger `trg_sync_current_weight` automatically
+  // keeps members.current_weight in sync, so no second round-trip needed.
   const { error: logErr } = await supabase
     .from("weight_logs")
     .insert({ member_id: memberId, weight, logged_by: me.id });
   if (logErr) return { ok: false, error: logErr.message };
-
-  const { error: updErr } = await supabase
-    .from("members")
-    .update({ current_weight: weight })
-    .eq("user_id", memberId);
-  if (updErr) return { ok: false, error: updErr.message };
 
   revalidatePath(`/members/${memberId}`);
   revalidatePath("/members");
@@ -134,7 +130,7 @@ export async function saveIntake(
   // Keep the member's headline weights in sync with the intake.
   const ideal = row.ideal_weight as number | null;
   const start = row.start_weight as number | null;
-  const memberUpdate: Record<string, number> = {};
+  const memberUpdate: { ideal_weight?: number; current_weight?: number } = {};
   if (ideal != null) memberUpdate.ideal_weight = ideal;
   if (start != null) {
     const { data: m } = await supabase
