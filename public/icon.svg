@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="#1f3d2b"/>
+  <!-- Leaf / wellness symbol in terra -->
+  <path d="M256 96 C160 96 96 176 96 272 C96 352 160 416 256 416 C352 416 416 352 416 272 C416 176 352 96 256 96 Z" fill="#c2643a" opacity="0.15"/>
+  <!-- RA monogram -->
+  <text x="256" y="300" font-family="Georgia, serif" font-size="180" font-weight="700" text-anchor="middle" fill="#f6efe3">RA</text>
+  <!-- Leaf accent -->
+  <path d="M256 80 Q310 140 290 200 Q256 180 230 200 Q210 140 256 80Z" fill="#8a9a7b"/>
+</svg>

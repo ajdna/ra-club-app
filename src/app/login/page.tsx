@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -210,11 +211,19 @@ function LoginForm() {
               >
                 {loading ? "Login ho raha hai…" : "Login"}
               </button>
+              <p className="text-center text-sm">
+                <Link
+                  href="/auth/reset-password"
+                  className="text-sage-d underline"
+                >
+                  Password bhool gaye?
+                </Link>
+              </p>
             </div>
           )}
 
           {error && (
-            <p className="mt-3 rounded-lg bg-bad/10 px-3 py-2 text-sm text-bad">
+            <p role="alert" className="mt-3 rounded-lg bg-bad/10 px-3 py-2 text-sm text-bad">
               {error}
             </p>
           )}

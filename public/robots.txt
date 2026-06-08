@@ -1,0 +1,3 @@
+# Private club management app — no public content to index.
+User-agent: *
+Disallow: /
