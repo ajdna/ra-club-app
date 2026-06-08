@@ -82,6 +82,20 @@ export default async function AdminPage() {
         </div>
       </Link>
 
+      {/* Import members */}
+      <Link
+        href="/admin/import"
+        className="mt-4 flex items-center gap-3 rounded-2xl border border-line bg-card px-4 py-3 shadow-sm transition hover:bg-cream-2"
+      >
+        <span className="text-2xl">📥</span>
+        <div className="flex-1">
+          <div className="font-semibold text-ink">Import Members (Excel)</div>
+          <div className="text-sm text-ink/60">
+            Excel se bulk upload · follow-up tasks auto-generate →
+          </div>
+        </div>
+      </Link>
+
       {/* Rules engine */}
       <h2 className="font-display mt-8 text-lg font-semibold text-emerald">
         Rules Engine

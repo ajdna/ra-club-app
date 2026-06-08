@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getConfigValue } from "@/modules/rules-engine";
@@ -159,6 +160,30 @@ export default async function CommandCenter() {
             <div className="mt-0.5 text-sm text-ink/60">{s.label}</div>
           </div>
         ))}
+      </div>
+
+      {/* Quick actions */}
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <Link
+          href="/followup"
+          className="flex items-center gap-2 rounded-2xl border border-emerald/30 bg-emerald/5 px-3 py-3 transition hover:bg-emerald/10"
+        >
+          <span className="text-xl">📋</span>
+          <div>
+            <div className="text-sm font-semibold text-emerald">Follow-up</div>
+            <div className="text-xs text-ink/50">Aaj ke tasks</div>
+          </div>
+        </Link>
+        <Link
+          href="/members"
+          className="flex items-center gap-2 rounded-2xl border border-line bg-card px-3 py-3 transition hover:bg-cream-2"
+        >
+          <span className="text-xl">👥</span>
+          <div>
+            <div className="text-sm font-semibold text-ink">Members</div>
+            <div className="text-xs text-ink/50">List & details</div>
+          </div>
+        </Link>
       </div>
 
       {/* Aaj ka plan — today's tasks */}

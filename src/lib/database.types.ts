@@ -167,6 +167,7 @@ export type Database = {
           day_number: number;
           cycle: number;
           activity: Database["public"]["Enums"]["followup_activity"];
+          title: string | null;
           due_date: string;
           status: Database["public"]["Enums"]["followup_status"];
           completed_at: string | null;
@@ -179,6 +180,7 @@ export type Database = {
           day_number: number;
           cycle: number;
           activity: Database["public"]["Enums"]["followup_activity"];
+          title?: string | null;
           due_date: string;
           status?: Database["public"]["Enums"]["followup_status"];
           completed_at?: string | null;
@@ -191,6 +193,7 @@ export type Database = {
           day_number?: number;
           cycle?: number;
           activity?: Database["public"]["Enums"]["followup_activity"];
+          title?: string | null;
           due_date?: string;
           status?: Database["public"]["Enums"]["followup_status"];
           completed_at?: string | null;
@@ -542,6 +545,19 @@ export type Database = {
         Args: { target: string };
         Returns: boolean;
       };
+      bulk_import_member: {
+        Args: {
+          p_name: string;
+          p_phone?: string | null;
+          p_email?: string | null;
+          p_coach_id: string;
+          p_membership?: Database["public"]["Enums"]["membership_type"];
+          p_join_date?: string;
+          p_ideal_weight?: number | null;
+          p_cur_weight?: number | null;
+        };
+        Returns: string;
+      };
       create_member: {
         Args: {
           p_name: string;
@@ -610,7 +626,7 @@ export type Database = {
       membership_type: "basic" | "elite" | "privilege";
       followup_activity: "call" | "home_visit" | "reminder";
       followup_status: "pending" | "done" | "skipped";
-      notification_type: "milestone" | "recharge_due" | "drop_off" | "info";
+      notification_type: "milestone" | "recharge_due" | "drop_off" | "info" | "weight_reminder" | "checkin_reminder" | "followup_reminder" | "followup_overdue" | "dmo_reminder";
     };
     CompositeTypes: Record<string, never>;
   };
