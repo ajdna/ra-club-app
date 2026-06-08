@@ -125,9 +125,9 @@ export async function importMembers(formData: FormData): Promise<ImportResult> {
         "bulk_import_member",
         {
           p_name: name,
+          p_coach_id: coachId,
           p_phone: String(row.phone ?? "").trim() || null,
           p_email: String(row.email ?? "").trim() || null,
-          p_coach_id: coachId,
           p_membership: membership,
           p_join_date: startDate.toISOString().split("T")[0],
           p_ideal_weight: isNaN(idealWeight!) ? null : idealWeight,

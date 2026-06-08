@@ -548,9 +548,9 @@ export type Database = {
       bulk_import_member: {
         Args: {
           p_name: string;
+          p_coach_id: string;
           p_phone?: string | null;
           p_email?: string | null;
-          p_coach_id: string;
           p_membership?: Database["public"]["Enums"]["membership_type"];
           p_join_date?: string;
           p_ideal_weight?: number | null;

@@ -37,13 +37,13 @@ alter table follow_up_tasks
 -- Returns the new user's UUID.
 create or replace function bulk_import_member(
   p_name         text,
-  p_phone        text        default null,
-  p_email        text        default null,
   p_coach_id     uuid,
+  p_phone        text            default null,
+  p_email        text            default null,
   p_membership   membership_type default 'basic',
-  p_join_date    date        default current_date,
-  p_ideal_weight numeric     default null,
-  p_cur_weight   numeric     default null
+  p_join_date    date            default current_date,
+  p_ideal_weight numeric         default null,
+  p_cur_weight   numeric         default null
 ) returns uuid
 language plpgsql
 security definer
@@ -112,7 +112,7 @@ end;
 $$;
 
 grant execute on function bulk_import_member(
-  text, text, text, uuid, membership_type, date, numeric, numeric
+  text, uuid, text, text, membership_type, date, numeric, numeric
 ) to authenticated;
 
 -- ── 4. Index for today's tasks lookup (cron + coach dashboard) ────────────────
