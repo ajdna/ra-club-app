@@ -10,7 +10,9 @@ const PUBLIC_PATHS = [
   "/login",
   "/auth",
   "/monitoring",
-  "/api/",          // all API routes do their own auth — don't redirect to login
+  "/manifest.json", // PWA manifest must be public — mobile browsers fetch it without cookies
+  "/api",           // all API routes do their own auth — don't redirect to login
+                    // NOTE: must be "/api" not "/api/" — isPublic appends "/" before startsWith
 ];
 
 function isPublic(pathname: string) {
