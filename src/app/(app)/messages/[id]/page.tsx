@@ -3,6 +3,9 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { getThread, getMessages } from "../actions";
 import { ChatClient } from "./ChatClient";
+import { ClearChatButton } from "./ClearChatButton";
+
+const CAN_CLEAR = ["club_owner", "nco", "jco", "coach"];
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +25,7 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
   return (
     <div className="flex h-dvh flex-col bg-cream">
       {/* Header */}
-      <header className="flex items-center gap-3 border-b border-line bg-card px-4 py-3 shadow-sm">
+      <header className="flex items-center gap-2 border-b border-line bg-card px-4 py-3 shadow-sm">
         <Link href="/messages" className="text-sage-d">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
             strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
@@ -35,6 +38,9 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
             <p className="text-xs text-ink/50">Team broadcast</p>
           )}
         </div>
+        {CAN_CLEAR.includes(me.role) && (
+          <ClearChatButton threadId={id} />
+        )}
       </header>
 
       {/* Chat */}
@@ -42,7 +48,6 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
         threadId={id}
         initialMessages={messages}
         myId={me.id}
-        myRole={me.role}
         otherName={thread.title}
       />
     </div>
