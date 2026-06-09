@@ -11,12 +11,33 @@ type UserSub = {
 };
 
 type TestResult = { ok?: boolean; log?: string[]; error?: string };
+type SimResult = { ok?: boolean; log?: string[]; error?: string };
 
 export default function AdminPushPage() {
   const [users, setUsers] = useState<UserSub[]>([]);
   const [loading, setLoading] = useState(true);
   const [results, setResults] = useState<Record<string, TestResult>>({});
   const [isPending, start] = useTransition();
+
+  // Simulate webhook state
+  const [simThreadId, setSimThreadId] = useState("");
+  const [simResult, setSimResult] = useState<SimResult | null>(null);
+  const [simPending, simStart] = useTransition();
+
+  function simulate() {
+    const id = simThreadId.trim();
+    if (!id) return;
+    setSimResult(null);
+    simStart(async () => {
+      const res = await fetch("/api/push/simulate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ thread_id: id }),
+      });
+      const data = await res.json();
+      setSimResult(data);
+    });
+  }
 
   useEffect(() => {
     fetch("/api/push/admin-subs")
@@ -127,6 +148,44 @@ export default function AdminPushPage() {
           )}
         </>
       )}
+
+      {/* Simulate webhook — debug tool */}
+      <section className="mt-8 rounded-2xl border border-line bg-card p-4">
+        <p className="text-sm font-semibold text-ink">🔧 Simulate Webhook (Debug)</p>
+        <p className="mt-0.5 text-xs text-ink/60">
+          Paste a thread ID from a conversation URL (<code>/messages/&lt;uuid&gt;</code>) to
+          simulate the push notification that Supabase would send for the last message in that thread.
+        </p>
+        <div className="mt-3 flex gap-2">
+          <input
+            type="text"
+            placeholder="paste thread UUID here"
+            value={simThreadId}
+            onChange={(e) => setSimThreadId(e.target.value)}
+            className="min-w-0 flex-1 rounded-xl border border-line bg-surface px-3 py-2 text-xs font-mono text-ink placeholder:text-ink/30 focus:outline-none focus:ring-2 focus:ring-emerald"
+          />
+          <button
+            onClick={simulate}
+            disabled={simPending || !simThreadId.trim()}
+            className="rounded-xl bg-emerald px-3 py-2 text-xs font-semibold text-white disabled:opacity-40"
+          >
+            {simPending ? "…" : "Simulate"}
+          </button>
+        </div>
+        {simResult && (
+          <div className={`mt-3 rounded-xl p-3 text-xs font-mono ${simResult.error ? "bg-bad/10 text-bad" : "bg-good/10 text-ink"}`}>
+            {simResult.error ? (
+              <p>❌ {simResult.error}</p>
+            ) : (
+              <ul className="space-y-0.5">
+                {(simResult.log ?? []).map((line, i) => (
+                  <li key={i}>{line}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </section>
     </main>
   );
 }
