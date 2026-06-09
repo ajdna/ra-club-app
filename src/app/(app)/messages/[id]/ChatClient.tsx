@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { sendMessage, markThreadRead } from "../actions";
+import { sendMessage, markThreadRead, clearThread } from "../actions";
 import { createClient } from "@/lib/supabase/client";
 
 type Message = {
@@ -30,22 +30,39 @@ function formatDay(iso: string) {
   return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
+const CAN_CLEAR_ROLES = ["club_owner", "nco", "jco", "coach"];
+
 export function ChatClient({
   threadId,
   initialMessages,
   myId,
+  myRole,
   otherName,
 }: {
   threadId: string;
   initialMessages: Message[];
   myId: string;
+  myRole: string;
   otherName: string;
 }) {
   const [messages, setMessages] = useState(initialMessages);
   const [text, setText] = useState("");
   const [isPending, start] = useTransition();
+  const [clearPending, clearStart] = useTransition();
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const canClear = CAN_CLEAR_ROLES.includes(myRole);
+
+  function handleClear() {
+    clearStart(async () => {
+      const res = await clearThread(threadId);
+      if (res.error) { alert(res.error); return; }
+      setMessages([]);
+      setShowClearConfirm(false);
+    });
+  }
 
   // Mark read on mount
   useEffect(() => {
@@ -168,6 +185,34 @@ export function ChatClient({
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
+
+      {/* Clear-chat confirmation dialog */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 z-40 flex items-end justify-center bg-ink/40 backdrop-blur-sm pb-safe">
+          <div className="w-full max-w-md rounded-t-3xl bg-card px-5 py-6 shadow-xl">
+            <p className="text-center text-lg font-semibold text-ink">🗑️ Chat clear karein?</p>
+            <p className="mt-2 text-center text-sm text-ink/60">
+              Is thread ke saare messages hamesha ke liye delete ho jayenge.
+            </p>
+            <div className="mt-5 flex gap-3">
+              <button
+                onClick={() => setShowClearConfirm(false)}
+                className="flex-1 rounded-2xl border border-line py-3 text-sm font-semibold text-ink"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleClear}
+                disabled={clearPending}
+                className="flex-1 rounded-2xl bg-bad py-3 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {clearPending ? "Deleting…" : "Haan, clear karo"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1">
         {grouped.length === 0 && (
@@ -214,6 +259,23 @@ export function ChatClient({
         onSubmit={handleSend}
         className="flex items-end gap-2 border-t border-line bg-card px-3 py-2 pb-[max(env(safe-area-inset-bottom),8px)]"
       >
+        {/* Clear button — coaches / owners only */}
+        {canClear && (
+          <button
+            type="button"
+            onClick={() => setShowClearConfirm(true)}
+            title="Clear chat"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-ink/40 hover:bg-bad/10 hover:text-bad transition"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+              strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+              <path d="M10 11v6M14 11v6" />
+              <path d="M9 6V4h6v2" />
+            </svg>
+          </button>
+        )}
         <textarea
           ref={inputRef}
           value={text}

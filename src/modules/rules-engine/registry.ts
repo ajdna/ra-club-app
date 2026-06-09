@@ -103,4 +103,30 @@ export const SECTIONS: Section[] = [
     description: "Consumer-count ranges per tier.",
     raw: true,
   },
+  {
+    key: "session_timers",
+    title: "⏱️ Session & chat timers",
+    description:
+      "Auto-logout on inactivity, warning countdown, and chat message auto-clear. Changes apply on next page load — no deploy needed.",
+    fields: [
+      {
+        path: "inactivity_logout_minutes",
+        label: "Auto-logout after N minutes of inactivity",
+        type: "number",
+        hint: "Default: 90 min. Timer resets on any mouse move, click, key press or scroll.",
+      },
+      {
+        path: "inactivity_warn_minutes",
+        label: "Show logout warning N minutes before",
+        type: "number",
+        hint: "Default: 2 min. A banner appears giving the user a chance to stay logged in.",
+      },
+      {
+        path: "chat_auto_clear_hours",
+        label: "Auto-delete chat messages older than N hours",
+        type: "number",
+        hint: "Default: 3 hours. Cron runs every hour. Set to 0 to disable auto-clear.",
+      },
+    ],
+  },
 ];

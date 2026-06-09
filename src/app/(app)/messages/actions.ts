@@ -338,6 +338,37 @@ export async function getMyContacts(): Promise<{
   });
 }
 
+// ── Clear all messages in a thread (coach / owner only) ──────────────────────
+// The caller must be a participant in the thread and have a non-member role.
+export async function clearThread(threadId: string): Promise<{ error?: string }> {
+  const me = await getCurrentUser();
+  if (!me || typeof me === "string") return { error: "Not signed in" };
+  if (me.role === "member") return { error: "Members cannot clear threads" };
+
+  const supabase = await createClient();
+
+  // Verify caller is a participant
+  const { data: thread } = await supabase
+    .from("chat_threads")
+    .select("coach_id, member_id")
+    .eq("id", threadId)
+    .single();
+
+  if (!thread) return { error: "Thread not found" };
+  const isParticipant = thread.coach_id === me.id || thread.member_id === me.id;
+  if (!isParticipant && me.role !== "club_owner") return { error: "Not a participant" };
+
+  const { error } = await supabase
+    .from("chat_messages")
+    .delete()
+    .eq("thread_id", threadId);
+
+  if (error) return { error: error.message };
+  revalidatePath(`/messages/${threadId}`);
+  revalidatePath("/messages");
+  return {};
+}
+
 // ── Kept for backward compat (broadcast page uses this) ──────────────────────
 export async function getMyMembers() {
   const contacts = await getMyContacts();

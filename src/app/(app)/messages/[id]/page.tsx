@@ -42,6 +42,7 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
         threadId={id}
         initialMessages={messages}
         myId={me.id}
+        myRole={me.role}
         otherName={thread.title}
       />
     </div>

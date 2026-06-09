@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/evening",
       "schedule": "30 12 * * *"
+    },
+    {
+      "path": "/api/cron/chat-clear",
+      "schedule": "0 * * * *"
     }
   ]
 }
