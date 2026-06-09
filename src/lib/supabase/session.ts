@@ -6,7 +6,12 @@ import type { Database } from "@/lib/database.types";
 // /monitoring is the Sentry tunnel route (next.config.ts → tunnelRoute).
 // It must be public so the Sentry SDK can POST error reports from the browser
 // without auth — otherwise the proxy redirects every Sentry event to /login.
-const PUBLIC_PATHS = ["/login", "/auth", "/monitoring"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/auth",
+  "/monitoring",
+  "/api/",          // all API routes do their own auth — don't redirect to login
+];
 
 function isPublic(pathname: string) {
   return PUBLIC_PATHS.some(
