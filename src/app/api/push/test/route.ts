@@ -1,9 +1,7 @@
 /**
  * GET /api/push/test
- *
- * Diagnostic endpoint — checks the push setup and sends a test notification
- * to the currently signed-in user's registered devices.
- * Only accessible when signed in.
+ * Diagnostic — checks setup and sends a real test push to the signed-in user.
+ * Returns full error detail so we can see exactly what went wrong.
  */
 
 import { NextResponse } from "next/server";
@@ -19,59 +17,67 @@ export async function GET() {
 
   const checks: Record<string, string> = {};
 
-  // Check env vars
   checks.VAPID_PUBLIC_KEY  = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ? "✅ set" : "❌ missing";
-  checks.VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY             ? "✅ set" : "❌ missing";
-  checks.VAPID_EMAIL       = process.env.VAPID_EMAIL                    ? "✅ set" : "❌ missing";
-  checks.SERVICE_ROLE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.SUPABASE_SERVICE_ROLE_KEY !== "your-service-role-key-here"
-    ? "✅ set"
-    : "❌ missing or placeholder";
-  checks.WEBHOOK_SECRET    = process.env.PUSH_WEBHOOK_SECRET ? "✅ set" : "❌ missing";
+  checks.VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY            ? "✅ set" : "❌ missing";
+  checks.VAPID_EMAIL       = process.env.VAPID_EMAIL                   ? "✅ set" : "❌ missing";
+  checks.SERVICE_ROLE_KEY  =
+    process.env.SUPABASE_SERVICE_ROLE_KEY &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY !== "your-service-role-key-here"
+      ? "✅ set"
+      : "❌ missing or placeholder";
+  checks.WEBHOOK_SECRET = process.env.PUSH_WEBHOOK_SECRET ? "✅ set" : "❌ missing";
 
-  // Count subscriptions for this user
+  // Count subscriptions
   let subCount = 0;
+  let subEndpointPreview = "";
   try {
     const supabase = createServiceClient();
     const { data, error } = await supabase
       .from("push_subscriptions")
-      .select("id")
+      .select("id, endpoint")
       .eq("user_id", me.id);
 
     if (error) {
       checks.subscriptions = `❌ DB error: ${error.message}`;
     } else {
       subCount = data?.length ?? 0;
-      checks.subscriptions = subCount > 0
-        ? `✅ ${subCount} device(s) registered`
-        : "❌ 0 subscriptions — open the app and click Allow on the notification banner";
+      if (subCount > 0) {
+        // Show last 30 chars of endpoint so we can identify the browser
+        subEndpointPreview = data![0].endpoint.slice(-30);
+        checks.subscriptions = `✅ ${subCount} device(s) registered (endpoint: ...${subEndpointPreview})`;
+      } else {
+        checks.subscriptions =
+          "❌ 0 subscriptions — open the app and click Allow on the green notification banner";
+      }
     }
   } catch (e) {
     checks.subscriptions = `❌ exception: ${String(e)}`;
   }
 
-  // Send a test push if everything looks OK
-  let testResult = "skipped";
-  const allGood = Object.values(checks).every((v) => v.startsWith("✅"));
-  if (allGood && subCount > 0) {
+  // Attempt a real push and report the full result
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let pushResult: Record<string, any> = { skipped: "no subscriptions" };
+  if (subCount > 0) {
     try {
-      await sendPushToUser(me.id, {
+      const result = await sendPushToUser(me.id, {
         title: "🔔 RA Club Test",
-        body: "Push notifications are working! Tap to open the app.",
+        body: "Push notifications working! Tap to open.",
         url: "/",
         tag: "push-test",
       });
-      testResult = "✅ test push sent";
+      pushResult = result;
     } catch (e) {
-      testResult = `❌ send failed: ${String(e)}`;
+      pushResult = { exception: String(e) };
     }
   }
 
   return NextResponse.json({
     user: { id: me.id, name: me.name, role: me.role },
     checks,
-    testPush: testResult,
-    instructions: subCount === 0
-      ? "Open the app in your browser → you should see a green 'Enable notifications' banner → click Allow"
-      : undefined,
+    pushResult,
+    hint:
+      pushResult.sent === 0 && subCount > 0
+        ? "Push sent but failed — check errors[] above. Common cause: VAPID key mismatch. Delete the subscription from DB and re-subscribe."
+        : undefined,
   });
 }
