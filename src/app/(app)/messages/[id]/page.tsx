@@ -49,6 +49,7 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
         initialMessages={messages}
         myId={me.id}
         otherName={thread.title}
+        initialOtherReadAt={thread.otherReadAt ?? null}
       />
     </div>
   );

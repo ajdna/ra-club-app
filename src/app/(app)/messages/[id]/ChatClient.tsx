@@ -38,18 +38,32 @@ function formatDay(iso: string) {
   return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
+function Tick({ read }: { read: boolean }) {
+  return (
+    <span className={"inline-flex items-center " + (read ? "text-sky-300" : "text-white/50")}>
+      <svg viewBox="0 0 18 12" fill="none" className="h-3 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M1 6 6 11 17 1" />
+        {read && <path d="M6 6l5 5 6-10" />}
+      </svg>
+    </span>
+  );
+}
+
 export function ChatClient({
   threadId,
   initialMessages,
   myId,
   otherName,
+  initialOtherReadAt,
 }: {
   threadId: string;
   initialMessages: Message[];
   myId: string;
   otherName: string;
+  initialOtherReadAt: string | null;
 }) {
   const [messages, setMessages] = useState(initialMessages);
+  const [otherReadAt, setOtherReadAt] = useState<string | null>(initialOtherReadAt);
   const [text, setText] = useState("");
   const [isPending, start] = useTransition();
   const [typingNames, setTypingNames] = useState<string[]>([]);
@@ -66,7 +80,6 @@ export function ChatClient({
 
   useEffect(() => { markThreadRead(threadId); }, [threadId]);
 
-  // Typing indicator
   useEffect(() => {
     const supabase = createClient();
     const ch = supabase.channel("typing:" + threadId, { config: { presence: { key: myId } } });
@@ -84,7 +97,6 @@ export function ChatClient({
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  // Realtime: new messages + reaction updates
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
@@ -114,7 +126,6 @@ export function ChatClient({
               return next;
             }
           }
-          // Find reply context from current messages
           const quoted = row.reply_to_message_id ? prev.find((m) => m.id === row.reply_to_message_id) : null;
           return [...prev, {
             id: row.id, senderId: row.sender_id,
@@ -154,6 +165,13 @@ export function ChatClient({
           return prev;
         });
       })
+      .on("postgres_changes", {
+        event: "*", schema: "public", table: "chat_reads",
+        filter: "thread_id=eq." + threadId,
+      }, (payload) => {
+        const row = payload.new as { user_id: string; last_read_at: string };
+        if (row && row.user_id !== myId) setOtherReadAt(row.last_read_at);
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -177,9 +195,7 @@ export function ChatClient({
     const replyId = replyTo?.id ?? null;
     const replyBody = replyTo?.body ?? null;
     const replyName = replyTo?.senderName ?? null;
-    setText("");
-    setReplyTo(null);
-    broadcastTyping(false);
+    setText(""); setReplyTo(null); broadcastTyping(false);
     const optimistic: Message = {
       id: "opt-" + Date.now(), senderId: "me", senderName: "You",
       body, createdAt: new Date().toISOString(), isMe: true, reactions: [],
@@ -217,34 +233,20 @@ export function ChatClient({
     });
   }
 
-  function openContextMenu(msg: Message) {
-    if (msg.id.startsWith("opt-")) return;
-    setPickerFor(msg.id);
-  }
-
   function startLongPress(msg: Message) {
     if (msg.id.startsWith("opt-")) return;
     longPressRef.current = setTimeout(() => setPickerFor(msg.id), 500);
   }
 
-  function cancelLongPress() {
-    if (longPressRef.current) clearTimeout(longPressRef.current);
-  }
+  function cancelLongPress() { if (longPressRef.current) clearTimeout(longPressRef.current); }
 
-  function handleReply(msg: Message) {
-    setPickerFor(null);
-    setReplyTo(msg);
-    inputRef.current?.focus();
-  }
+  function handleReply(msg: Message) { setPickerFor(null); setReplyTo(msg); inputRef.current?.focus(); }
 
   const grouped: { day: string; msgs: Message[] }[] = [];
   for (const m of messages) {
     const day = formatDay(m.createdAt);
-    if (!grouped.length || grouped[grouped.length - 1].day !== day) {
-      grouped.push({ day, msgs: [m] });
-    } else {
-      grouped[grouped.length - 1].msgs.push(m);
-    }
+    if (!grouped.length || grouped[grouped.length - 1].day !== day) grouped.push({ day, msgs: [m] });
+    else grouped[grouped.length - 1].msgs.push(m);
   }
 
   return (
@@ -260,111 +262,85 @@ export function ChatClient({
               <span className="text-xs text-ink/40">{g.day}</span>
               <div className="h-px flex-1 bg-line" />
             </div>
-            {g.msgs.map((m) => (
-              <div key={m.id} className={"mb-2 flex " + (m.isMe ? "justify-end" : "justify-start")}>
-                <div className="relative max-w-xs">
-                  <div
-                    className={
-                      "rounded-2xl px-3 py-2 text-sm " +
-                      (m.isMe
-                        ? "rounded-br-sm bg-emerald text-white"
-                        : "rounded-bl-sm bg-card border border-line text-ink")
-                    }
-                    onContextMenu={(e) => { e.preventDefault(); openContextMenu(m); }}
-                    onTouchStart={() => startLongPress(m)}
-                    onTouchEnd={cancelLongPress}
-                    onTouchMove={cancelLongPress}
-                  >
-                    {!m.isMe && (
-                      <p className="mb-0.5 text-xs font-semibold text-emerald">{m.senderName}</p>
-                    )}
+            {g.msgs.map((m) => {
+              const isRead = m.isMe && otherReadAt !== null && m.createdAt <= otherReadAt;
+              return (
+                <div key={m.id} className={"mb-2 flex " + (m.isMe ? "justify-end" : "justify-start")}>
+                  <div className="relative max-w-xs">
+                    <div
+                      className={
+                        "rounded-2xl px-3 py-2 text-sm " +
+                        (m.isMe ? "rounded-br-sm bg-emerald text-white" : "rounded-bl-sm bg-card border border-line text-ink")
+                      }
+                      onContextMenu={(e) => { e.preventDefault(); if (!m.id.startsWith("opt-")) setPickerFor(m.id); }}
+                      onTouchStart={() => startLongPress(m)}
+                      onTouchEnd={cancelLongPress}
+                      onTouchMove={cancelLongPress}
+                    >
+                      {!m.isMe && <p className="mb-0.5 text-xs font-semibold text-emerald">{m.senderName}</p>}
 
-                    {/* Quoted reply preview */}
-                    {m.replyToBody && (
-                      <div className={
-                        "mb-1.5 rounded-lg border-l-2 px-2 py-1 text-xs " +
-                        (m.isMe
-                          ? "border-white/50 bg-white/15 text-white/80"
-                          : "border-emerald/50 bg-emerald/8 text-ink/60")
-                      }>
-                        <span className="font-semibold block">
-                          {m.replyToName ?? ""}
-                        </span>
-                        <span className="line-clamp-2">{m.replyToBody}</span>
+                      {m.replyToBody && (
+                        <div className={
+                          "mb-1.5 rounded-lg border-l-2 px-2 py-1 text-xs " +
+                          (m.isMe ? "border-white/50 bg-white/15 text-white/80" : "border-emerald/50 bg-emerald/5 text-ink/60")
+                        }>
+                          <span className="font-semibold block">{m.replyToName ?? ""}</span>
+                          <span className="line-clamp-2">{m.replyToBody}</span>
+                        </div>
+                      )}
+
+                      <p className="whitespace-pre-wrap">{m.body}</p>
+
+                      <div className={"mt-0.5 flex items-center justify-end gap-1 " + (m.isMe ? "text-white/70" : "text-ink/40")}>
+                        <span className="text-xs">{formatTime(m.createdAt)}</span>
+                        {m.isMe && !m.id.startsWith("opt-") && <Tick read={isRead} />}
+                        {m.isMe && m.id.startsWith("opt-") && <span className="text-xs opacity-40">...</span>}
+                      </div>
+                    </div>
+
+                    {pickerFor === m.id && (
+                      <div
+                        className={"absolute z-20 rounded-2xl border border-line bg-card shadow-lg " + (m.isMe ? "right-0" : "left-0")}
+                        style={{ bottom: "calc(100% + 4px)" }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex gap-1 px-2 pt-2">
+                          {EMOJI_PICKER.map((key) => (
+                            <button key={key} type="button" onClick={() => handleReact(m.id, key)}
+                              className="h-9 w-9 rounded-xl text-lg transition hover:bg-cream-2 active:scale-90">
+                              {EMOJI_MAP[key]}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="border-t border-line mx-2 my-1" />
+                        <button type="button" onClick={() => handleReply(m)}
+                          className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-ink/70 hover:bg-cream-2">
+                          Reply
+                        </button>
                       </div>
                     )}
 
-                    <p className="whitespace-pre-wrap">{m.body}</p>
-                    <p className={"mt-0.5 text-right text-xs " + (m.isMe ? "text-white/70" : "text-ink/40")}>
-                      {formatTime(m.createdAt)}
-                    </p>
-                  </div>
-
-                  {/* Context menu: emoji picker + reply */}
-                  {pickerFor === m.id && (
-                    <div
-                      className={
-                        "absolute z-20 rounded-2xl border border-line bg-card shadow-lg " +
-                        (m.isMe ? "right-0" : "left-0")
-                      }
-                      style={{ bottom: "calc(100% + 4px)" }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="flex gap-1 px-2 pt-2">
-                        {EMOJI_PICKER.map((key) => (
-                          <button
-                            key={key}
-                            type="button"
-                            onClick={() => handleReact(m.id, key)}
-                            className="h-9 w-9 rounded-xl text-lg transition hover:bg-cream-2 active:scale-90"
-                          >
-                            {EMOJI_MAP[key]}
+                    {m.reactions.length > 0 && (
+                      <div className={"mt-0.5 flex flex-wrap gap-1 " + (m.isMe ? "justify-end" : "justify-start")}>
+                        {m.reactions.map((r) => (
+                          <button key={r.emoji} type="button"
+                            onClick={(e) => { e.stopPropagation(); handleReact(m.id, r.emoji); }}
+                            className={"inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold transition " +
+                              (r.byMe ? "bg-emerald/20 text-emerald" : "bg-line text-ink/70")}>
+                            {EMOJI_MAP[r.emoji] ?? r.emoji} {r.count}
                           </button>
                         ))}
                       </div>
-                      <div className="border-t border-line mx-2 my-1" />
-                      <button
-                        type="button"
-                        onClick={() => handleReply(m)}
-                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-ink/70 hover:bg-cream-2"
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                          <path d="M9 17H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l4 4v5" />
-                          <polyline points="9 11 12 8 9 5" />
-                          <path d="M12 8v8" />
-                        </svg>
-                        Reply
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Reaction counts */}
-                  {m.reactions.length > 0 && (
-                    <div className={"mt-0.5 flex flex-wrap gap-1 " + (m.isMe ? "justify-end" : "justify-start")}>
-                      {m.reactions.map((r) => (
-                        <button
-                          key={r.emoji}
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); handleReact(m.id, r.emoji); }}
-                          className={
-                            "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold transition " +
-                            (r.byMe ? "bg-emerald/20 text-emerald" : "bg-line text-ink/70")
-                          }
-                        >
-                          {EMOJI_MAP[r.emoji] ?? r.emoji} {r.count}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ))}
         <div ref={bottomRef} />
       </div>
 
-      {/* Typing indicator */}
       {typingNames.length > 0 && (
         <div className="flex items-center gap-2 border-t border-line bg-card px-4 py-1.5">
           <span className="flex gap-0.5">
@@ -377,19 +353,14 @@ export function ChatClient({
         </div>
       )}
 
-      {/* Reply preview bar */}
       {replyTo && (
         <div className="flex items-start gap-2 border-t border-emerald/30 bg-emerald/5 px-3 py-2">
           <div className="min-w-0 flex-1 border-l-2 border-emerald pl-2">
             <p className="text-xs font-semibold text-emerald">{replyTo.senderName}</p>
             <p className="truncate text-xs text-ink/60">{replyTo.body}</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setReplyTo(null)}
-            className="shrink-0 text-ink/40 hover:text-ink/70"
-            aria-label="Cancel reply"
-          >
+          <button type="button" onClick={() => setReplyTo(null)}
+            className="shrink-0 text-ink/40 hover:text-ink/70" aria-label="Cancel reply">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
               <path d="M18 6 6 18M6 6l12 12" />
             </svg>
@@ -409,11 +380,8 @@ export function ChatClient({
           className="flex-1 resize-none rounded-xl border border-line bg-cream px-3 py-2 text-sm text-ink outline-none focus:border-emerald"
           style={{ maxHeight: "120px" }}
         />
-        <button
-          type="submit"
-          disabled={!text.trim() || isPending}
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald text-white transition disabled:opacity-40"
-        >
+        <button type="submit" disabled={!text.trim() || isPending}
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald text-white transition disabled:opacity-40">
           <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
             <path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z" />
           </svg>

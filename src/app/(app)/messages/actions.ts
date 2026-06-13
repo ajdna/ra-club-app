@@ -195,7 +195,17 @@ export async function getThread(threadId: string) {
     }
   }
 
-  return { id: data.id, type: data.type, title, coachId: data.coach_id, memberId: data.member_id };
+  // Fetch other participant's read timestamp for double-tick receipts
+  const { data: readsData } = await supabase
+    .from("chat_reads")
+    .select("user_id, last_read_at")
+    .eq("thread_id", threadId);
+  type RawRead = { user_id: string; last_read_at: string };
+  const reads = (readsData as RawRead[] | null) ?? [];
+  const otherRead = reads.find((r) => r.user_id !== me.id);
+  const otherReadAt = otherRead?.last_read_at ?? null;
+
+  return { id: data.id, type: data.type, title, coachId: data.coach_id, memberId: data.member_id, otherReadAt };
 }
 
 // ── Send a message ────────────────────────────────────────────────────────────
