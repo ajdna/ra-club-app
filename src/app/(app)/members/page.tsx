@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { computeHealth, type Health } from "@/lib/health";
-import { getConfigValue } from "@/modules/rules-engine";
+import { getConfigValue } from "@/modules/rules-engine";h
 import { membershipLabel, type MembershipLabels } from "@/lib/membership";
 import { MembersList, type MemberRow } from "./MembersList";
 
@@ -87,7 +87,7 @@ export default async function MembersPage() {
           </Link>
         )}
       </header>
-      <MembersList rows={rows} />
+      <MembersList members={rows} myId={typeof me === "object" ? me.id : ""} />
     </main>
   );
 }
