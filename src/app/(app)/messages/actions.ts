@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
-// ── Types ────────────────────────────────────────────────────────────────────
+// ââ Types ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 export interface ThreadSummary {
   id: string;
   type: "direct" | "broadcast" | "group";
@@ -17,7 +17,7 @@ export interface ThreadSummary {
   unread: number;
 }
 
-// ── Get inbox threads ─────────────────────────────────────────────────────────
+// ââ Get inbox threads âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 export async function getThreads(): Promise<ThreadSummary[]> {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return [];
@@ -110,7 +110,7 @@ export async function getThreads(): Promise<ThreadSummary[]> {
   });
 }
 
-// ── Get messages in a thread ──────────────────────────────────────────────────
+// ââ Get messages in a thread ââââââââââââââââââââââââââââââââââââââââââââââââââ
 export async function getMessages(threadId: string) {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return [];
@@ -167,7 +167,7 @@ export async function getMessages(threadId: string) {
   });
 }
 
-// ── Get thread detail ─────────────────────────────────────────────────────────
+// ââ Get thread detail âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 export async function getThread(threadId: string) {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return null;
@@ -217,7 +217,7 @@ export async function getThread(threadId: string) {
   return { id: data.id, type: data.type, title, coachId: data.coach_id, memberId: data.member_id, otherReadAt, pinnedMessageId: data.pinned_message_id, pinnedBody };
 }
 
-// ── Send a message ────────────────────────────────────────────────────────────
+// ââ Send a message ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 export async function sendMessage(threadId: string, body: string, replyToId?: string | null): Promise<{ error?: string }> {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return { error: "Not signed in" };
@@ -237,7 +237,7 @@ export async function sendMessage(threadId: string, body: string, replyToId?: st
   return {};
 }
 
-// ── Mark thread as read ───────────────────────────────────────────────────────
+// ââ Mark thread as read âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 export async function markThreadRead(threadId: string) {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return;
@@ -250,7 +250,7 @@ export async function markThreadRead(threadId: string) {
   revalidatePath("/messages");
 }
 
-// ── Start a direct thread ─────────────────────────────────────────────────────
+// ââ Start a direct thread âââââââââââââââââââââââââââââââââââââââââââââââââââââ
 export async function startDirectThread(otherUserId: string): Promise<{ threadId?: string; error?: string }> {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return { error: "Not signed in" };
@@ -279,7 +279,7 @@ export async function startDirectThread(otherUserId: string): Promise<{ threadId
   return { threadId: data.id };
 }
 
-// ── Broadcast to all members ──────────────────────────────────────────────────
+// ââ Broadcast to all members ââââââââââââââââââââââââââââââââââââââââââââââââââ
 export async function sendBroadcast(
   subject: string,
   body: string,
@@ -345,7 +345,7 @@ export async function sendBroadcast(
   return {};
 }
 
-// ── Get contacts ──────────────────────────────────────────────────────────────
+// ââ Get contacts ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 export async function getMyContacts(): Promise<{
   id: string; name: string; role: string; group: "upline" | "downline";
 }[]> {
@@ -388,7 +388,7 @@ export async function getMyContacts(): Promise<{
   });
 }
 
-// ── Clear thread ──────────────────────────────────────────────────────────────
+// ââ Clear thread ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 export async function clearThread(threadId: string): Promise<{ error?: string }> {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return { error: "Not signed in" };
@@ -407,13 +407,13 @@ export async function clearThread(threadId: string): Promise<{ error?: string }>
   return {};
 }
 
-// ── Kept for backward compat ──────────────────────────────────────────────────
+// ââ Kept for backward compat ââââââââââââââââââââââââââââââââââââââââââââââââââ
 export async function getMyMembers() {
   const contacts = await getMyContacts();
   return contacts.filter((c) => c.group === "downline").map((c) => ({ id: c.id, name: c.name }));
 }
 
-// ── Broadcast Groups (saved named lists) ─────────────────────────────────────
+// ââ Broadcast Groups (saved named lists) âââââââââââââââââââââââââââââââââââââ
 
 export type BroadcastGroup = {
   id: string;
@@ -539,7 +539,7 @@ export async function sendBroadcastToGroup(
   return {};
 }
 
-// ── Toggle emoji reaction ─────────────────────────────────────────────────────
+// ââ Toggle emoji reaction âââââââââââââââââââââââââââââââââââââââââââââââââââââ
 export async function toggleReaction(messageId: string, emoji: string): Promise<{ error?: string }> {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return { error: "Not signed in" };
@@ -569,7 +569,7 @@ export async function toggleReaction(messageId: string, emoji: string): Promise<
   return {};
 }
 
-// ── Delete a message (sender only) ───────────────────────────────────────────
+// ââ Delete a message (sender only) âââââââââââââââââââââââââââââââââââââââââââ
 export async function deleteMessage(messageId: string): Promise<{ error?: string }> {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return { error: "Not signed in" };
@@ -590,7 +590,7 @@ export async function deleteMessage(messageId: string): Promise<{ error?: string
   return {};
 }
 
-// ── Pin / unpin a message in a thread ────────────────────────────────────────
+// ââ Pin / unpin a message in a thread ââââââââââââââââââââââââââââââââââââââââ
 export async function pinMessage(threadId: string, messageId: string | null): Promise<{ error?: string }> {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return { error: "Not signed in" };
@@ -606,17 +606,17 @@ export async function pinMessage(threadId: string, messageId: string | null): Pr
   return {};
 }
 
-// ── Forward a message to another thread ──────────────────────────────────────
+// ââ Forward a message to another thread ââââââââââââââââââââââââââââââââââââââ
 export async function forwardMessage(
   targetThreadId: string,
   body: string,
   forwardedFromName: string,
 ): Promise<{ error?: string }> {
-  const forwardBody = "↪ Forwarded from " + forwardedFromName + ":\n" + body;
+  const forwardBody = "âª Forwarded from " + forwardedFromName + ":\n" + body;
   return sendMessage(targetThreadId, forwardBody);
 }
 
-// ── Create a group thread ─────────────────────────────────────────────────────
+// ââ Create a group thread âââââââââââââââââââââââââââââââââââââââââââââââââââââ
 export async function createGroupThread(
   name: string,
   memberIds: string[],
@@ -645,7 +645,7 @@ export async function createGroupThread(
   return { threadId: thread.id };
 }
 
-// ── Get group members ─────────────────────────────────────────────────────────
+// ââ Get group members âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 export async function getGroupMembers(threadId: string): Promise<{ id: string; name: string }[]> {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return [];
@@ -662,7 +662,7 @@ export async function getGroupMembers(threadId: string): Promise<{ id: string; n
     .map((r) => ({ id: r.user!.id, name: r.user!.name }));
 }
 
-// ── Update last seen ──────────────────────────────────────────────────────────
+// ââ Update last seen ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 export async function updateLastSeen(): Promise<void> {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return;
@@ -671,7 +671,7 @@ export async function updateLastSeen(): Promise<void> {
   await supabase.from("users").update({ last_seen_at: new Date().toISOString() }).eq("id", me.id);
 }
 
-// ── Get other user's last seen ────────────────────────────────────────────────
+// ââ Get other user's last seen ââââââââââââââââââââââââââââââââââââââââââââââââ
 export async function getLastSeen(userId: string): Promise<string | null> {
   const supabase = await createClient();
   const { data } = await supabase
@@ -682,7 +682,7 @@ export async function getLastSeen(userId: string): Promise<string | null> {
   return (data as { last_seen_at: string | null } | null)?.last_seen_at ?? null;
 }
 
-// ── Save push subscription ────────────────────────────────────────────────────
+// ââ Save push subscription ââââââââââââââââââââââââââââââââââââââââââââââââââââ
 export async function savePushSubscription(
   endpoint: string,
   p256dh: string,
@@ -712,7 +712,7 @@ export async function removePushSubscription(endpoint: string): Promise<void> {
     .eq("user_id", me.id).eq("endpoint", endpoint);
 }
 
-// ── Send push notification to a user ─────────────────────────────────────────
+// ââ Send push notification to a user âââââââââââââââââââââââââââââââââââââââââ
 export async function sendPushToUser(
   userId: string,
   title: string,
@@ -735,11 +735,11 @@ export async function sendPushToUser(
   const webpush = await import("web-push").catch(() => null);
   if (!webpush) return;
 
-  webpush.default.setVapidDetails("mailto:" + vapidEmail, vapidPublic, vapidPrivate);
+  webpush.setVapidDetails("mailto:" + vapidEmail, vapidPublic, vapidPrivate);
   const payload = JSON.stringify({ title, body, url, tag: url });
   await Promise.allSettled(
     (subs as { endpoint: string; p256dh: string; auth: string }[]).map((s) =>
-      webpush.default.sendNotification(
+      webpush.sendNotification(
         { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
         payload,
       )
