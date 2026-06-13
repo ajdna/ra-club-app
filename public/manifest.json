@@ -28,5 +28,30 @@
       "type": "image/svg+xml",
       "purpose": "any"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Follow-up Tasks",
+      "short_name": "Tasks",
+      "description": "View today's follow-up tasks",
+      "url": "/followup",
+      "icons": [{ "src": "/icon-72.png", "sizes": "72x72" }]
+    },
+    {
+      "name": "Members",
+      "short_name": "Members",
+      "description": "View club members",
+      "url": "/members",
+      "icons": [{ "src": "/icon-72.png", "sizes": "72x72" }]
+    },
+    {
+      "name": "Messages",
+      "short_name": "Chat",
+      "description": "Open messages",
+      "url": "/messages",
+      "icons": [{ "src": "/icon-72.png", "sizes": "72x72" }]
+    }
+  ],
+  "prefer_related_applications": false,
+  "display_override": ["standalone", "minimal-ui"]
 }

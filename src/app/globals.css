@@ -63,3 +63,52 @@ body {
 .font-display {
   font-family: var(--font-fraunces), "Fraunces", Georgia, serif;
 }
+
+/* ── Dark mode — system-aware ───────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --cream:     #1a1510;
+    --cream-2:   #221c14;
+    --card:      #201a12;
+    --ink:       #f0ead8;
+    --line:      #332b1e;
+    --terra:     #e8834a;
+    --terra-d:   #f09050;
+    --sage:      #7aa36c;
+    --sage-d:    #8fb880;
+    --emerald:   #3a9e62;
+    --emerald-2: #44b870;
+    --gold:      #d4a84a;
+    --good:      #4aaa70;
+    --warn:      #d49830;
+    --bad:       #d06050;
+    --background: var(--cream);
+    --foreground: var(--ink);
+    --shadow:    0 1px 2px rgba(0,0,0,0.3), 0 8px 28px rgba(0,0,0,0.4);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.25);
+  }
+}
+
+/* ── Smooth scrolling + tap highlight removal ───────────────────────────── */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Better mobile input styling ─────────────────────────────────────────── */
+input, textarea, select {
+  background: var(--card);
+  color: var(--ink);
+}
+
+/* ── Loading skeleton animation ─────────────────────────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--line) 25%, var(--cream-2) 50%, var(--line) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}

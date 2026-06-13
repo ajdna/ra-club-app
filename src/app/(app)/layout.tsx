@@ -46,7 +46,11 @@ export default async function AppLayout({
       <PushPermission />
       <PushNavigator />
       <div className="flex-1 overflow-y-auto">{children}</div>
-      <BottomNav unreadAlerts={unread} unreadMessages={unreadMessages} />
+      <BottomNav
+        unreadAlerts={unread}
+        unreadMessages={unreadMessages}
+        role={typeof me === "object" ? (me.role as "member" | "coach" | "nco" | "jco" | "club_owner") : undefined}
+      />
     </div>
   );
 }

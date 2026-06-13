@@ -8,6 +8,7 @@ import { getIntake } from "@/modules/members";
 import { membershipLabel, type MembershipLabels } from "@/lib/membership";
 import { MarkPresentButton } from "../MarkPresentButton";
 import { LogWeightForm } from "../LogWeightForm";
+import { WeightChart } from "../WeightChart";
 
 export const dynamic = "force-dynamic";
 
@@ -221,22 +222,21 @@ export default async function MemberDetail({
           <LogWeightForm memberId={id} />
         </div>
         {weights.length > 0 && (
-          <ul className="mt-3 divide-y divide-line border-t border-line pt-2">
-            {weights.map((w, i) => (
-              <li
-                key={i}
-                className="flex justify-between py-1.5 text-sm text-ink/70"
-              >
-                <span>{w.weight} kg</span>
-                <span className="text-ink/45">
-                  {new Date(w.logged_at).toLocaleDateString("en-IN", {
-                    day: "numeric",
-                    month: "short",
-                  })}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <>
+            <div className="mt-3 border-t border-line pt-3">
+              <WeightChart weights={weights} />
+            </div>
+            <ul className="mt-2 divide-y divide-line">
+              {weights.slice(0, 4).map((w, i) => (
+                <li key={i} className="flex justify-between py-1.5 text-sm text-ink/70">
+                  <span>{w.weight} kg</span>
+                  <span className="text-ink/45">
+                    {new Date(w.logged_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </div>
 

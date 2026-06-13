@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ACTIVITY_LABEL } from "@/lib/followup-planner";
 import { ClearAllButton } from "./ClearAllButton";
 import { HomeVisitActions } from "./HomeVisitActions";
+import { MarkDoneModal } from "./MarkDoneModal";
 
 export const dynamic = "force-dynamic";
 
@@ -129,7 +130,7 @@ export default async function FollowupPage() {
                 📞 Call
               </a>
             )}
-            {isMine && <MarkDoneButton taskId={task.id} status={task.status} />}
+            {isMine && <MarkDoneModal taskId={task.id} status={task.status} />}
           </div>
         </div>
       </div>
@@ -187,27 +188,3 @@ export default async function FollowupPage() {
   );
 }
 
-// Inline server-rendered placeholder — actual mark-done is a client action
-function MarkDoneButton({
-  taskId,
-  status,
-}: {
-  taskId: string;
-  status: string;
-}) {
-  if (status === "done") {
-    return (
-      <span className="rounded-lg bg-good/20 px-3 py-1 text-xs font-semibold text-good">
-        ✓ Done
-      </span>
-    );
-  }
-  return (
-    <Link
-      href={`/followup/done?id=${taskId}`}
-      className="rounded-lg border border-good/40 bg-good/10 px-3 py-1 text-xs font-semibold text-good"
-    >
-      Mark Done
-    </Link>
-  );
-}

@@ -245,7 +245,11 @@ export async function startDirectThread(otherUserId: string): Promise<{ threadId
 }
 
 // ── Broadcast to all members ──────────────────────────────────────────────────
-export async function sendBroadcast(subject: string, body: string): Promise<{ error?: string }> {
+export async function sendBroadcast(
+  subject: string,
+  body: string,
+  target: "all" | "coaches" | "members" = "all",
+): Promise<{ error?: string }> {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return { error: "Not signed in" };
   if (me.role === "member") return { error: "Sirf coaches broadcast bhej sakte hain." };
@@ -254,9 +258,13 @@ export async function sendBroadcast(subject: string, body: string): Promise<{ er
   const supabase = await createClient();
 
   // Create a new broadcast thread every time (they're like announcements)
+  const threadSubject =
+    subject.trim() ||
+    (target === "coaches" ? "Coaches Broadcast" : target === "members" ? "Members Broadcast" : "Team Broadcast");
+
   const { data: thread, error: tErr } = await supabase
     .from("chat_threads")
-    .insert({ type: "broadcast", coach_id: me.id, subject: subject.trim() || "Team Broadcast" })
+    .insert({ type: "broadcast", coach_id: me.id, subject: threadSubject })
     .select("id")
     .single();
 
@@ -269,6 +277,38 @@ export async function sendBroadcast(subject: string, body: string): Promise<{ er
   });
 
   if (mErr) return { error: mErr.message };
+
+  // Also create a notification for downline — filtered by target role
+  // We insert notifications for all visible users matching the target filter.
+  const { data: downline } = await supabase
+    .from("hierarchy_closure")
+    .select("descendant:users!descendant_id(id, role)")
+    .eq("ancestor_id", me.id)
+    .gt("depth", 0);
+
+  if (downline?.length) {
+    type DRow = { descendant: { id: string; role: string } | null };
+    const recipients = (downline as unknown as DRow[])
+      .filter((r) => {
+        if (!r.descendant) return false;
+        if (target === "all") return true;
+        if (target === "coaches") return ["coach", "jco", "nco"].includes(r.descendant.role);
+        if (target === "members") return r.descendant.role === "member";
+        return true;
+      })
+      .map((r) => ({
+        user_id: r.descendant!.id,
+        type: "broadcast" as const,
+        title: threadSubject,
+        body: body.trim().slice(0, 200),
+        broadcast_target: target,
+      }));
+
+    if (recipients.length) {
+      await supabase.from("notifications").insert(recipients);
+    }
+  }
+
   revalidatePath("/messages");
   return {};
 }

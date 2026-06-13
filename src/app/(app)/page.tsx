@@ -14,20 +14,10 @@ const ACTIVITY_LABEL: Record<string, string> = {
   reminder: "Reminder call",
 };
 
-const AV_COLORS = [
-  "bg-terra",
-  "bg-sage-d",
-  "bg-emerald-2",
-  "bg-gold",
-];
+const AV_COLORS = ["bg-terra", "bg-sage-d", "bg-emerald-2", "bg-gold"];
 
 function initials(name: string) {
-  return name
-    .split(" ")
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  return name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 }
 
 function avColor(seed: string) {
@@ -38,9 +28,7 @@ function avColor(seed: string) {
 
 function todayISO() {
   const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-    d.getDate(),
-  ).padStart(2, "0")}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export default async function CommandCenter() {
@@ -52,12 +40,9 @@ export default async function CommandCenter() {
   if (me === "unlinked") {
     return (
       <main className="px-5 py-16">
-        <h1 className="font-display text-2xl font-semibold text-emerald">
-          Almost there
-        </h1>
+        <h1 className="font-display text-2xl font-semibold text-emerald">Almost there</h1>
         <p className="mt-3 text-ink/70">
-          You&apos;re signed in, but this login isn&apos;t linked to a club
-          account yet. Set a <code>users.auth_id</code> in Supabase, then refresh.
+          You&apos;re signed in, but this login isn&apos;t linked to a club account yet.
         </p>
       </main>
     );
@@ -66,29 +51,100 @@ export default async function CommandCenter() {
   const supabase = await createClient();
   const today = todayISO();
 
-  // All RLS-scoped: each query returns only what `me` is allowed to see.
-  const [usersRes, membersRes, tasksRes, dmoRes, labelRes, memLabels] =
-    await Promise.all([
-      supabase.from("users").select("id, name, role"),
-      supabase
-        .from("members")
-        .select("user_id, membership_type, stage, current_weight, join_date"),
-      supabase
-        .from("follow_up_tasks")
-        .select("id, member_id, coach_id, activity, due_date, status, day_number, cycle"),
-      supabase
-        .from("dmo_entries")
-        .select("total")
-        .eq("coach_id", me.id)
-        .eq("entry_date", today)
-        .maybeSingle(),
-      supabase
-        .from("rule_config")
-        .select("value")
-        .eq("key", "ui_labels")
-        .maybeSingle(),
-      getConfigValue<MembershipLabels>("membership_labels", {}),
+  const dateLabel = new Date().toLocaleDateString("en-IN", {
+    weekday: "long", day: "numeric", month: "long",
+  });
+
+  // ── MEMBER HOME ────────────────────────────────────────────────────────────
+  if (me.role === "member") {
+    const [memberRes, weightRes, attendanceRes, tasksRes] = await Promise.all([
+      supabase.from("members").select("membership_type, stage, current_weight, ideal_weight").eq("user_id", me.id).maybeSingle(),
+      supabase.from("weight_logs").select("weight, logged_at").eq("member_id", me.id).order("logged_at", { ascending: false }).limit(1).maybeSingle(),
+      supabase.from("attendance").select("date, present").eq("member_id", me.id).order("date", { ascending: false }).limit(7),
+      supabase.from("follow_up_tasks").select("activity, due_date, status, cycle, day_number").eq("member_id", me.id).gte("due_date", today).order("due_date", { ascending: true }).limit(3),
     ]);
+
+    const m = memberRes.data;
+    const streak = (() => {
+      let s = 0;
+      for (const a of (attendanceRes.data ?? [])) { if (a.present) s++; else break; }
+      return s;
+    })();
+
+    return (
+      <main className="px-4 pb-6 pt-6">
+        <header className="mb-5 px-1">
+          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-sage-d">{dateLabel}</p>
+          <h1 className="font-display mt-1 text-3xl font-semibold text-emerald">
+            Namaste, {me.name.split(" ")[0]} 🙏
+          </h1>
+          <p className="mt-1 text-sm text-ink/60">Aapka wellness journey track ho raha hai 🌱</p>
+        </header>
+
+        <div className="grid grid-cols-3 gap-3 mb-5">
+          <div className="rounded-2xl border border-line bg-card p-3 text-center shadow-sm">
+            <div className="font-display text-2xl font-bold text-terra-d">{m?.current_weight ?? "—"}</div>
+            <div className="text-xs text-ink/55">kg</div>
+          </div>
+          <div className="rounded-2xl border border-line bg-card p-3 text-center shadow-sm">
+            <div className="font-display text-2xl font-bold text-sage-d">{streak}</div>
+            <div className="text-xs text-ink/55">day streak</div>
+          </div>
+          <div className="rounded-2xl border border-line bg-card p-3 text-center shadow-sm">
+            <div className="font-display text-2xl font-bold text-emerald">{m?.stage ?? 1}/6</div>
+            <div className="text-xs text-ink/55">stage</div>
+          </div>
+        </div>
+
+        {m && (
+          <div className="rounded-2xl border border-line bg-card p-4 shadow-sm mb-5">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-semibold text-ink">Journey Progress</span>
+              <span className="text-xs text-ink/50">Stage {m.stage} / 6</span>
+            </div>
+            <div className="h-2.5 w-full rounded-full bg-line overflow-hidden">
+              <div className="h-2.5 rounded-full bg-gradient-to-r from-emerald to-terra" style={{ width: `${Math.round((m.stage / 6) * 100)}%` }} />
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          <Link href="/my-progress" className="flex items-center gap-2 rounded-2xl border border-emerald/30 bg-emerald/5 px-3 py-3">
+            <span className="text-xl">📊</span>
+            <div><div className="text-sm font-semibold text-emerald">My Progress</div><div className="text-xs text-ink/50">Weight & attendance</div></div>
+          </Link>
+          <Link href="/messages" className="flex items-center gap-2 rounded-2xl border border-line bg-card px-3 py-3">
+            <span className="text-xl">💬</span>
+            <div><div className="text-sm font-semibold text-ink">Messages</div><div className="text-xs text-ink/50">Chat with coach</div></div>
+          </Link>
+        </div>
+
+        {(tasksRes.data?.length ?? 0) > 0 && (
+          <>
+            <SectionHeader>📋 Upcoming Follow-ups</SectionHeader>
+            <div className="rounded-2xl border border-line bg-card p-2 shadow-sm">
+              {tasksRes.data!.map((t, i) => (
+                <Row key={i} avatar="📅" avatarClass="bg-emerald/20"
+                  title={ACTIVITY_LABEL[t.activity] ?? t.activity}
+                  sub={`${new Date(t.due_date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} · Cycle ${t.cycle}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </main>
+    );
+  }
+
+  // ── NCO/JCO/OWNER/COACH HOME ───────────────────────────────────────────────
+  const [usersRes, membersRes, tasksRes, dmoRes, labelRes, memLabels] = await Promise.all([
+    supabase.from("users").select("id, name, role"),
+    supabase.from("members").select("user_id, membership_type, stage, current_weight, join_date, coach_id"),
+    supabase.from("follow_up_tasks").select("id, member_id, coach_id, activity, due_date, status, day_number, cycle"),
+    supabase.from("dmo_entries").select("total").eq("coach_id", me.id).eq("entry_date", today).maybeSingle(),
+    supabase.from("rule_config").select("value").eq("key", "ui_labels").maybeSingle(),
+    getConfigValue<MembershipLabels>("membership_labels", {}),
+  ]);
 
   const users = usersRes.data ?? [];
   const members = membersRes.data ?? [];
@@ -96,54 +152,49 @@ export default async function CommandCenter() {
   const dmoTotal = (dmoRes.data?.total as number | undefined) ?? null;
   const nameById = new Map(users.map((u) => [u.id, u.name as string]));
 
-  const dueToday = tasks.filter(
-    (t) => t.status === "pending" && t.due_date === today,
-  );
-  const overdue = tasks.filter(
-    (t) => t.status === "pending" && t.due_date < today,
-  );
-  const teamCount = users.filter((u) =>
-    ["coach", "jco", "nco"].includes(u.role as string),
-  ).length;
+  const dueToday = tasks.filter((t) => t.status === "pending" && t.due_date === today);
+  const overdue = tasks.filter((t) => t.status === "pending" && t.due_date < today);
+  const homeTitle = (labelRes.data?.value as { home_title?: string } | null)?.home_title ?? "Aaj ka Plan";
 
-  const recentMembers = [...members]
-    .sort((a, b) => (b.join_date ?? "").localeCompare(a.join_date ?? ""))
-    .slice(0, 3);
+  // Team breakdown for NCO/JCO/owner
+  const isLeader = ["nco", "jco", "club_owner"].includes(me.role);
+  const coaches = users.filter((u) => ["coach", "jco", "nco"].includes(u.role as string));
+  const teamCount = coaches.length;
 
-  const dateLabel = new Date().toLocaleDateString("en-IN", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
+  // Per-coach stats (for leader view)
+  const coachStats = coaches.map((c) => {
+    const coachTasks = tasks.filter((t) => t.coach_id === c.id);
+    const coachMembers = members.filter((m) => m.coach_id === c.id);
+    const coachOverdue = coachTasks.filter((t) => t.status === "pending" && t.due_date < today).length;
+    const coachDueToday = coachTasks.filter((t) => t.status === "pending" && t.due_date === today).length;
+    return { ...c, memberCount: coachMembers.length, overdueCount: coachOverdue, dueTodayCount: coachDueToday };
+  }).sort((a, b) => b.overdueCount - a.overdueCount);
 
-  const homeTitle =
-    (labelRes.data?.value as { home_title?: string } | null)?.home_title ??
-    "Aaj ka Plan";
+  const recentMembers = [...members].sort((a, b) => (b.join_date ?? "").localeCompare(a.join_date ?? "")).slice(0, 3);
 
   const stats = [
     { n: members.length, label: "Members", tint: "text-terra-d" },
-    { n: dueToday.length, label: "Aaj ke tasks", tint: "text-emerald" },
+    { n: dueToday.length, label: "Due today", tint: "text-emerald" },
     { n: teamCount, label: "Team", tint: "text-sage-d" },
-    {
-      n: overdue.length,
-      label: "Action needed",
-      tint: overdue.length ? "text-bad" : "text-good",
-    },
+    { n: overdue.length, label: "Overdue", tint: overdue.length ? "text-bad" : "text-good" },
   ];
 
   return (
     <main className="px-4 pb-6 pt-6">
       {/* Header */}
       <header className="mb-5 px-1">
-        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-sage-d">
-          {dateLabel}
-        </p>
+        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-sage-d">{dateLabel}</p>
         <h1 className="font-display mt-1 text-3xl font-semibold text-emerald">
           Namaste, {me.name.split(" ")[0]} 🙏
         </h1>
         {dmoTotal !== null && (
           <p className="mt-1 text-sm text-ink/60">
-            Aaj ka DMO score: <span className="font-semibold text-terra-d">{dmoTotal}</span> · keep it up! 🌱
+            DMO score: <span className="font-semibold text-terra-d">{dmoTotal}</span> · keep it up! 🌱
+          </p>
+        )}
+        {isLeader && (
+          <p className="mt-1 text-xs font-semibold text-sage-d uppercase tracking-wide">
+            {me.role === "club_owner" ? "🏆 Club Owner" : me.role === "nco" ? "⭐ NCO — Team Leader" : "🔷 JCO — Area Leader"}
           </p>
         )}
       </header>
@@ -151,13 +202,8 @@ export default async function CommandCenter() {
       {/* Stat strip */}
       <div className="grid grid-cols-2 gap-3">
         {stats.map((s) => (
-          <div
-            key={s.label}
-            className="rounded-2xl border border-line bg-card p-4 shadow-sm"
-          >
-            <div className={`font-display text-3xl font-semibold ${s.tint}`}>
-              {s.n}
-            </div>
+          <div key={s.label} className="rounded-2xl border border-line bg-card p-4 shadow-sm">
+            <div className={`font-display text-3xl font-semibold ${s.tint}`}>{s.n}</div>
             <div className="mt-0.5 text-sm text-ink/60">{s.label}</div>
           </div>
         ))}
@@ -165,59 +211,76 @@ export default async function CommandCenter() {
 
       {/* Quick actions */}
       <div className="mt-4 grid grid-cols-2 gap-3">
-        <Link
-          href="/followup"
-          className="flex items-center gap-2 rounded-2xl border border-emerald/30 bg-emerald/5 px-3 py-3 transition hover:bg-emerald/10"
-        >
+        <Link href="/followup" className="flex items-center gap-2 rounded-2xl border border-emerald/30 bg-emerald/5 px-3 py-3 transition hover:bg-emerald/10">
           <span className="text-xl">📋</span>
-          <div>
-            <div className="text-sm font-semibold text-emerald">Follow-up</div>
-            <div className="text-xs text-ink/50">Aaj ke tasks</div>
-          </div>
+          <div><div className="text-sm font-semibold text-emerald">Follow-up</div><div className="text-xs text-ink/50">Aaj ke tasks</div></div>
         </Link>
-        <Link
-          href="/members"
-          className="flex items-center gap-2 rounded-2xl border border-line bg-card px-3 py-3 transition hover:bg-cream-2"
-        >
+        <Link href="/members" className="flex items-center gap-2 rounded-2xl border border-line bg-card px-3 py-3 transition hover:bg-cream-2">
           <span className="text-xl">👥</span>
-          <div>
-            <div className="text-sm font-semibold text-ink">Members</div>
-            <div className="text-xs text-ink/50">List & details</div>
-          </div>
+          <div><div className="text-sm font-semibold text-ink">Members</div><div className="text-xs text-ink/50">List & details</div></div>
         </Link>
-        <Link
-          href="/messages"
-          className="flex items-center gap-2 rounded-2xl border border-line bg-card px-3 py-3 transition hover:bg-cream-2"
-        >
+        <Link href="/messages" className="flex items-center gap-2 rounded-2xl border border-line bg-card px-3 py-3 transition hover:bg-cream-2">
           <span className="text-xl">💬</span>
-          <div>
-            <div className="text-sm font-semibold text-ink">Messages</div>
-            <div className="text-xs text-ink/50">Chat & broadcast</div>
-          </div>
+          <div><div className="text-sm font-semibold text-ink">Messages</div><div className="text-xs text-ink/50">Chat & broadcast</div></div>
         </Link>
-        <Link
-          href="/calendar"
-          className="flex items-center gap-2 rounded-2xl border border-line bg-card px-3 py-3 transition hover:bg-cream-2"
-        >
+        <Link href="/calendar" className="flex items-center gap-2 rounded-2xl border border-line bg-card px-3 py-3 transition hover:bg-cream-2">
           <span className="text-xl">📅</span>
-          <div>
-            <div className="text-sm font-semibold text-ink">Calendar</div>
-            <div className="text-xs text-ink/50">Home visits</div>
-          </div>
+          <div><div className="text-sm font-semibold text-ink">Calendar</div><div className="text-xs text-ink/50">Home visits</div></div>
         </Link>
+        {me.role === "club_owner" && (
+          <Link href="/admin/analytics" className="flex items-center gap-2 rounded-2xl border border-terra/30 bg-terra/5 px-3 py-3 transition hover:bg-terra/10">
+            <span className="text-xl">📈</span>
+            <div><div className="text-sm font-semibold text-terra-d">Analytics</div><div className="text-xs text-ink/50">Club insights</div></div>
+          </Link>
+        )}
+        {me.role === "club_owner" && (
+          <Link href="/search" className="flex items-center gap-2 rounded-2xl border border-line bg-card px-3 py-3 transition hover:bg-cream-2">
+            <span className="text-xl">🔍</span>
+            <div><div className="text-sm font-semibold text-ink">Search</div><div className="text-xs text-ink/50">Members, tasks</div></div>
+          </Link>
+        )}
       </div>
 
-      {/* Aaj ka plan — today's tasks */}
+      {/* NCO/JCO Team Overview */}
+      {isLeader && coachStats.length > 0 && (
+        <>
+          <SectionHeader>👥 Team Performance</SectionHeader>
+          <div className="rounded-2xl border border-line bg-card p-2 shadow-sm">
+            {coachStats.slice(0, 8).map((c) => (
+              <div key={c.id} className="flex items-center justify-between rounded-xl px-2 py-2.5">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-bold text-white ${avColor(c.name as string)}`}>
+                    {initials(c.name as string)}
+                  </span>
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-semibold text-ink">{c.name as string}</div>
+                    <div className="text-xs text-ink/50">{c.memberCount} members · {c.dueTodayCount} due today</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {c.overdueCount > 0 && (
+                    <span className="rounded-full bg-bad/15 px-2 py-0.5 text-xs font-semibold text-bad">
+                      {c.overdueCount} overdue
+                    </span>
+                  )}
+                  {c.overdueCount === 0 && (
+                    <span className="rounded-full bg-good/15 px-2 py-0.5 text-xs font-semibold text-good">✓</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Aaj ka plan */}
       <SectionHeader>📅 {homeTitle}</SectionHeader>
       <div className="rounded-2xl border border-line bg-card p-2 shadow-sm">
         {dueToday.length ? (
-          dueToday.map((t) => {
+          dueToday.slice(0, 10).map((t) => {
             const nm = nameById.get(t.member_id) ?? "Member";
             return (
-              <Row
-                key={t.id}
-                avatar={initials(nm)}
-                avatarClass={avColor(nm)}
+              <Row key={t.id} avatar={initials(nm)} avatarClass={avColor(nm)}
                 title={`${ACTIVITY_LABEL[t.activity] ?? t.activity} — ${nm}`}
                 sub={`Cycle ${t.cycle} · Day ${t.day_number}`}
               />
@@ -226,48 +289,37 @@ export default async function CommandCenter() {
         ) : (
           <Empty>Aaj koi pending task nahi 🎉</Empty>
         )}
+        {dueToday.length > 10 && (
+          <Link href="/followup" className="block px-2 pb-2 pt-1 text-center text-xs font-semibold text-terra-d">
+            + {dueToday.length - 10} aur →
+          </Link>
+        )}
       </div>
 
-      {/* Action required — overdue follow-ups */}
+      {/* Action required — overdue */}
       <div className="mb-2 mt-6 flex items-center justify-between px-1">
-        <h2 className="font-display text-sm font-semibold uppercase tracking-[0.08em] text-sage-d">
-          ⚠️ Action required
-        </h2>
+        <h2 className="font-display text-sm font-semibold uppercase tracking-[0.08em] text-sage-d">⚠️ Action required</h2>
         {overdue.filter((t) => t.coach_id === me.id).length > 0 && (
-          <ClearAllButton
-            count={overdue.filter((t) => t.coach_id === me.id).length}
-          />
+          <ClearAllButton count={overdue.filter((t) => t.coach_id === me.id).length} />
         )}
       </div>
       <div className="rounded-2xl border border-line bg-card p-2 shadow-sm">
         {overdue.length ? (
           <>
-            {overdue.slice(0, 20).map((t) => {
+            {overdue.slice(0, 15).map((t) => {
               const nm = nameById.get(t.member_id) ?? "Member";
-              const daysLate = Math.max(
-                1,
-                Math.round(
-                  (new Date(today).getTime() - new Date(t.due_date).getTime()) /
-                    86400000,
-                ),
-              );
+              const daysLate = Math.max(1, Math.round((new Date(today).getTime() - new Date(t.due_date).getTime()) / 86400000));
               return (
-                <Row
-                  key={t.id}
-                  avatar={initials(nm)}
-                  avatarClass={avColor(nm)}
-                  title={`${nm} — ${ACTIVITY_LABEL[t.activity] ?? t.activity} pending`}
-                  sub={`${daysLate} din se due · ek warm check-in karein?`}
+                <Row key={t.id} avatar={initials(nm)} avatarClass={avColor(nm)}
+                  title={`${nm} — ${ACTIVITY_LABEL[t.activity] ?? t.activity}`}
+                  sub={`${daysLate} din late`}
                   dot="bad"
                 />
               );
             })}
-            {overdue.length > 20 && (
-              <Link
-                href="/followup"
-                className="block px-2 pb-2 pt-1 text-center text-xs font-semibold text-terra-d"
-              >
-                + {overdue.length - 20} aur — sab Follow-up screen par dekhein →
+            {overdue.length > 15 && (
+              <Link href="/followup" className="block px-2 pb-2 pt-1 text-center text-xs font-semibold text-terra-d">
+                + {overdue.length - 15} aur →
               </Link>
             )}
           </>
@@ -276,19 +328,16 @@ export default async function CommandCenter() {
         )}
       </div>
 
-      {/* Club pulse — recent members */}
+      {/* Club pulse */}
       <SectionHeader>✨ Club pulse</SectionHeader>
       <div className="rounded-2xl border border-line bg-card p-2 shadow-sm">
         {recentMembers.length ? (
           recentMembers.map((m) => {
             const nm = nameById.get(m.user_id) ?? "Member";
             return (
-              <Row
-                key={m.user_id}
-                avatar={initials(nm)}
-                avatarClass={avColor(nm)}
-                title={`${nm} · ${membershipLabel(m.membership_type, memLabels)} member`}
-                sub={`Stage ${m.stage}${m.current_weight ? ` · ${m.current_weight}kg` : ""} · joined ${m.join_date}`}
+              <Row key={m.user_id} avatar={initials(nm)} avatarClass={avColor(nm)}
+                title={`${nm} · ${membershipLabel(m.membership_type, memLabels)}`}
+                sub={`Stage ${m.stage}${m.current_weight ? ` · ${m.current_weight}kg` : ""}`}
                 dot="good"
               />
             );
@@ -301,7 +350,7 @@ export default async function CommandCenter() {
   );
 }
 
-/* ── small presentational helpers ────────────────────────────────────────── */
+/* ── helpers ─────────────────────────────────────────────────────────────── */
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
@@ -315,24 +364,12 @@ function Empty({ children }: { children: React.ReactNode }) {
   return <p className="px-2 py-4 text-center text-sm text-ink/50">{children}</p>;
 }
 
-function Row({
-  avatar,
-  avatarClass,
-  title,
-  sub,
-  dot,
-}: {
-  avatar: string;
-  avatarClass: string;
-  title: string;
-  sub: string;
-  dot?: "good" | "warn" | "bad";
+function Row({ avatar, avatarClass, title, sub, dot }: {
+  avatar: string; avatarClass: string; title: string; sub: string; dot?: "good" | "warn" | "bad";
 }) {
   return (
     <div className="flex items-center gap-3 rounded-xl px-2 py-2.5">
-      <span
-        className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-semibold text-white ${avatarClass}`}
-      >
+      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-semibold text-white ${avatarClass}`}>
         {avatar}
       </span>
       <div className="min-w-0 flex-1">
@@ -340,11 +377,7 @@ function Row({
         <div className="truncate text-xs text-ink/55">{sub}</div>
       </div>
       {dot && (
-        <span
-          className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-            dot === "good" ? "bg-good" : dot === "warn" ? "bg-warn" : "bg-bad"
-          }`}
-        />
+        <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${dot === "good" ? "bg-good" : dot === "warn" ? "bg-warn" : "bg-bad"}`} />
       )}
     </div>
   );
