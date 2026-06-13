@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { sendMessage, markThreadRead, toggleReaction } from "../actions";
+import {
+  sendMessage, markThreadRead, toggleReaction,
+  deleteMessage, pinMessage, forwardMessage,
+  updateLastSeen, getLastSeen,
+} from "../actions";
 import { createClient } from "@/lib/supabase/client";
 
 type Reaction = { emoji: string; count: number; byMe: boolean };
@@ -55,12 +59,20 @@ export function ChatClient({
   myId,
   otherName,
   initialOtherReadAt,
+  initialPinnedId = null,
+  initialPinnedBody = null,
+  otherUserId = null,
+  threads = [],
 }: {
   threadId: string;
   initialMessages: Message[];
   myId: string;
   otherName: string;
   initialOtherReadAt: string | null;
+  initialPinnedId?: string | null;
+  initialPinnedBody?: string | null;
+  otherUserId?: string | null;
+  threads?: { id: string; name: string }[];
 }) {
   const [messages, setMessages] = useState(initialMessages);
   const [otherReadAt, setOtherReadAt] = useState<string | null>(initialOtherReadAt);
@@ -69,6 +81,11 @@ export function ChatClient({
   const [typingNames, setTypingNames] = useState<string[]>([]);
   const [pickerFor, setPickerFor] = useState<string | null>(null);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [pinnedId, setPinnedId] = useState<string | null>(initialPinnedId);
+  const [pinnedBody, setPinnedBody] = useState<string | null>(initialPinnedBody);
+  const [forwardMsg, setForwardMsg] = useState<Message | null>(null);
+  const [otherOnline, setOtherOnline] = useState(false);
+  const [otherLastSeen, setOtherLastSeen] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -78,7 +95,12 @@ export function ChatClient({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const longPressRef = useRef<any>(null);
 
-  useEffect(() => { markThreadRead(threadId); }, [threadId]);
+  useEffect(() => { markThreadRead(threadId); updateLastSeen(); }, [threadId]);
+
+  useEffect(() => {
+    if (!otherUserId) return;
+    getLastSeen(otherUserId).then((ts) => setOtherLastSeen(ts));
+  }, [otherUserId]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -91,7 +113,12 @@ export function ChatClient({
         .filter(([uid, p]) => uid !== myId && p?.[0]?.typing)
         .map(([, p]) => p[0].name as string);
       setTypingNames(names);
+      if (otherUserId) {
+        const isOnline = Object.keys(state).includes(otherUserId);
+        setOtherOnline(isOnline);
+      }
     }).subscribe();
+    ch.track({ typing: false });
     return () => { supabase.removeChannel(ch); };
   }, [threadId, myId]);
 
@@ -164,6 +191,29 @@ export function ChatClient({
             });
           return prev;
         });
+      })
+      .on("postgres_changes", {
+        event: "DELETE", schema: "public", table: "chat_messages",
+        filter: "thread_id=eq." + threadId,
+      }, (payload) => {
+        const id = (payload.old as { id: string }).id;
+        if (id) setMessages((prev) => prev.filter((m) => m.id !== id));
+      })
+      .on("postgres_changes", {
+        event: "UPDATE", schema: "public", table: "chat_threads",
+        filter: "id=eq." + threadId,
+      }, (payload) => {
+        const row = payload.new as { pinned_message_id: string | null };
+        setPinnedId(row.pinned_message_id ?? null);
+        if (row.pinned_message_id) {
+          setMessages((prev) => {
+            const msg = prev.find((m) => m.id === row.pinned_message_id);
+            if (msg) setPinnedBody(msg.body);
+            return prev;
+          });
+        } else {
+          setPinnedBody(null);
+        }
       })
       .on("postgres_changes", {
         event: "*", schema: "public", table: "chat_reads",
@@ -242,6 +292,48 @@ export function ChatClient({
 
   function handleReply(msg: Message) { setPickerFor(null); setReplyTo(msg); inputRef.current?.focus(); }
 
+  function handleDelete(msg: Message) {
+    setPickerFor(null);
+    setMessages((prev) => prev.filter((m) => m.id !== msg.id));
+    start(async () => { await deleteMessage(msg.id); });
+  }
+
+  function handlePin(msg: Message) {
+    setPickerFor(null);
+    const isUnpin = pinnedId === msg.id;
+    const newId = isUnpin ? null : msg.id;
+    const newBody = isUnpin ? null : msg.body;
+    setPinnedId(newId);
+    setPinnedBody(newBody);
+    start(async () => { await pinMessage(threadId, newId); });
+  }
+
+  function handleForward(msg: Message) {
+    setPickerFor(null);
+    setForwardMsg(msg);
+  }
+
+  function doForward(targetId: string) {
+    if (!forwardMsg) return;
+    const body = forwardMsg.body;
+    const name = forwardMsg.senderName;
+    setForwardMsg(null);
+    start(async () => { await forwardMessage(targetId, body, name); });
+  }
+
+  function formatLastSeen(ts: string | null): string {
+    if (!ts) return "";
+    const d = new Date(ts);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 2) return "last seen just now";
+    if (diffMin < 60) return "last seen " + diffMin + "m ago";
+    const diffH = Math.floor(diffMin / 60);
+    if (diffH < 24) return "last seen " + diffH + "h ago";
+    return "last seen " + d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+  }
+
   const grouped: { day: string; msgs: Message[] }[] = [];
   for (const m of messages) {
     const day = formatDay(m.createdAt);
@@ -250,7 +342,28 @@ export function ChatClient({
   }
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden" onClick={() => setPickerFor(null)}>
+    <div className="relative flex flex-1 flex-col overflow-hidden" onClick={() => { setPickerFor(null); setForwardMsg(null); }}>
+
+      {/* Online / last seen status bar */}
+      {otherUserId && (
+        <div className="flex items-center gap-1.5 border-b border-line bg-card px-4 py-1">
+          <span className={"h-2 w-2 rounded-full " + (otherOnline ? "bg-green-400" : "bg-ink/20")} />
+          <span className="text-xs text-ink/50">
+            {otherOnline ? "Online" : formatLastSeen(otherLastSeen)}
+          </span>
+        </div>
+      )}
+
+      {/* Pinned message banner */}
+      {pinnedId && pinnedBody && (
+        <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-50 dark:bg-amber-900/20 px-3 py-1.5">
+          <span className="text-sm">📌</span>
+          <p className="flex-1 truncate text-xs text-ink/70">{pinnedBody}</p>
+          <button type="button" onClick={() => { setPinnedId(null); setPinnedBody(null); start(async () => { await pinMessage(threadId, null); }); }}
+            className="shrink-0 text-ink/40 hover:text-ink/70 text-xs">✕</button>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1">
         {grouped.length === 0 && (
           <p className="py-12 text-center text-sm text-ink/40">Baat shuru karein</p>
@@ -315,8 +428,22 @@ export function ChatClient({
                         <div className="border-t border-line mx-2 my-1" />
                         <button type="button" onClick={() => handleReply(m)}
                           className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-ink/70 hover:bg-cream-2">
-                          Reply
+                          ↩ Reply
                         </button>
+                        <button type="button" onClick={() => handleForward(m)}
+                          className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-ink/70 hover:bg-cream-2">
+                          ↪ Forward
+                        </button>
+                        <button type="button" onClick={() => handlePin(m)}
+                          className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-ink/70 hover:bg-cream-2">
+                          {pinnedId === m.id ? "📌 Unpin" : "📌 Pin"}
+                        </button>
+                        {m.isMe && (
+                          <button type="button" onClick={() => handleDelete(m)}
+                            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
+                            🗑 Delete
+                          </button>
+                        )}
                       </div>
                     )}
 
@@ -365,6 +492,24 @@ export function ChatClient({
               <path d="M18 6 6 18M6 6l12 12" />
             </svg>
           </button>
+        </div>
+      )}
+
+      {/* Forward picker modal */}
+      {forwardMsg && (
+        <div className="absolute inset-0 z-30 flex items-end bg-black/40" onClick={() => setForwardMsg(null)}>
+          <div className="w-full rounded-t-2xl bg-card p-4" onClick={(e) => e.stopPropagation()}>
+            <p className="mb-3 font-semibold text-ink">Forward to…</p>
+            {threads.length === 0 && <p className="text-sm text-ink/50">No other threads</p>}
+            <div className="space-y-1 max-h-48 overflow-y-auto">
+              {threads.filter((t) => t.id !== threadId).map((t) => (
+                <button key={t.id} type="button" onClick={() => doForward(t.id)}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-ink hover:bg-cream-2">
+                  💬 {t.name}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 

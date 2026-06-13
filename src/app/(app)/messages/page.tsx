@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { getThreads } from "./actions";
+import { PushSubscribeButton } from "./PushSubscribeButton";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,7 @@ export default async function MessagesPage() {
   const threads = await getThreads();
 
   const broadcasts = threads.filter((t) => t.type === "broadcast");
+  const groups = threads.filter((t) => t.type === "group");
   const directs = threads.filter((t) => t.type === "direct");
 
   // Anyone with a downline can broadcast; only members cannot
@@ -45,6 +47,14 @@ export default async function MessagesPage() {
               📢 Broadcast
             </Link>
           )}
+          {canBroadcast && (
+            <Link
+              href="/messages/group/new"
+              className="rounded-xl bg-emerald/10 px-3 py-1.5 text-sm font-semibold text-emerald"
+            >
+              👥 Group
+            </Link>
+          )}
           <Link
             href="/messages/new"
             className="rounded-xl bg-terra px-3 py-1.5 text-sm font-semibold text-white"
@@ -52,6 +62,10 @@ export default async function MessagesPage() {
             + New
           </Link>
         </div>
+      </div>
+
+      <div className="mb-4">
+        <PushSubscribeButton />
       </div>
 
       {threads.length === 0 && (
@@ -70,6 +84,20 @@ export default async function MessagesPage() {
           </p>
           <div className="space-y-2">
             {broadcasts.map((t) => (
+              <ThreadRow key={t.id} thread={t} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Groups */}
+      {groups.length > 0 && (
+        <section className="mb-5">
+          <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-ink/50">
+            👥 Group Chats
+          </p>
+          <div className="space-y-2">
+            {groups.map((t) => (
               <ThreadRow key={t.id} thread={t} />
             ))}
           </div>
@@ -103,9 +131,9 @@ function ThreadRow({ thread }: { thread: Awaited<ReturnType<typeof getThreads>>[
       }`}
     >
       <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-full text-sm font-bold text-white ${
-        thread.type === "broadcast" ? "bg-terra" : "bg-sage-d"
+        thread.type === "broadcast" ? "bg-terra" : thread.type === "group" ? "bg-blue-500" : "bg-sage-d"
       }`}>
-        {thread.type === "broadcast" ? "📢" : initials(thread.otherName)}
+        {thread.type === "broadcast" ? "📢" : thread.type === "group" ? "👥" : initials(thread.otherName)}
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-1">

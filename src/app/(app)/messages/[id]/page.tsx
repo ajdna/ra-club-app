@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
-import { getThread, getMessages } from "../actions";
+import { getThread, getMessages, getThreads } from "../actions";
 import { ChatClient } from "./ChatClient";
 import { ClearChatButton } from "./ClearChatButton";
 
@@ -15,9 +15,10 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
   if (me === null) redirect("/login");
   if (typeof me === "string") redirect("/");
 
-  const [thread, messages] = await Promise.all([
+  const [thread, messages, allThreads] = await Promise.all([
     getThread(id),
     getMessages(id),
+    getThreads(),
   ]);
 
   if (!thread) notFound();
@@ -50,6 +51,10 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
         myId={me.id}
         otherName={thread.title}
         initialOtherReadAt={thread.otherReadAt ?? null}
+        initialPinnedId={thread.pinnedMessageId ?? null}
+        initialPinnedBody={thread.pinnedBody ?? null}
+        otherUserId={thread.type === "direct" ? (thread.coachId === me.id ? thread.memberId : thread.coachId) : null}
+        threads={allThreads.map((t) => ({ id: t.id, name: t.otherName }))}
       />
     </div>
   );

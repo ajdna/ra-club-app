@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 // ── Types ────────────────────────────────────────────────────────────────────
 export interface ThreadSummary {
   id: string;
-  type: "direct" | "broadcast";
+  type: "direct" | "broadcast" | "group";
   coachId: string;
   memberId: string | null;
   subject: string | null;
@@ -88,6 +88,8 @@ export async function getThreads(): Promise<ThreadSummary[]> {
     let otherName: string;
     if (t.type === "broadcast") {
       otherName = t.subject ?? (coachName + " - Team");
+    } else if (t.type === "group") {
+      otherName = t.subject ?? "Group";
     } else if (t.coach_id === me.id) {
       otherName = memberName ?? "Member";
     } else {
@@ -96,7 +98,7 @@ export async function getThreads(): Promise<ThreadSummary[]> {
 
     return {
       id: t.id,
-      type: t.type as "direct" | "broadcast",
+      type: t.type as "direct" | "broadcast" | "group",
       coachId: t.coach_id,
       memberId: t.member_id,
       subject: t.subject,
@@ -173,12 +175,12 @@ export async function getThread(threadId: string) {
   const supabase = await createClient();
   const { data: raw } = await supabase
     .from("chat_threads")
-    .select("id, type, coach_id, member_id, subject, coach:coach_id(name), member:member_id(name)")
+    .select("id, type, coach_id, member_id, subject, pinned_message_id, coach:coach_id(name), member:member_id(name)")
     .eq("id", threadId)
     .single();
 
   if (!raw) return null;
-  type RawT = { id: string; type: string; coach_id: string; member_id: string | null; subject: string | null; coach: { name: string } | null; member: { name: string } | null };
+  type RawT = { id: string; type: string; coach_id: string; member_id: string | null; subject: string | null; pinned_message_id: string | null; coach: { name: string } | null; member: { name: string } | null };
   const data = raw as unknown as RawT;
 
   const coachName = data.coach?.name ?? "Coach";
@@ -205,7 +207,14 @@ export async function getThread(threadId: string) {
   const otherRead = reads.find((r) => r.user_id !== me.id);
   const otherReadAt = otherRead?.last_read_at ?? null;
 
-  return { id: data.id, type: data.type, title, coachId: data.coach_id, memberId: data.member_id, otherReadAt };
+  // Fetch pinned message body if present
+  let pinnedBody: string | null = null;
+  if (data.pinned_message_id) {
+    const { data: pm } = await supabase.from("chat_messages").select("body").eq("id", data.pinned_message_id).maybeSingle();
+    pinnedBody = (pm as { body: string } | null)?.body ?? null;
+  }
+
+  return { id: data.id, type: data.type, title, coachId: data.coach_id, memberId: data.member_id, otherReadAt, pinnedMessageId: data.pinned_message_id, pinnedBody };
 }
 
 // ── Send a message ────────────────────────────────────────────────────────────
@@ -556,4 +565,182 @@ export async function toggleReaction(messageId: string, emoji: string): Promise<
   }
 
   return {};
+}
+
+// ── Delete a message (sender only) ───────────────────────────────────────────
+export async function deleteMessage(messageId: string): Promise<{ error?: string }> {
+  const me = await getCurrentUser();
+  if (!me || typeof me === "string") return { error: "Not signed in" };
+
+  const supabase = await createClient();
+  const { data: msg } = await supabase
+    .from("chat_messages")
+    .select("thread_id, sender_id")
+    .eq("id", messageId)
+    .maybeSingle();
+
+  if (!msg) return { error: "Message not found" };
+  if (msg.sender_id !== me.id) return { error: "Not your message" };
+
+  const { error } = await supabase.from("chat_messages").delete().eq("id", messageId);
+  if (error) return { error: error.message };
+  revalidatePath("/messages/" + msg.thread_id);
+  return {};
+}
+
+// ── Pin / unpin a message in a thread ────────────────────────────────────────
+export async function pinMessage(threadId: string, messageId: string | null): Promise<{ error?: string }> {
+  const me = await getCurrentUser();
+  if (!me || typeof me === "string") return { error: "Not signed in" };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("chat_threads")
+    .update({ pinned_message_id: messageId })
+    .eq("id", threadId);
+
+  if (error) return { error: error.message };
+  revalidatePath("/messages/" + threadId);
+  return {};
+}
+
+// ── Forward a message to another thread ──────────────────────────────────────
+export async function forwardMessage(
+  targetThreadId: string,
+  body: string,
+  forwardedFromName: string,
+): Promise<{ error?: string }> {
+  const forwardBody = "↪ Forwarded from " + forwardedFromName + ":\n" + body;
+  return sendMessage(targetThreadId, forwardBody);
+}
+
+// ── Create a group thread ─────────────────────────────────────────────────────
+export async function createGroupThread(
+  name: string,
+  memberIds: string[],
+): Promise<{ threadId?: string; error?: string }> {
+  const me = await getCurrentUser();
+  if (!me || typeof me === "string") return { error: "Not signed in" };
+  if (!name.trim()) return { error: "Group name required" };
+  if (memberIds.length < 1) return { error: "Add at least one member" };
+
+  const supabase = await createClient();
+  const { data: thread, error: tErr } = await supabase
+    .from("chat_threads")
+    .insert({ type: "group", coach_id: me.id, subject: name.trim() })
+    .select("id")
+    .single();
+
+  if (tErr) return { error: tErr.message };
+
+  const allMembers = [...new Set([me.id, ...memberIds])];
+  const { error: mErr } = await supabase.from("chat_group_members").insert(
+    allMembers.map((uid) => ({ thread_id: thread.id, user_id: uid, added_by: me.id }))
+  );
+
+  if (mErr) return { error: mErr.message };
+  revalidatePath("/messages");
+  return { threadId: thread.id };
+}
+
+// ── Get group members ─────────────────────────────────────────────────────────
+export async function getGroupMembers(threadId: string): Promise<{ id: string; name: string }[]> {
+  const me = await getCurrentUser();
+  if (!me || typeof me === "string") return [];
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("chat_group_members")
+    .select("user:user_id(id, name)")
+    .eq("thread_id", threadId);
+
+  type Row = { user: { id: string; name: string } | null };
+  return ((data ?? []) as unknown as Row[])
+    .filter((r) => r.user)
+    .map((r) => ({ id: r.user!.id, name: r.user!.name }));
+}
+
+// ── Update last seen ──────────────────────────────────────────────────────────
+export async function updateLastSeen(): Promise<void> {
+  const me = await getCurrentUser();
+  if (!me || typeof me === "string") return;
+
+  const supabase = await createClient();
+  await supabase.from("users").update({ last_seen_at: new Date().toISOString() }).eq("id", me.id);
+}
+
+// ── Get other user's last seen ────────────────────────────────────────────────
+export async function getLastSeen(userId: string): Promise<string | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("users")
+    .select("last_seen_at")
+    .eq("id", userId)
+    .maybeSingle();
+  return (data as { last_seen_at: string | null } | null)?.last_seen_at ?? null;
+}
+
+// ── Save push subscription ────────────────────────────────────────────────────
+export async function savePushSubscription(
+  endpoint: string,
+  p256dh: string,
+  auth: string,
+  userAgent?: string,
+): Promise<{ error?: string }> {
+  const me = await getCurrentUser();
+  if (!me || typeof me === "string") return { error: "Not signed in" };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("push_subscriptions")
+    .upsert(
+      { user_id: me.id, endpoint, p256dh, auth, user_agent: userAgent ?? "" },
+      { onConflict: "user_id,endpoint" }
+    );
+
+  return error ? { error: error.message } : {};
+}
+
+export async function removePushSubscription(endpoint: string): Promise<void> {
+  const me = await getCurrentUser();
+  if (!me || typeof me === "string") return;
+
+  const supabase = await createClient();
+  await supabase.from("push_subscriptions").delete()
+    .eq("user_id", me.id).eq("endpoint", endpoint);
+}
+
+// ── Send push notification to a user ─────────────────────────────────────────
+export async function sendPushToUser(
+  userId: string,
+  title: string,
+  body: string,
+  url: string,
+): Promise<void> {
+  const vapidPublic  = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
+  const vapidEmail   = process.env.VAPID_EMAIL;
+  if (!vapidPublic || !vapidPrivate || !vapidEmail) return;
+
+  const supabase = await createClient();
+  const { data: subs } = await supabase
+    .from("push_subscriptions")
+    .select("endpoint, p256dh, auth")
+    .eq("user_id", userId);
+
+  if (!subs?.length) return;
+
+  const webpush = await import("web-push").catch(() => null);
+  if (!webpush) return;
+
+  webpush.default.setVapidDetails("mailto:" + vapidEmail, vapidPublic, vapidPrivate);
+  const payload = JSON.stringify({ title, body, url, tag: url });
+  await Promise.allSettled(
+    (subs as { endpoint: string; p256dh: string; auth: string }[]).map((s) =>
+      webpush.default.sendNotification(
+        { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+        payload,
+      )
+    )
+  );
 }
