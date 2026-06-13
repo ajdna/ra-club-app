@@ -234,7 +234,7 @@ export default async function CommandCenter() {
         <>
           <div className="mt-5 flex items-center justify-between px-1">
             <h2 className="font-display text-base font-semibold text-emerald">{homeTitle}</h2>
-            <ClearAllButton />
+            <ClearAllButton count={overdue.length} />
           </div>
           <div className="mt-2 rounded-2xl border border-line bg-card p-2 shadow-sm">
             {dueToday.slice(0, 5).map((t) => (
