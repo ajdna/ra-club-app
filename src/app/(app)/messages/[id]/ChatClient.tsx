@@ -14,6 +14,9 @@ type Message = {
   createdAt: string;
   isMe: boolean;
   reactions: Reaction[];
+  replyToId: string | null;
+  replyToBody: string | null;
+  replyToName: string | null;
 };
 
 const EMOJI_PICKER = ["like", "heart", "laugh", "wow", "sad", "pray"];
@@ -51,12 +54,15 @@ export function ChatClient({
   const [isPending, start] = useTransition();
   const [typingNames, setTypingNames] = useState<string[]>([]);
   const [pickerFor, setPickerFor] = useState<string | null>(null);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const typingChannelRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const typingTimerRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const longPressRef = useRef<any>(null);
 
   useEffect(() => { markThreadRead(threadId); }, [threadId]);
 
@@ -78,54 +84,75 @@ export function ChatClient({
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  // Realtime: new messages
+  // Realtime: new messages + reaction updates
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
       .channel("thread:" + threadId)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages", filter: "thread_id=eq." + threadId },
-        (payload) => {
-          const row = payload.new as { id: string; sender_id: string; body: string; created_at: string };
-          const isMe = row.sender_id === myId;
-          setMessages((prev) => {
-            if (prev.some((m) => m.id === row.id)) return prev;
-            if (isMe) {
-              const optIdx = prev.findIndex((m) => m.id.startsWith("opt-") && m.body === row.body && m.isMe);
-              if (optIdx !== -1) {
-                const next = [...prev];
-                next[optIdx] = { id: row.id, senderId: row.sender_id, senderName: "You", body: row.body, createdAt: row.created_at, isMe: true, reactions: [] };
-                return next;
-              }
+      .on("postgres_changes", {
+        event: "INSERT", schema: "public", table: "chat_messages",
+        filter: "thread_id=eq." + threadId,
+      }, (payload) => {
+        const row = payload.new as {
+          id: string; sender_id: string; body: string; created_at: string;
+          reply_to_message_id: string | null;
+        };
+        const isMe = row.sender_id === myId;
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === row.id)) return prev;
+          if (isMe) {
+            const optIdx = prev.findIndex((m) => m.id.startsWith("opt-") && m.body === row.body && m.isMe);
+            if (optIdx !== -1) {
+              const next = [...prev];
+              next[optIdx] = {
+                id: row.id, senderId: row.sender_id, senderName: "You",
+                body: row.body, createdAt: row.created_at, isMe: true, reactions: [],
+                replyToId: row.reply_to_message_id,
+                replyToBody: prev[optIdx].replyToBody,
+                replyToName: prev[optIdx].replyToName,
+              };
+              return next;
             }
-            return [...prev, { id: row.id, senderId: row.sender_id, senderName: isMe ? "You" : otherName, body: row.body, createdAt: row.created_at, isMe, reactions: [] }];
-          });
-          if (!isMe) markThreadRead(threadId);
-        })
-      // Realtime: reactions
+          }
+          // Find reply context from current messages
+          const quoted = row.reply_to_message_id ? prev.find((m) => m.id === row.reply_to_message_id) : null;
+          return [...prev, {
+            id: row.id, senderId: row.sender_id,
+            senderName: isMe ? "You" : otherName,
+            body: row.body, createdAt: row.created_at, isMe, reactions: [],
+            replyToId: row.reply_to_message_id ?? null,
+            replyToBody: quoted?.body ?? null,
+            replyToName: quoted?.senderName ?? null,
+          }];
+        });
+        if (!isMe) markThreadRead(threadId);
+      })
       .on("postgres_changes", { event: "*", schema: "public", table: "message_reactions" }, () => {
-        // Refetch reactions for visible messages (simple approach)
         const supabase2 = createClient();
-        const msgIds = messages.map((m) => m.id).filter((id) => !id.startsWith("opt-"));
-        if (!msgIds.length) return;
-        supabase2.from("message_reactions").select("message_id, user_id, emoji").in("message_id", msgIds)
-          .then(({ data }) => {
-            if (!data) return;
-            const byMsg: Record<string, { emoji: string; user_id: string }[]> = {};
-            for (const r of data) {
-              if (!byMsg[r.message_id]) byMsg[r.message_id] = [];
-              byMsg[r.message_id].push(r);
-            }
-            setMessages((prev) => prev.map((m) => {
-              const rows = byMsg[m.id] ?? [];
-              const grouped: Record<string, Reaction> = {};
-              for (const r of rows) {
-                if (!grouped[r.emoji]) grouped[r.emoji] = { emoji: r.emoji, count: 0, byMe: false };
-                grouped[r.emoji].count++;
-                if (r.user_id === myId) grouped[r.emoji].byMe = true;
+        setMessages((prev) => {
+          const msgIds = prev.map((m) => m.id).filter((id) => !id.startsWith("opt-"));
+          if (!msgIds.length) return prev;
+          supabase2.from("message_reactions").select("message_id, user_id, emoji").in("message_id", msgIds)
+            .then(({ data }) => {
+              if (!data) return;
+              const byMsg: Record<string, { message_id: string; user_id: string; emoji: string }[]> = {};
+              for (const r of data) {
+                if (!byMsg[r.message_id]) byMsg[r.message_id] = [];
+                byMsg[r.message_id].push(r);
               }
-              return { ...m, reactions: Object.values(grouped) };
-            }));
-          });
+              setMessages((p) => p.map((m) => {
+                const rows = byMsg[m.id] ?? [];
+                const grouped: Record<string, Reaction> = {};
+                for (const r of rows) {
+                  if (!grouped[r.emoji]) grouped[r.emoji] = { emoji: r.emoji, count: 0, byMe: false };
+                  grouped[r.emoji].count++;
+                  if (r.user_id === myId) grouped[r.emoji].byMe = true;
+                }
+                return { ...m, reactions: Object.values(grouped) };
+              }));
+            });
+          return prev;
+        });
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -147,15 +174,20 @@ export function ChatClient({
     e.preventDefault();
     const body = text.trim();
     if (!body) return;
+    const replyId = replyTo?.id ?? null;
+    const replyBody = replyTo?.body ?? null;
+    const replyName = replyTo?.senderName ?? null;
     setText("");
+    setReplyTo(null);
     broadcastTyping(false);
     const optimistic: Message = {
       id: "opt-" + Date.now(), senderId: "me", senderName: "You",
       body, createdAt: new Date().toISOString(), isMe: true, reactions: [],
+      replyToId: replyId, replyToBody: replyBody, replyToName: replyName,
     };
     setMessages((prev) => [...prev, optimistic]);
     start(async () => {
-      const res = await sendMessage(threadId, body);
+      const res = await sendMessage(threadId, body, replyId);
       if (res.error) alert(res.error);
     });
   }
@@ -168,7 +200,6 @@ export function ChatClient({
     setPickerFor(null);
     start(async () => {
       await toggleReaction(messageId, emojiKey);
-      // Optimistic update
       setMessages((prev) => prev.map((m) => {
         if (m.id !== messageId) return m;
         const existing = m.reactions.find((r) => r.emoji === emojiKey);
@@ -184,6 +215,26 @@ export function ChatClient({
         return { ...m, reactions: [...m.reactions, { emoji: emojiKey, count: 1, byMe: true }] };
       }));
     });
+  }
+
+  function openContextMenu(msg: Message) {
+    if (msg.id.startsWith("opt-")) return;
+    setPickerFor(msg.id);
+  }
+
+  function startLongPress(msg: Message) {
+    if (msg.id.startsWith("opt-")) return;
+    longPressRef.current = setTimeout(() => setPickerFor(msg.id), 500);
+  }
+
+  function cancelLongPress() {
+    if (longPressRef.current) clearTimeout(longPressRef.current);
+  }
+
+  function handleReply(msg: Message) {
+    setPickerFor(null);
+    setReplyTo(msg);
+    inputRef.current?.focus();
   }
 
   const grouped: { day: string; msgs: Message[] }[] = [];
@@ -212,50 +263,78 @@ export function ChatClient({
             {g.msgs.map((m) => (
               <div key={m.id} className={"mb-2 flex " + (m.isMe ? "justify-end" : "justify-start")}>
                 <div className="relative max-w-xs">
-                  {/* Long-press area */}
                   <div
-                    className={"rounded-2xl px-3 py-2 text-sm " + (
-                      m.isMe
+                    className={
+                      "rounded-2xl px-3 py-2 text-sm " +
+                      (m.isMe
                         ? "rounded-br-sm bg-emerald text-white"
-                        : "rounded-bl-sm bg-card border border-line text-ink"
-                    )}
-                    onContextMenu={(e) => { e.preventDefault(); if (!m.id.startsWith("opt-")) setPickerFor(m.id); }}
-                    onTouchStart={() => {
-                      if (m.id.startsWith("opt-")) return;
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      (window as any).__reactionTimer = setTimeout(() => setPickerFor(m.id), 500);
-                    }}
-                    onTouchEnd={() => {
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      clearTimeout((window as any).__reactionTimer);
-                    }}
+                        : "rounded-bl-sm bg-card border border-line text-ink")
+                    }
+                    onContextMenu={(e) => { e.preventDefault(); openContextMenu(m); }}
+                    onTouchStart={() => startLongPress(m)}
+                    onTouchEnd={cancelLongPress}
+                    onTouchMove={cancelLongPress}
                   >
                     {!m.isMe && (
                       <p className="mb-0.5 text-xs font-semibold text-emerald">{m.senderName}</p>
                     )}
+
+                    {/* Quoted reply preview */}
+                    {m.replyToBody && (
+                      <div className={
+                        "mb-1.5 rounded-lg border-l-2 px-2 py-1 text-xs " +
+                        (m.isMe
+                          ? "border-white/50 bg-white/15 text-white/80"
+                          : "border-emerald/50 bg-emerald/8 text-ink/60")
+                      }>
+                        <span className="font-semibold block">
+                          {m.replyToName ?? ""}
+                        </span>
+                        <span className="line-clamp-2">{m.replyToBody}</span>
+                      </div>
+                    )}
+
                     <p className="whitespace-pre-wrap">{m.body}</p>
                     <p className={"mt-0.5 text-right text-xs " + (m.isMe ? "text-white/70" : "text-ink/40")}>
                       {formatTime(m.createdAt)}
                     </p>
                   </div>
 
-                  {/* Emoji picker */}
+                  {/* Context menu: emoji picker + reply */}
                   {pickerFor === m.id && (
                     <div
-                      className={"absolute z-20 flex gap-1 rounded-2xl border border-line bg-card p-2 shadow-lg " + (m.isMe ? "right-0" : "left-0")}
+                      className={
+                        "absolute z-20 rounded-2xl border border-line bg-card shadow-lg " +
+                        (m.isMe ? "right-0" : "left-0")
+                      }
                       style={{ bottom: "calc(100% + 4px)" }}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {EMOJI_PICKER.map((key) => (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => handleReact(m.id, key)}
-                          className="h-9 w-9 rounded-xl text-lg transition hover:bg-cream-2 active:scale-90"
-                        >
-                          {EMOJI_MAP[key]}
-                        </button>
-                      ))}
+                      <div className="flex gap-1 px-2 pt-2">
+                        {EMOJI_PICKER.map((key) => (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => handleReact(m.id, key)}
+                            className="h-9 w-9 rounded-xl text-lg transition hover:bg-cream-2 active:scale-90"
+                          >
+                            {EMOJI_MAP[key]}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="border-t border-line mx-2 my-1" />
+                      <button
+                        type="button"
+                        onClick={() => handleReply(m)}
+                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-ink/70 hover:bg-cream-2"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                          <path d="M9 17H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l4 4v5" />
+                          <polyline points="9 11 12 8 9 5" />
+                          <path d="M12 8v8" />
+                        </svg>
+                        Reply
+                      </button>
                     </div>
                   )}
 
@@ -267,9 +346,10 @@ export function ChatClient({
                           key={r.emoji}
                           type="button"
                           onClick={(e) => { e.stopPropagation(); handleReact(m.id, r.emoji); }}
-                          className={"inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold transition " + (
-                            r.byMe ? "bg-emerald/20 text-emerald" : "bg-line text-ink/70"
-                          )}
+                          className={
+                            "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold transition " +
+                            (r.byMe ? "bg-emerald/20 text-emerald" : "bg-line text-ink/70")
+                          }
                         >
                           {EMOJI_MAP[r.emoji] ?? r.emoji} {r.count}
                         </button>
@@ -284,14 +364,36 @@ export function ChatClient({
         <div ref={bottomRef} />
       </div>
 
+      {/* Typing indicator */}
       {typingNames.length > 0 && (
         <div className="flex items-center gap-2 border-t border-line bg-card px-4 py-1.5">
           <span className="flex gap-0.5">
             {[0, 1, 2].map((i) => (
-              <span key={i} className="inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-ink/40" style={{ animationDelay: i * 150 + "ms" }} />
+              <span key={i} className="inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-ink/40"
+                style={{ animationDelay: i * 150 + "ms" }} />
             ))}
           </span>
           <span className="text-xs text-ink/50">{typingNames.join(", ")} likh raha hai</span>
+        </div>
+      )}
+
+      {/* Reply preview bar */}
+      {replyTo && (
+        <div className="flex items-start gap-2 border-t border-emerald/30 bg-emerald/5 px-3 py-2">
+          <div className="min-w-0 flex-1 border-l-2 border-emerald pl-2">
+            <p className="text-xs font-semibold text-emerald">{replyTo.senderName}</p>
+            <p className="truncate text-xs text-ink/60">{replyTo.body}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setReplyTo(null)}
+            className="shrink-0 text-ink/40 hover:text-ink/70"
+            aria-label="Cancel reply"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
         </div>
       )}
 

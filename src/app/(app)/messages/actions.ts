@@ -116,11 +116,11 @@ export async function getMessages(threadId: string) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("chat_messages")
-    .select("id, sender_id, body, created_at, sender:sender_id(name)")
+    .select("id, sender_id, body, created_at, reply_to_message_id, sender:sender_id(name)")
     .eq("thread_id", threadId)
     .order("created_at", { ascending: true });
 
-  type RawM = { id: string; sender_id: string; body: string; created_at: string; sender: { name: string } | null };
+  type RawM = { id: string; sender_id: string; body: string; created_at: string; reply_to_message_id: string | null; sender: { name: string } | null };
   const msgs = data as unknown as RawM[] | null;
   if (!msgs?.length) return [];
 
@@ -138,6 +138,9 @@ export async function getMessages(threadId: string) {
     reactionsByMsg.get(r.message_id)!.push(r);
   }
 
+  // Build quick lookup for quoted messages
+  const msgById = new Map(msgs.map((m) => [m.id, m]));
+
   return msgs.map((m) => {
     const rows = reactionsByMsg.get(m.id) ?? [];
     const grouped: Record<string, { emoji: string; count: number; byMe: boolean }> = {};
@@ -146,6 +149,7 @@ export async function getMessages(threadId: string) {
       grouped[r.emoji].count++;
       if (r.user_id === me.id) grouped[r.emoji].byMe = true;
     }
+    const quoted = m.reply_to_message_id ? msgById.get(m.reply_to_message_id) : null;
     return {
       id: m.id,
       senderId: m.sender_id,
@@ -154,6 +158,9 @@ export async function getMessages(threadId: string) {
       createdAt: m.created_at,
       isMe: m.sender_id === me.id,
       reactions: Object.values(grouped),
+      replyToId: m.reply_to_message_id ?? null,
+      replyToBody: quoted?.body ?? null,
+      replyToName: quoted?.sender?.name ?? null,
     };
   });
 }
@@ -192,7 +199,7 @@ export async function getThread(threadId: string) {
 }
 
 // ── Send a message ────────────────────────────────────────────────────────────
-export async function sendMessage(threadId: string, body: string): Promise<{ error?: string }> {
+export async function sendMessage(threadId: string, body: string, replyToId?: string | null): Promise<{ error?: string }> {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return { error: "Not signed in" };
   if (!body.trim()) return { error: "Message cannot be empty" };
@@ -202,6 +209,7 @@ export async function sendMessage(threadId: string, body: string): Promise<{ err
     thread_id: threadId,
     sender_id: me.id,
     body: body.trim(),
+    ...(replyToId ? { reply_to_message_id: replyToId } : {}),
   });
 
   if (error) return { error: error.message };
