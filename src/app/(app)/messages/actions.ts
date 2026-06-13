@@ -248,6 +248,7 @@ export async function startDirectThread(otherUserId: string): Promise<{ threadId
 export async function sendBroadcast(subject: string, body: string): Promise<{ error?: string }> {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return { error: "Not signed in" };
+  if (me.role === "member") return { error: "Sirf coaches broadcast bhej sakte hain." };
   if (!body.trim()) return { error: "Message cannot be empty" };
 
   const supabase = await createClient();
@@ -292,11 +293,13 @@ export async function getMyContacts(): Promise<{
 
   if (me.role === "member") {
     // Members can only message their direct coach
-    const { data: upline } = await supabase
+    const { data: upline, error: uplineErr } = await supabase
       .from("hierarchy_closure")
-      .select("ancestor:ancestor_id(id, name, role)")
+      .select("ancestor:users!ancestor_id(id, name, role)")
       .eq("descendant_id", me.id)
       .eq("depth", 1);
+
+    if (uplineErr) console.error("[getMyContacts] member upline error:", uplineErr);
 
     type RawUp = { ancestor: RawUser | null };
     return ((upline ?? []) as unknown as RawUp[])
@@ -308,12 +311,12 @@ export async function getMyContacts(): Promise<{
   const [uplineRes, downlineRes] = await Promise.all([
     supabase
       .from("hierarchy_closure")
-      .select("ancestor:ancestor_id(id, name, role)")
+      .select("ancestor:users!ancestor_id(id, name, role)")
       .eq("descendant_id", me.id)
       .gt("depth", 0),
     supabase
       .from("hierarchy_closure")
-      .select("descendant:descendant_id(id, name, role)")
+      .select("descendant:users!descendant_id(id, name, role)")
       .eq("ancestor_id", me.id)
       .gt("depth", 0),
   ]);

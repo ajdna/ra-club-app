@@ -78,12 +78,14 @@ export default async function MembersPage() {
         <h1 className="font-display text-2xl font-semibold text-emerald">
           {title}
         </h1>
-        <Link
-          href="/add"
-          className="rounded-xl bg-terra px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-terra-d"
-        >
-          + Add
-        </Link>
+        {typeof me === "object" && me.role !== "member" && (
+          <Link
+            href="/add"
+            className="rounded-xl bg-terra px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-terra-d"
+          >
+            + Add
+          </Link>
+        )}
       </header>
       <MembersList members={rows} myId={typeof me === "object" ? me.id : ""} />
     </main>

@@ -91,6 +91,21 @@ export default async function MemberDetail({
   ).length;
   const { status, label } = computeHealth({ overdue, dueToday });
 
+  // Render a focused window of tasks instead of the full 12-cycle plan
+  // (full plan can be 360+ rows, which makes the page heavy on mobile).
+  const doneCount = tasks.filter((t) => t.status === "done").length;
+  const overdueTasks = tasks.filter(
+    (t) => t.status === "pending" && t.due_date < today,
+  );
+  const upcomingTasks = tasks.filter(
+    (t) => t.status !== "done" && t.due_date >= today,
+  );
+  const visibleTasks = [
+    ...overdueTasks.slice(-5), // 5 most recent overdue
+    ...upcomingTasks.slice(0, 10), // next 10 upcoming
+  ];
+  const hiddenCount = tasks.length - visibleTasks.length;
+
   const intakeSummary: [string, string][] = intake
     ? (
         [
@@ -258,8 +273,21 @@ export default async function MemberDetail({
       {/* Follow-up tasks */}
       <SectionHeader>📋 Follow-up tasks</SectionHeader>
       <div className="rounded-2xl border border-line bg-card p-2 shadow-sm">
+        {tasks.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 px-2 pb-1 pt-2 text-xs">
+            <span className="rounded-full bg-good/15 px-2 py-0.5 font-semibold text-good">
+              {doneCount} done
+            </span>
+            <span className="rounded-full bg-bad/15 px-2 py-0.5 font-semibold text-bad">
+              {overdueTasks.length} overdue
+            </span>
+            <span className="rounded-full bg-warn/15 px-2 py-0.5 font-semibold text-warn">
+              {upcomingTasks.length} upcoming
+            </span>
+          </div>
+        )}
         {tasks.length ? (
-          tasks.map((t) => (
+          visibleTasks.map((t) => (
             <div
               key={t.id}
               className="flex items-center justify-between rounded-xl px-2 py-2.5 text-sm"
@@ -296,6 +324,12 @@ export default async function MemberDetail({
         ) : (
           <p className="px-2 py-4 text-center text-sm text-ink/50">
             No follow-up tasks yet.
+          </p>
+        )}
+        {hiddenCount > 0 && (
+          <p className="px-2 pb-2 pt-1 text-center text-xs text-ink/45">
+            + {hiddenCount} aur tasks puri 90-day plan mein (yahan sirf recent
+            overdue aur agle tasks dikh rahe hain)
           </p>
         )}
       </div>

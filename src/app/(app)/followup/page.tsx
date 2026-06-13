@@ -34,32 +34,38 @@ export default async function FollowupPage() {
   sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
   const soon = sevenDaysLater.toISOString().split("T")[0];
 
+  // RLS-scoped (same as Home): a coach sees own tasks, owner/NCO/JCO see
+  // their whole tree. Keeps Home stats and this screen consistent.
   const { data: tasks } = await supabase
     .from("follow_up_tasks")
     .select(
-      `id, due_date, day_number, cycle, activity, title, status, scheduled_at, meeting_link,
-       member:member_id ( user_id, coach_id,
-         user:user_id ( name, phone ) )`,
+      `id, coach_id, due_date, day_number, cycle, activity, title, status, scheduled_at, meeting_link,
+       coach:users!coach_id ( name ),
+       member:members!member_id ( user_id, coach_id,
+         user:users!user_id ( name, phone ) )`,
     )
-    .eq("coach_id", me.id)
     .lte("due_date", soon)
     .gte("due_date", today)
     .order("due_date", { ascending: true })
-    .order("activity", { ascending: true });
+    .order("activity", { ascending: true })
+    .limit(150);
 
   // Also fetch overdue pending tasks
   const { data: overdue } = await supabase
     .from("follow_up_tasks")
     .select(
-      `id, due_date, day_number, cycle, activity, title, status, scheduled_at, meeting_link,
-       member:member_id ( user_id, coach_id,
-         user:user_id ( name, phone ) )`,
+      `id, coach_id, due_date, day_number, cycle, activity, title, status, scheduled_at, meeting_link,
+       coach:users!coach_id ( name ),
+       member:members!member_id ( user_id, coach_id,
+         user:users!user_id ( name, phone ) )`,
     )
-    .eq("coach_id", me.id)
     .eq("status", "pending")
     .lt("due_date", today)
     .order("due_date", { ascending: false })
-    .limit(20);
+    .limit(50);
+
+  const myOverdueCount =
+    overdue?.filter((t) => t.coach_id === me.id).length ?? 0;
 
   type Task = NonNullable<typeof tasks>[number];
 
@@ -79,6 +85,10 @@ export default async function FollowupPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const meetingLink = (task as any).meeting_link ?? null;
     const isHomeVisit = task.activity === "home_visit";
+    const isMine = task.coach_id === me.id;
+    const coachName =
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (task as any).coach?.name ?? null;
 
     return (
       <div
@@ -88,6 +98,11 @@ export default async function FollowupPage() {
           <div className="min-w-0 flex-1">
             <div className="font-semibold text-ink">{memberName}</div>
             <div className="mt-0.5 text-sm">{label}</div>
+            {!isMine && coachName && (
+              <div className="mt-0.5 inline-block rounded-md bg-sage/15 px-1.5 py-0.5 text-xs font-semibold text-sage-d">
+                Coach: {coachName}
+              </div>
+            )}
             {task.title && (
               <div className="mt-0.5 text-xs opacity-70">{task.title}</div>
             )}
@@ -95,8 +110,8 @@ export default async function FollowupPage() {
               {formatDate(task.due_date)} · Cycle {task.cycle}, Day{" "}
               {task.day_number}
             </div>
-            {/* Home visit scheduling actions */}
-            {isHomeVisit && task.status !== "done" && (
+            {/* Home visit scheduling actions — only on own tasks */}
+            {isMine && isHomeVisit && task.status !== "done" && (
               <HomeVisitActions
                 taskId={task.id}
                 scheduledAt={scheduledAt}
@@ -114,7 +129,7 @@ export default async function FollowupPage() {
                 📞 Call
               </a>
             )}
-            <MarkDoneButton taskId={task.id} status={task.status} />
+            {isMine && <MarkDoneButton taskId={task.id} status={task.status} />}
           </div>
         </div>
       </div>
@@ -141,7 +156,7 @@ export default async function FollowupPage() {
             <h2 className="text-xs font-semibold uppercase tracking-wide text-bad">
               ⚠️ Overdue ({overdue!.length})
             </h2>
-            <ClearAllButton count={overdue!.length} />
+            {myOverdueCount > 0 && <ClearAllButton count={myOverdueCount} />}
           </div>
           <div className="space-y-3">
             {overdue!.map((t) => (

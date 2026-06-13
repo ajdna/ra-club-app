@@ -75,7 +75,7 @@ export default async function CommandCenter() {
         .select("user_id, membership_type, stage, current_weight, join_date"),
       supabase
         .from("follow_up_tasks")
-        .select("id, member_id, activity, due_date, status, day_number, cycle"),
+        .select("id, member_id, coach_id, activity, due_date, status, day_number, cycle"),
       supabase
         .from("dmo_entries")
         .select("total")
@@ -233,30 +233,44 @@ export default async function CommandCenter() {
         <h2 className="font-display text-sm font-semibold uppercase tracking-[0.08em] text-sage-d">
           ⚠️ Action required
         </h2>
-        {overdue.length > 0 && <ClearAllButton count={overdue.length} />}
+        {overdue.filter((t) => t.coach_id === me.id).length > 0 && (
+          <ClearAllButton
+            count={overdue.filter((t) => t.coach_id === me.id).length}
+          />
+        )}
       </div>
       <div className="rounded-2xl border border-line bg-card p-2 shadow-sm">
         {overdue.length ? (
-          overdue.map((t) => {
-            const nm = nameById.get(t.member_id) ?? "Member";
-            const daysLate = Math.max(
-              1,
-              Math.round(
-                (new Date(today).getTime() - new Date(t.due_date).getTime()) /
-                  86400000,
-              ),
-            );
-            return (
-              <Row
-                key={t.id}
-                avatar={initials(nm)}
-                avatarClass={avColor(nm)}
-                title={`${nm} — ${ACTIVITY_LABEL[t.activity] ?? t.activity} pending`}
-                sub={`${daysLate} din se due · ek warm check-in karein?`}
-                dot="bad"
-              />
-            );
-          })
+          <>
+            {overdue.slice(0, 20).map((t) => {
+              const nm = nameById.get(t.member_id) ?? "Member";
+              const daysLate = Math.max(
+                1,
+                Math.round(
+                  (new Date(today).getTime() - new Date(t.due_date).getTime()) /
+                    86400000,
+                ),
+              );
+              return (
+                <Row
+                  key={t.id}
+                  avatar={initials(nm)}
+                  avatarClass={avColor(nm)}
+                  title={`${nm} — ${ACTIVITY_LABEL[t.activity] ?? t.activity} pending`}
+                  sub={`${daysLate} din se due · ek warm check-in karein?`}
+                  dot="bad"
+                />
+              );
+            })}
+            {overdue.length > 20 && (
+              <Link
+                href="/followup"
+                className="block px-2 pb-2 pt-1 text-center text-xs font-semibold text-terra-d"
+              >
+                + {overdue.length - 20} aur — sab Follow-up screen par dekhein →
+              </Link>
+            )}
+          </>
         ) : (
           <Empty>Sab on track 🎉</Empty>
         )}

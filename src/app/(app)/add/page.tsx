@@ -1,4 +1,6 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
+import { getCurrentUser } from "@/lib/auth";
 import { getConfigMap } from "@/modules/rules-engine";
 import { membershipLabel, type MembershipLabels } from "@/lib/membership";
 import { AddMemberForm, type MembershipOption } from "./AddMemberForm";
@@ -6,6 +8,11 @@ import { AddMemberForm, type MembershipOption } from "./AddMemberForm";
 export const dynamic = "force-dynamic";
 
 export default async function AddPage() {
+  const me = await getCurrentUser();
+  if (!me || typeof me === "string") redirect("/login");
+  // Only coaches and above can add members
+  if (me.role === "member") redirect("/members");
+
   const cfg = await getConfigMap(["membership_labels", "pricing"]);
   const labels = (cfg.membership_labels as MembershipLabels) ?? {};
   const pricing = (cfg.pricing as Record<string, number>) ?? {};

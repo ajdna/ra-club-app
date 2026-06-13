@@ -39,17 +39,18 @@ export default async function CalendarPage() {
   const { data: tasks } = await supabase
     .from("follow_up_tasks")
     .select(`
-      id, due_date, cycle, day_number, title, status, scheduled_at, meeting_link,
-      member:member_id ( user_id, user:user_id ( name, phone ) )
+      id, coach_id, due_date, cycle, day_number, title, status, scheduled_at, meeting_link,
+      coach:users!coach_id ( name ),
+      member:members!member_id ( user_id, user:users!user_id ( name, phone ) )
     `)
-    .eq("coach_id", me.id)
     .eq("activity", "home_visit")
     .neq("status", "done")
     .neq("status", "skipped")
     .lte("due_date", endDate)
     .gte("due_date", today)
     .order("scheduled_at", { ascending: true, nullsFirst: false })
-    .order("due_date", { ascending: true });
+    .order("due_date", { ascending: true })
+    .limit(150);
 
   type Task = NonNullable<typeof tasks>[number];
 
@@ -114,6 +115,9 @@ export default async function CalendarPage() {
                   const name = member?.user?.name ?? "Member";
                   const phone = member?.user?.phone ?? null;
                   const hasScheduled = !!t.scheduled_at;
+                  const isMine = t.coach_id === me.id;
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const coachName = (t as any).coach?.name ?? null;
 
                   return (
                     <div
@@ -130,6 +134,11 @@ export default async function CalendarPage() {
                           <p className="mt-0.5 text-sm text-ink/70">
                             {t.title ?? "Home Visit"} · Cycle {t.cycle}
                           </p>
+                          {!isMine && coachName && (
+                            <p className="mt-0.5 inline-block rounded-md bg-sage/15 px-1.5 py-0.5 text-xs font-semibold text-sage-d">
+                              Coach: {coachName}
+                            </p>
+                          )}
                           {hasScheduled ? (
                             <p className="mt-1 text-xs font-semibold text-emerald">
                               ⏰ {fmtTime(t.scheduled_at!)}
@@ -159,12 +168,14 @@ export default async function CalendarPage() {
                               📞 Call
                             </a>
                           )}
-                          <Link
-                            href="/followup"
-                            className="rounded-lg border border-line px-2.5 py-1 text-xs font-semibold text-sage-d"
-                          >
-                            Edit
-                          </Link>
+                          {isMine && (
+                            <Link
+                              href="/followup"
+                              className="rounded-lg border border-line px-2.5 py-1 text-xs font-semibold text-sage-d"
+                            >
+                              Edit
+                            </Link>
+                          )}
                         </div>
                       </div>
                     </div>
