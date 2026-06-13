@@ -86,7 +86,7 @@ export default async function FollowupPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const meetingLink = (task as any).meeting_link ?? null;
     const isHomeVisit = task.activity === "home_visit";
-    const isMine = task.coach_id === me.id;
+    const isMine = task.coach_id === me?.id;
     const coachName =
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (task as any).coach?.name ?? null;
