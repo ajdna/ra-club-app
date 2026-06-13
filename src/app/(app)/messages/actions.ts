@@ -336,7 +336,8 @@ export async function sendBroadcast(
       }));
 
     if (recipients.length) {
-      await supabase.from("notifications").insert(recipients);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await supabase.from("notifications").insert(recipients as any);
     }
   }
 
@@ -531,7 +532,8 @@ export async function sendBroadcastToGroup(
     body: body.trim().slice(0, 200),
     broadcast_target: group.name,
   }));
-  await supabase.from("notifications").insert(notifs);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await supabase.from("notifications").insert(notifs as any);
 
   revalidatePath("/messages");
   return {};
