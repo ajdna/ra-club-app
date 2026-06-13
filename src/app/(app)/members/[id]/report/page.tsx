@@ -73,7 +73,7 @@ export default async function ReportPage({
   const attendancePct = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0;
 
   // Weight change (this month)
-  const startWeight = intake?.start_weight ?? null;
+  const startWeight = intake?.start_weight != null ? Number(intake.start_weight) : null;
   const thisMonthWeights = weights.filter((w) => w.logged_at >= mStart);
   const latestWeight = weights[0]?.weight ?? null;
   const earliestThisMonth = thisMonthWeights.length > 0
