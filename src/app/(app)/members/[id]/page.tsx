@@ -131,7 +131,7 @@ export default async function MemberDetail({
       ? Math.round((member.current_weight - member.ideal_weight) * 10) / 10
       : null;
 
-  const startWeight = intake?.start_weight ?? null;
+  const startWeight = intake?.start_weight != null ? Number(intake.start_weight) : null;
   const lostKg =
     startWeight != null && member.current_weight != null
       ? Math.round((startWeight - member.current_weight) * 10) / 10
