@@ -36,7 +36,7 @@ export default async function AddPage() {
         Add Member
       </h1>
       <div className="mt-6">
-        <AddMemberForm coachId={me.id} membershipOptions={options} />
+        <AddMemberForm options={options} />
       </div>
     </main>
   );
