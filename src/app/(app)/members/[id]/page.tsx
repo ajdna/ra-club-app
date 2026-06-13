@@ -181,7 +181,7 @@ export default async function MemberDetail({
       {/* Stage visual path */}
       <div className="mt-3">
         <StageProgress current={member.stage ?? 1} />
-        {["club_owner", "nco", "jco", "coach"].includes(me.role) && (
+        {["club_owner", "nco", "jco", "coach"].includes((me as {role: string}).role) && (
           <StageCompleteButton memberId={id} currentStage={member.stage ?? 1} />
         )}
       </div>
