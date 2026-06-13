@@ -35,11 +35,10 @@ export default async function CalendarPage() {
   ninetyDays.setDate(ninetyDays.getDate() + 90);
   const endDate = ninetyDays.toISOString().split("T")[0];
 
-  // All upcoming home visits (scheduled or by due_date)
   const { data: tasks } = await supabase
     .from("follow_up_tasks")
     .select(`
-      id, coach_id, due_date, cycle, day_number, title, status, scheduled_at, meeting_link,
+      id, coach_id, member_id, due_date, cycle, day_number, title, status, scheduled_at, meeting_link,
       coach:users!coach_id ( name ),
       member:members!member_id ( user_id, user:users!user_id ( name, phone ) )
     `)
@@ -54,12 +53,9 @@ export default async function CalendarPage() {
 
   type Task = NonNullable<typeof tasks>[number];
 
-  // Group by display date (scheduled_at takes priority over due_date)
   const grouped = new Map<string, Task[]>();
   for (const t of tasks ?? []) {
-    const key = t.scheduled_at
-      ? t.scheduled_at.slice(0, 10)
-      : t.due_date;
+    const key = t.scheduled_at ? t.scheduled_at.slice(0, 10) : t.due_date;
     if (!grouped.has(key)) grouped.set(key, []);
     grouped.get(key)!.push(t);
   }
@@ -68,9 +64,9 @@ export default async function CalendarPage() {
 
   return (
     <main className="px-4 pb-24 pt-5">
-      <Link href="/" className="text-sm font-semibold text-sage-d">← Home</Link>
+      <Link href="/" className="text-sm font-semibold text-sage-d">&larr; Home</Link>
       <h1 className="font-display mt-3 text-2xl font-semibold text-emerald">
-        🏠 Home Visit Calendar
+        Home Visit Calendar
       </h1>
       <p className="mt-1 text-sm text-ink/60">
         Agle 90 din ke scheduled home visits
@@ -85,7 +81,7 @@ export default async function CalendarPage() {
             href="/followup"
             className="mt-4 inline-block rounded-xl bg-emerald px-4 py-2 text-sm font-semibold text-white"
           >
-            Follow-up Tasks →
+            Follow-up Tasks
           </Link>
         </div>
       )}
@@ -96,14 +92,14 @@ export default async function CalendarPage() {
           const isToday = day === today;
           return (
             <section key={day}>
-              {/* Day header */}
-              <div className={`mb-2 flex items-center gap-2 rounded-xl px-3 py-1.5 ${
-                isToday ? "bg-emerald text-white" : "bg-cream-2 text-ink"
-              }`}>
+              <div className={
+                "mb-2 flex items-center gap-2 rounded-xl px-3 py-1.5 " +
+                (isToday ? "bg-emerald text-white" : "bg-cream-2 text-ink")
+              }>
                 <span className="text-sm font-bold">
                   {isToday ? "Today — " : ""}{fmtDate(day)}
                 </span>
-                <span className={`ml-auto text-xs ${isToday ? "text-white/70" : "text-ink/50"}`}>
+                <span className={"ml-auto text-xs " + (isToday ? "text-white/70" : "text-ink/50")}>
                   {dayTasks.length} visit{dayTasks.length !== 1 ? "s" : ""}
                 </span>
               </div>
@@ -122,17 +118,16 @@ export default async function CalendarPage() {
                   return (
                     <div
                       key={t.id}
-                      className={`rounded-2xl border px-4 py-3 ${
-                        hasScheduled
-                          ? "border-emerald/30 bg-emerald/5"
-                          : "border-warn/30 bg-warn/5"
-                      }`}
+                      className={
+                        "rounded-2xl border px-4 py-3 " +
+                        (hasScheduled ? "border-emerald/30 bg-emerald/5" : "border-warn/30 bg-warn/5")
+                      }
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="font-semibold text-ink">{name}</p>
                           <p className="mt-0.5 text-sm text-ink/70">
-                            {t.title ?? "Home Visit"} · Cycle {t.cycle}
+                            {t.title ?? "Home Visit"} &middot; Cycle {t.cycle}
                           </p>
                           {!isMine && coachName && (
                             <p className="mt-0.5 inline-block rounded-md bg-sage/15 px-1.5 py-0.5 text-xs font-semibold text-sage-d">
@@ -141,11 +136,11 @@ export default async function CalendarPage() {
                           )}
                           {hasScheduled ? (
                             <p className="mt-1 text-xs font-semibold text-emerald">
-                              ⏰ {fmtTime(t.scheduled_at!)}
+                              {fmtTime(t.scheduled_at!)}
                             </p>
                           ) : (
                             <p className="mt-1 text-xs text-warn">
-                              Due: {fmtDue(t.due_date)} · Time not set
+                              Due: {fmtDue(t.due_date)} &middot; Time not set
                             </p>
                           )}
                           {t.meeting_link && (
@@ -155,26 +150,18 @@ export default async function CalendarPage() {
                               rel="noopener noreferrer"
                               className="mt-1 block text-xs font-semibold text-terra-d underline"
                             >
-                              🔗 Join Meeting
+                              Join Meeting
                             </a>
                           )}
                         </div>
                         <div className="flex flex-col items-end gap-1.5 shrink-0">
                           {phone && (
                             <a
-                              href={`tel:${phone}`}
+                              href={"tel:" + phone}
                               className="rounded-lg bg-emerald px-2.5 py-1 text-xs font-semibold text-white"
                             >
-                              📞 Call
+                              Call
                             </a>
-                          )}
-                          {isMine && (
-                            <Link
-                              href="/followup"
-                              className="rounded-lg border border-line px-2.5 py-1 text-xs font-semibold text-sage-d"
-                            >
-                              Edit
-                            </Link>
                           )}
                         </div>
                       </div>

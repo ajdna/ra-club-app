@@ -10,7 +10,6 @@ export const dynamic = "force-dynamic";
 export default async function AddPage() {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") redirect("/login");
-  // Only coaches and above can add members
   if (me.role === "member") redirect("/members");
 
   const cfg = await getConfigMap(["membership_labels", "pricing"]);
@@ -23,7 +22,7 @@ export default async function AddPage() {
       const price = pricing[type];
       return {
         value: type,
-        label: price ? `${name} (₹${price.toLocaleString("en-IN")})` : name,
+        label: price ? `${name} (Rs.${price.toLocaleString("en-IN")})` : name,
       };
     },
   );
@@ -31,16 +30,14 @@ export default async function AddPage() {
   return (
     <main className="px-4 pb-8 pt-5">
       <Link href="/members" className="text-sm font-semibold text-sage-d">
-        ← Members
+        &larr; Members
       </Link>
       <h1 className="font-display mt-3 text-2xl font-semibold text-emerald">
-        Naya member add karein
+        Add Member
       </h1>
-      <p className="mt-1 text-sm text-ink/60">
-        Yeh member aapki downline mein add hoga (aap unke coach).
-      </p>
-
-      <AddMemberForm options={options} />
+      <div className="mt-6">
+        <AddMemberForm coachId={me.id} membershipOptions={options} />
+      </div>
     </main>
   );
 }

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getConfigValue } from "@/modules/rules-engine";
 import { membershipLabel, type MembershipLabels } from "@/lib/membership";
 import { ClearAllButton } from "./followup/ClearAllButton";
+import { StreakToast } from "@/components/StreakToast";
 
 export const dynamic = "force-dynamic";
 
@@ -60,14 +61,31 @@ export default async function CommandCenter() {
     const [memberRes, weightRes, attendanceRes, tasksRes] = await Promise.all([
       supabase.from("members").select("membership_type, stage, current_weight, ideal_weight").eq("user_id", me.id).maybeSingle(),
       supabase.from("weight_logs").select("weight, logged_at").eq("member_id", me.id).order("logged_at", { ascending: false }).limit(1).maybeSingle(),
-      supabase.from("attendance").select("date, present").eq("member_id", me.id).order("date", { ascending: false }).limit(7),
+      supabase.from("attendance").select("date, present").eq("member_id", me.id).order("date", { ascending: false }).limit(90),
       supabase.from("follow_up_tasks").select("activity, due_date, status, cycle, day_number").eq("member_id", me.id).gte("due_date", today).order("due_date", { ascending: true }).limit(3),
     ]);
 
     const m = memberRes.data;
+    // Day-by-day streak: count consecutive days with attendance going back from today
     const streak = (() => {
+      const presentDates = new Set(
+        (attendanceRes.data ?? []).filter((a) => a.present).map((a) => a.date)
+      );
       let s = 0;
-      for (const a of (attendanceRes.data ?? [])) { if (a.present) s++; else break; }
+      const cursor = new Date();
+      // If today doesn't have attendance yet, still allow yesterday as anchor
+      for (let i = 0; i < 90; i++) {
+        const d = cursor.toISOString().split("T")[0];
+        if (presentDates.has(d)) {
+          s++;
+          cursor.setDate(cursor.getDate() - 1);
+        } else if (i === 0) {
+          // Today not marked yet — try from yesterday
+          cursor.setDate(cursor.getDate() - 1);
+        } else {
+          break;
+        }
+      }
       return s;
     })();
 
@@ -81,13 +99,16 @@ export default async function CommandCenter() {
           <p className="mt-1 text-sm text-ink/60">Aapka wellness journey track ho raha hai 🌱</p>
         </header>
 
+        <StreakToast streak={streak} />
         <div className="grid grid-cols-3 gap-3 mb-5">
           <div className="rounded-2xl border border-line bg-card p-3 text-center shadow-sm">
             <div className="font-display text-2xl font-bold text-terra-d">{m?.current_weight ?? "—"}</div>
             <div className="text-xs text-ink/55">kg</div>
           </div>
-          <div className="rounded-2xl border border-line bg-card p-3 text-center shadow-sm">
-            <div className="font-display text-2xl font-bold text-sage-d">{streak}</div>
+          <div className={`rounded-2xl border p-3 text-center shadow-sm ${streak >= 7 ? "border-terra/40 bg-terra/8" : "border-line bg-card"}`}>
+            <div className="font-display text-2xl font-bold text-terra-d">
+              {streak > 0 ? "🔥" : "💤"} {streak}
+            </div>
             <div className="text-xs text-ink/55">day streak</div>
           </div>
           <div className="rounded-2xl border border-line bg-card p-3 text-center shadow-sm">
@@ -208,63 +229,77 @@ export default async function CommandCenter() {
           </div>
         ))}
       </div>
+      {/* Follow-up tasks strip */}
+      {dueToday.length > 0 && (
+        <>
+          <div className="mt-5 flex items-center justify-between px-1">
+            <h2 className="font-display text-base font-semibold text-emerald">{homeTitle}</h2>
+            <ClearAllButton />
+          </div>
+          <div className="mt-2 rounded-2xl border border-line bg-card p-2 shadow-sm">
+            {dueToday.slice(0, 5).map((t) => (
+              <Row
+                key={t.id}
+                avatar={initials(nameById.get(t.member_id) ?? "?")}
+                avatarClass={avColor(t.member_id)}
+                title={nameById.get(t.member_id) ?? "Member"}
+                sub={ACTIVITY_LABEL[t.activity] ?? t.activity}
+                href={"/members/" + t.member_id}
+              />
+            ))}
+            {dueToday.length > 5 && (
+              <p className="px-3 py-2 text-xs text-ink/40">+{dueToday.length - 5} more</p>
+            )}
+          </div>
+        </>
+      )}
 
-      {/* Quick actions */}
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        <Link href="/followup" className="flex items-center gap-2 rounded-2xl border border-emerald/30 bg-emerald/5 px-3 py-3 transition hover:bg-emerald/10">
-          <span className="text-xl">📋</span>
-          <div><div className="text-sm font-semibold text-emerald">Follow-up</div><div className="text-xs text-ink/50">Aaj ke tasks</div></div>
-        </Link>
-        <Link href="/members" className="flex items-center gap-2 rounded-2xl border border-line bg-card px-3 py-3 transition hover:bg-cream-2">
-          <span className="text-xl">👥</span>
-          <div><div className="text-sm font-semibold text-ink">Members</div><div className="text-xs text-ink/50">List & details</div></div>
-        </Link>
-        <Link href="/messages" className="flex items-center gap-2 rounded-2xl border border-line bg-card px-3 py-3 transition hover:bg-cream-2">
-          <span className="text-xl">💬</span>
-          <div><div className="text-sm font-semibold text-ink">Messages</div><div className="text-xs text-ink/50">Chat & broadcast</div></div>
-        </Link>
-        <Link href="/calendar" className="flex items-center gap-2 rounded-2xl border border-line bg-card px-3 py-3 transition hover:bg-cream-2">
-          <span className="text-xl">📅</span>
-          <div><div className="text-sm font-semibold text-ink">Calendar</div><div className="text-xs text-ink/50">Home visits</div></div>
-        </Link>
-        {me.role === "club_owner" && (
-          <Link href="/admin/analytics" className="flex items-center gap-2 rounded-2xl border border-terra/30 bg-terra/5 px-3 py-3 transition hover:bg-terra/10">
-            <span className="text-xl">📈</span>
-            <div><div className="text-sm font-semibold text-terra-d">Analytics</div><div className="text-xs text-ink/50">Club insights</div></div>
-          </Link>
-        )}
-        {me.role === "club_owner" && (
-          <Link href="/search" className="flex items-center gap-2 rounded-2xl border border-line bg-card px-3 py-3 transition hover:bg-cream-2">
-            <span className="text-xl">🔍</span>
-            <div><div className="text-sm font-semibold text-ink">Search</div><div className="text-xs text-ink/50">Members, tasks</div></div>
-          </Link>
-        )}
-      </div>
+      {overdue.length > 0 && (
+        <>
+          <div className="mt-5 flex items-center justify-between px-1">
+            <h2 className="font-display text-base font-semibold text-bad">Overdue</h2>
+            <span className="rounded-full bg-bad/15 px-2 py-0.5 text-xs font-semibold text-bad">
+              {overdue.length}
+            </span>
+          </div>
+          <div className="mt-2 rounded-2xl border border-bad/20 bg-card p-2 shadow-sm">
+            {overdue.slice(0, 3).map((t) => (
+              <Row
+                key={t.id}
+                avatar={initials(nameById.get(t.member_id) ?? "?")}
+                avatarClass={avColor(t.member_id)}
+                title={nameById.get(t.member_id) ?? "Member"}
+                sub={ACTIVITY_LABEL[t.activity] ?? t.activity}
+                href={"/members/" + t.member_id}
+              />
+            ))}
+            {overdue.length > 3 && (
+              <p className="px-3 py-2 text-xs text-ink/40">+{overdue.length - 3} more</p>
+            )}
+          </div>
+        </>
+      )}
 
-      {/* NCO/JCO Team Overview */}
+      {/* NCO/JCO/Owner: team breakdown */}
       {isLeader && coachStats.length > 0 && (
         <>
-          <SectionHeader>👥 Team Performance</SectionHeader>
-          <div className="rounded-2xl border border-line bg-card p-2 shadow-sm">
-            {coachStats.slice(0, 8).map((c) => (
-              <div key={c.id} className="flex items-center justify-between rounded-xl px-2 py-2.5">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-bold text-white ${avColor(c.name as string)}`}>
-                    {initials(c.name as string)}
-                  </span>
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold text-ink">{c.name as string}</div>
-                    <div className="text-xs text-ink/50">{c.memberCount} members · {c.dueTodayCount} due today</div>
-                  </div>
+          <SectionHeader>Team Overview</SectionHeader>
+          <div className="space-y-2">
+            {coachStats.slice(0, 6).map((c) => (
+              <div key={c.id} className="flex items-center justify-between rounded-2xl border border-line bg-card px-4 py-3 shadow-sm">
+                <div>
+                  <div className="font-semibold text-ink">{c.name}</div>
+                  <div className="text-xs text-ink/50">{c.memberCount} members</div>
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex gap-2 text-xs font-semibold">
                   {c.overdueCount > 0 && (
-                    <span className="rounded-full bg-bad/15 px-2 py-0.5 text-xs font-semibold text-bad">
-                      {c.overdueCount} overdue
-                    </span>
+                    <span className="rounded-full bg-bad/15 px-2 py-0.5 text-bad">{c.overdueCount} overdue</span>
                   )}
-                  {c.overdueCount === 0 && (
-                    <span className="rounded-full bg-good/15 px-2 py-0.5 text-xs font-semibold text-good">✓</span>
+                  {c.dueTodayCount > 0 && (
+                    <span className="rounded-full bg-warn/15 px-2 py-0.5 text-warn">{c.dueTodayCount} today</span>
+                  )}
+                  {c.overdueCount === 0 && c.dueTodayCount === 0 && (
+                    <span className="rounded-full bg-good/15 px-2 py-0.5 text-good">Clear</span>
                   )}
                 </div>
               </div>
@@ -273,112 +308,52 @@ export default async function CommandCenter() {
         </>
       )}
 
-      {/* Aaj ka plan */}
-      <SectionHeader>📅 {homeTitle}</SectionHeader>
-      <div className="rounded-2xl border border-line bg-card p-2 shadow-sm">
-        {dueToday.length ? (
-          dueToday.slice(0, 10).map((t) => {
-            const nm = nameById.get(t.member_id) ?? "Member";
-            return (
-              <Row key={t.id} avatar={initials(nm)} avatarClass={avColor(nm)}
-                title={`${ACTIVITY_LABEL[t.activity] ?? t.activity} — ${nm}`}
-                sub={`Cycle ${t.cycle} · Day ${t.day_number}`}
+      {/* Recent members */}
+      {recentMembers.length > 0 && (
+        <>
+          <SectionHeader>Recently Joined</SectionHeader>
+          <div className="rounded-2xl border border-line bg-card p-2 shadow-sm">
+            {recentMembers.map((m) => (
+              <Row
+                key={m.user_id}
+                avatar={initials(nameById.get(m.user_id) ?? "?")}
+                avatarClass={avColor(m.user_id)}
+                title={nameById.get(m.user_id) ?? "Member"}
+                sub={membershipLabel(m.membership_type, memLabels) + " · Stage " + m.stage}
+                href={"/members/" + m.user_id}
               />
-            );
-          })
-        ) : (
-          <Empty>Aaj koi pending task nahi 🎉</Empty>
-        )}
-        {dueToday.length > 10 && (
-          <Link href="/followup" className="block px-2 pb-2 pt-1 text-center text-xs font-semibold text-terra-d">
-            + {dueToday.length - 10} aur →
-          </Link>
-        )}
-      </div>
-
-      {/* Action required — overdue */}
-      <div className="mb-2 mt-6 flex items-center justify-between px-1">
-        <h2 className="font-display text-sm font-semibold uppercase tracking-[0.08em] text-sage-d">⚠️ Action required</h2>
-        {overdue.filter((t) => t.coach_id === me.id).length > 0 && (
-          <ClearAllButton count={overdue.filter((t) => t.coach_id === me.id).length} />
-        )}
-      </div>
-      <div className="rounded-2xl border border-line bg-card p-2 shadow-sm">
-        {overdue.length ? (
-          <>
-            {overdue.slice(0, 15).map((t) => {
-              const nm = nameById.get(t.member_id) ?? "Member";
-              const daysLate = Math.max(1, Math.round((new Date(today).getTime() - new Date(t.due_date).getTime()) / 86400000));
-              return (
-                <Row key={t.id} avatar={initials(nm)} avatarClass={avColor(nm)}
-                  title={`${nm} — ${ACTIVITY_LABEL[t.activity] ?? t.activity}`}
-                  sub={`${daysLate} din late`}
-                  dot="bad"
-                />
-              );
-            })}
-            {overdue.length > 15 && (
-              <Link href="/followup" className="block px-2 pb-2 pt-1 text-center text-xs font-semibold text-terra-d">
-                + {overdue.length - 15} aur →
-              </Link>
-            )}
-          </>
-        ) : (
-          <Empty>Sab on track 🎉</Empty>
-        )}
-      </div>
-
-      {/* Club pulse */}
-      <SectionHeader>✨ Club pulse</SectionHeader>
-      <div className="rounded-2xl border border-line bg-card p-2 shadow-sm">
-        {recentMembers.length ? (
-          recentMembers.map((m) => {
-            const nm = nameById.get(m.user_id) ?? "Member";
-            return (
-              <Row key={m.user_id} avatar={initials(nm)} avatarClass={avColor(nm)}
-                title={`${nm} · ${membershipLabel(m.membership_type, memLabels)}`}
-                sub={`Stage ${m.stage}${m.current_weight ? ` · ${m.current_weight}kg` : ""}`}
-                dot="good"
-              />
-            );
-          })
-        ) : (
-          <Empty>No members visible yet.</Empty>
-        )}
-      </div>
+            ))}
+          </div>
+        </>
+      )}
     </main>
   );
 }
 
-/* ── helpers ─────────────────────────────────────────────────────────────── */
-
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="font-display mb-2 mt-6 px-1 text-sm font-semibold uppercase tracking-[0.08em] text-sage-d">
+    <h2 className="font-display mt-6 mb-2 text-sm font-semibold uppercase tracking-wide text-sage-d">
       {children}
     </h2>
   );
 }
 
-function Empty({ children }: { children: React.ReactNode }) {
-  return <p className="px-2 py-4 text-center text-sm text-ink/50">{children}</p>;
-}
-
-function Row({ avatar, avatarClass, title, sub, dot }: {
-  avatar: string; avatarClass: string; title: string; sub: string; dot?: "good" | "warn" | "bad";
+function Row({
+  avatar, avatarClass, title, sub, href,
+}: {
+  avatar: string; avatarClass: string; title: string; sub: string; href?: string;
 }) {
-  return (
-    <div className="flex items-center gap-3 rounded-xl px-2 py-2.5">
-      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-semibold text-white ${avatarClass}`}>
+  const inner = (
+    <div className="flex items-center gap-3 rounded-xl px-2 py-2.5 transition hover:bg-cream-2">
+      <span className={"grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-bold text-white " + avatarClass}>
         {avatar}
       </span>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0">
         <div className="truncate text-sm font-semibold text-ink">{title}</div>
-        <div className="truncate text-xs text-ink/55">{sub}</div>
+        <div className="text-xs text-ink/50">{sub}</div>
       </div>
-      {dot && (
-        <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${dot === "good" ? "bg-good" : dot === "warn" ? "bg-warn" : "bg-bad"}`} />
-      )}
     </div>
   );
+  if (href) return <Link href={href}>{inner}</Link>;
+  return inner;
 }

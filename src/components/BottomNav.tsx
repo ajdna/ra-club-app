@@ -70,29 +70,31 @@ export function BottomNav({
                   </span>
                 )}
               </span>
+              <span className="mt-1 text-[10px] text-ink/50">{it.label}</span>
             </Link>
           );
         }
-        const badge =
-          (it.href === "/alerts" && unreadAlerts > 0);
-        const badgeCount = it.href === "/alerts" ? unreadAlerts : 0;
+
+        const showBadge = it.href === "/alerts" && unreadAlerts > 0;
+
         return (
           <Link
             key={it.href}
             href={it.href}
-            className={`relative flex flex-1 flex-col items-center gap-1 rounded-lg py-1.5 text-[11px] font-semibold transition ${
-              active ? "text-terra-d" : "text-sage-d"
-            }`}
+            aria-label={it.label}
+            className={"flex flex-1 flex-col items-center gap-1 rounded-xl px-1 pt-1 pb-0.5 transition " + (
+              active ? "text-terra" : "text-ink/40 hover:text-ink/70"
+            )}
           >
             <span className="relative">
               {it.icon}
-              {badge && (
-                <span className="absolute -right-2 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-bad px-1 text-[10px] font-bold text-white">
-                  {badgeCount > 9 ? "9+" : badgeCount}
+              {showBadge && (
+                <span className="absolute -right-1.5 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-bad px-1 text-[10px] font-bold text-white">
+                  {unreadAlerts > 9 ? "9+" : unreadAlerts}
                 </span>
               )}
             </span>
-            {it.label}
+            <span className="text-[10px] font-medium leading-none">{it.label}</span>
           </Link>
         );
       })}

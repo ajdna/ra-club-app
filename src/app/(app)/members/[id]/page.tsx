@@ -305,32 +305,23 @@ export default async function MemberDetail({
                 </div>
               </div>
               <span
-                className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                className={
                   t.status === "done"
-                    ? "bg-good/15 text-good"
-                    : t.due_date < today
-                      ? "bg-bad/15 text-bad"
-                      : "bg-warn/15 text-warn"
-                }`}
+                    ? "rounded-full bg-good/15 px-2 py-0.5 text-xs font-semibold text-good"
+                    : t.due_date < new Date().toISOString().slice(0, 10)
+                    ? "rounded-full bg-bad/15 px-2 py-0.5 text-xs font-semibold text-bad"
+                    : "rounded-full bg-warn/15 px-2 py-0.5 text-xs font-semibold text-warn"
+                }
               >
-                {t.status === "done"
-                  ? "Done"
-                  : t.due_date < today
-                    ? "Overdue"
-                    : "Pending"}
+                {t.status === "done" ? "Done" : t.due_date < new Date().toISOString().slice(0, 10) ? "Overdue" : "Pending"}
               </span>
             </div>
           ))
         ) : (
-          <p className="px-2 py-4 text-center text-sm text-ink/50">
-            No follow-up tasks yet.
-          </p>
+          <p className="px-3 py-4 text-sm text-ink/50">No follow-up tasks yet.</p>
         )}
         {hiddenCount > 0 && (
-          <p className="px-2 pb-2 pt-1 text-center text-xs text-ink/45">
-            + {hiddenCount} aur tasks puri 90-day plan mein (yahan sirf recent
-            overdue aur agle tasks dikh rahe hain)
-          </p>
+          <p className="px-3 py-2 text-xs text-ink/40">+{hiddenCount} more tasks hidden</p>
         )}
       </div>
     </main>
@@ -339,29 +330,17 @@ export default async function MemberDetail({
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="font-display mb-2 mt-6 px-1 text-sm font-semibold uppercase tracking-[0.08em] text-sage-d">
+    <h2 className="font-display mt-6 mb-2 text-sm font-semibold uppercase tracking-wide text-sage-d">
       {children}
     </h2>
   );
 }
 
-function Fact({
-  label,
-  value,
-  capitalize,
-}: {
-  label: string;
-  value: string;
-  capitalize?: boolean;
-}) {
+function Fact({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-line bg-card p-3 shadow-sm">
-      <div
-        className={`font-display text-lg font-semibold text-ink ${capitalize ? "capitalize" : ""}`}
-      >
-        {value}
-      </div>
-      <div className="text-xs text-ink/55">{label}</div>
+      <div className="text-xs text-ink/45">{label}</div>
+      <div className="mt-0.5 font-semibold text-ink">{value}</div>
     </div>
   );
 }

@@ -11,13 +11,13 @@ export interface ThreadSummary {
   coachId: string;
   memberId: string | null;
   subject: string | null;
-  otherName: string;    // display name of the other party
+  otherName: string;
   lastMessage: string;
   lastAt: string;
   unread: number;
 }
 
-// ── Get inbox threads for the current user ────────────────────────────────────
+// ── Get inbox threads ─────────────────────────────────────────────────────────
 export async function getThreads(): Promise<ThreadSummary[]> {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return [];
@@ -31,14 +31,9 @@ export async function getThreads(): Promise<ThreadSummary[]> {
     member: { name: string } | null;
   };
 
-  // Fetch threads visible to me (RLS handles filtering)
   const { data: rawThreads } = await supabase
     .from("chat_threads")
-    .select(`
-      id, type, coach_id, member_id, subject, updated_at,
-      coach:coach_id ( name ),
-      member:member_id ( name )
-    `)
+    .select("id, type, coach_id, member_id, subject, updated_at, coach:coach_id ( name ), member:member_id ( name )")
     .order("updated_at", { ascending: false });
   const threads = rawThreads as unknown as RawThread[] | null;
 
@@ -49,7 +44,6 @@ export async function getThreads(): Promise<ThreadSummary[]> {
   type RawMsg = { thread_id: string; body: string; created_at: string; sender_id: string };
   type RawRead = { thread_id: string; last_read_at: string };
 
-  // Fetch last message per thread
   const { data: rawMsgs } = await supabase
     .from("chat_messages")
     .select("thread_id, body, created_at, sender_id")
@@ -57,14 +51,12 @@ export async function getThreads(): Promise<ThreadSummary[]> {
     .order("created_at", { ascending: false });
   const lastMsgs = rawMsgs as RawMsg[] | null;
 
-  // Fetch my read timestamps
   const { data: rawReads } = await supabase
     .from("chat_reads")
     .select("thread_id, last_read_at")
     .in("thread_id", threadIds);
   const reads = rawReads as RawRead[] | null;
 
-  // Fetch unread counts
   const lastMsgByThread = new Map<string, RawMsg>();
   const seenThread = new Set<string>();
   for (const m of lastMsgs ?? []) {
@@ -77,7 +69,6 @@ export async function getThreads(): Promise<ThreadSummary[]> {
   const readAt = new Map<string, string>();
   for (const r of reads ?? []) readAt.set(r.thread_id, r.last_read_at);
 
-  // Count unread per thread (messages after my last_read, not sent by me)
   const unreadByThread = new Map<string, number>();
   for (const m of lastMsgs ?? []) {
     if (m.sender_id === me.id) continue;
@@ -96,7 +87,7 @@ export async function getThreads(): Promise<ThreadSummary[]> {
 
     let otherName: string;
     if (t.type === "broadcast") {
-      otherName = t.subject ?? `${coachName} — Team`;
+      otherName = t.subject ?? (coachName + " - Team");
     } else if (t.coach_id === me.id) {
       otherName = memberName ?? "Member";
     } else {
@@ -125,21 +116,46 @@ export async function getMessages(threadId: string) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("chat_messages")
-    .select(`id, sender_id, body, created_at, sender:sender_id(name)`)
+    .select("id, sender_id, body, created_at, sender:sender_id(name)")
     .eq("thread_id", threadId)
     .order("created_at", { ascending: true });
 
   type RawM = { id: string; sender_id: string; body: string; created_at: string; sender: { name: string } | null };
   const msgs = data as unknown as RawM[] | null;
+  if (!msgs?.length) return [];
 
-  return (msgs ?? []).map((m) => ({
-    id: m.id,
-    senderId: m.sender_id,
-    senderName: m.sender?.name ?? "Unknown",
-    body: m.body,
-    createdAt: m.created_at,
-    isMe: m.sender_id === me.id,
-  }));
+  const msgIds = msgs.map((m) => m.id);
+  const { data: reactionRows } = await supabase
+    .from("message_reactions")
+    .select("message_id, user_id, emoji")
+    .in("message_id", msgIds);
+
+  type RawR = { message_id: string; user_id: string; emoji: string };
+  const allReactions = (reactionRows as RawR[] | null) ?? [];
+  const reactionsByMsg = new Map<string, RawR[]>();
+  for (const r of allReactions) {
+    if (!reactionsByMsg.has(r.message_id)) reactionsByMsg.set(r.message_id, []);
+    reactionsByMsg.get(r.message_id)!.push(r);
+  }
+
+  return msgs.map((m) => {
+    const rows = reactionsByMsg.get(m.id) ?? [];
+    const grouped: Record<string, { emoji: string; count: number; byMe: boolean }> = {};
+    for (const r of rows) {
+      if (!grouped[r.emoji]) grouped[r.emoji] = { emoji: r.emoji, count: 0, byMe: false };
+      grouped[r.emoji].count++;
+      if (r.user_id === me.id) grouped[r.emoji].byMe = true;
+    }
+    return {
+      id: m.id,
+      senderId: m.sender_id,
+      senderName: m.sender?.name ?? "Unknown",
+      body: m.body,
+      createdAt: m.created_at,
+      isMe: m.sender_id === me.id,
+      reactions: Object.values(grouped),
+    };
+  });
 }
 
 // ── Get thread detail ─────────────────────────────────────────────────────────
@@ -150,7 +166,7 @@ export async function getThread(threadId: string) {
   const supabase = await createClient();
   const { data: raw } = await supabase
     .from("chat_threads")
-    .select(`id, type, coach_id, member_id, subject, coach:coach_id(name), member:member_id(name)`)
+    .select("id, type, coach_id, member_id, subject, coach:coach_id(name), member:member_id(name)")
     .eq("id", threadId)
     .single();
 
@@ -163,9 +179,8 @@ export async function getThread(threadId: string) {
 
   let title: string;
   if (data.type === "broadcast") {
-    title = data.subject ?? `${coachName} — Team Broadcast`;
+    title = data.subject ?? (coachName + " - Team Broadcast");
   } else {
-    // Direct thread: show the OTHER person's name
     if (data.coach_id === me.id) {
       title = memberName ?? coachName;
     } else {
@@ -190,7 +205,7 @@ export async function sendMessage(threadId: string, body: string): Promise<{ err
   });
 
   if (error) return { error: error.message };
-  revalidatePath(`/messages/${threadId}`);
+  revalidatePath("/messages/" + threadId);
   revalidatePath("/messages");
   return {};
 }
@@ -208,21 +223,14 @@ export async function markThreadRead(threadId: string) {
   revalidatePath("/messages");
 }
 
-// ── Start a direct thread between me and any other user ──────────────────────
-// Works regardless of role — club_owner↔member, coach↔jco, etc.
-// Uses canonical ordering: least(uuid) always goes into coach_id so the
-// unique index fires correctly even if thread is created from either end.
+// ── Start a direct thread ─────────────────────────────────────────────────────
 export async function startDirectThread(otherUserId: string): Promise<{ threadId?: string; error?: string }> {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return { error: "Not signed in" };
 
   const supabase = await createClient();
+  const [aId, bId] = me.id < otherUserId ? [me.id, otherUserId] : [otherUserId, me.id];
 
-  // Canonical pair: smaller UUID in coach_id
-  const [aId, bId] =
-    me.id < otherUserId ? [me.id, otherUserId] : [otherUserId, me.id];
-
-  // Look for existing thread in either direction
   const { data: existing } = await supabase
     .from("chat_threads")
     .select("id")
@@ -257,9 +265,7 @@ export async function sendBroadcast(
 
   const supabase = await createClient();
 
-  // Create a new broadcast thread every time (they're like announcements)
-  const threadSubject =
-    subject.trim() ||
+  const threadSubject = subject.trim() ||
     (target === "coaches" ? "Coaches Broadcast" : target === "members" ? "Members Broadcast" : "Team Broadcast");
 
   const { data: thread, error: tErr } = await supabase
@@ -278,8 +284,6 @@ export async function sendBroadcast(
 
   if (mErr) return { error: mErr.message };
 
-  // Also create a notification for downline — filtered by target role
-  // We insert notifications for all visible users matching the target filter.
   const { data: downline } = await supabase
     .from("hierarchy_closure")
     .select("descendant:users!descendant_id(id, role)")
@@ -313,66 +317,41 @@ export async function sendBroadcast(
   return {};
 }
 
-// ── Get contacts I'm allowed to message ──────────────────────────────────────
-// Upline  = ancestors in hierarchy_closure (people above me)
-// Downline = descendants in hierarchy_closure (people below me)
-// Members see only their direct coach (depth 1 upline).
-// Everyone else sees their full upline chain + all downline.
+// ── Get contacts ──────────────────────────────────────────────────────────────
 export async function getMyContacts(): Promise<{
-  id: string;
-  name: string;
-  role: string;
-  group: "upline" | "downline";
+  id: string; name: string; role: string; group: "upline" | "downline";
 }[]> {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return [];
 
   const supabase = await createClient();
-
   type RawUser = { id: string; name: string; role: string };
 
   if (me.role === "member") {
-    // Members can only message their direct coach
-    const { data: upline, error: uplineErr } = await supabase
+    const { data: upline } = await supabase
       .from("hierarchy_closure")
       .select("ancestor:users!ancestor_id(id, name, role)")
       .eq("descendant_id", me.id)
       .eq("depth", 1);
-
-    if (uplineErr) console.error("[getMyContacts] member upline error:", uplineErr);
-
     type RawUp = { ancestor: RawUser | null };
     return ((upline ?? []) as unknown as RawUp[])
       .filter((r) => r.ancestor)
       .map((r) => ({ ...r.ancestor!, group: "upline" as const }));
   }
 
-  // Everyone else: full upline + full downline (excluding self)
   const [uplineRes, downlineRes] = await Promise.all([
-    supabase
-      .from("hierarchy_closure")
-      .select("ancestor:users!ancestor_id(id, name, role)")
-      .eq("descendant_id", me.id)
-      .gt("depth", 0),
-    supabase
-      .from("hierarchy_closure")
-      .select("descendant:users!descendant_id(id, name, role)")
-      .eq("ancestor_id", me.id)
-      .gt("depth", 0),
+    supabase.from("hierarchy_closure").select("ancestor:users!ancestor_id(id, name, role)").eq("descendant_id", me.id).gt("depth", 0),
+    supabase.from("hierarchy_closure").select("descendant:users!descendant_id(id, name, role)").eq("ancestor_id", me.id).gt("depth", 0),
   ]);
 
   type RawUp   = { ancestor:   RawUser | null };
   type RawDown = { descendant: RawUser | null };
 
   const upline = ((uplineRes.data ?? []) as unknown as RawUp[])
-    .filter((r) => r.ancestor)
-    .map((r) => ({ ...r.ancestor!, group: "upline" as const }));
-
+    .filter((r) => r.ancestor).map((r) => ({ ...r.ancestor!, group: "upline" as const }));
   const downline = ((downlineRes.data ?? []) as unknown as RawDown[])
-    .filter((r) => r.descendant)
-    .map((r) => ({ ...r.descendant!, group: "downline" as const }));
+    .filter((r) => r.descendant).map((r) => ({ ...r.descendant!, group: "downline" as const }));
 
-  // Dedup (a user might appear via multiple paths in a DAG)
   const seen = new Set<string>();
   return [...upline, ...downline].filter((u) => {
     if (seen.has(u.id)) return false;
@@ -381,42 +360,182 @@ export async function getMyContacts(): Promise<{
   });
 }
 
-// ── Clear all messages in a thread (coach / owner only) ──────────────────────
-// The caller must be a participant in the thread and have a non-member role.
+// ── Clear thread ──────────────────────────────────────────────────────────────
 export async function clearThread(threadId: string): Promise<{ error?: string }> {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return { error: "Not signed in" };
   if (me.role === "member") return { error: "Members cannot clear threads" };
 
   const supabase = await createClient();
-
-  // Verify caller is a participant
-  const { data: thread } = await supabase
-    .from("chat_threads")
-    .select("coach_id, member_id")
-    .eq("id", threadId)
-    .single();
-
+  const { data: thread } = await supabase.from("chat_threads").select("coach_id, member_id").eq("id", threadId).single();
   if (!thread) return { error: "Thread not found" };
   const isParticipant = thread.coach_id === me.id || thread.member_id === me.id;
   if (!isParticipant && me.role !== "club_owner") return { error: "Not a participant" };
 
-  const { error } = await supabase
-    .from("chat_messages")
-    .delete()
-    .eq("thread_id", threadId);
-
+  const { error } = await supabase.from("chat_messages").delete().eq("thread_id", threadId);
   if (error) return { error: error.message };
-  revalidatePath(`/messages/${threadId}`);
+  revalidatePath("/messages/" + threadId);
   revalidatePath("/messages");
   return {};
 }
 
-// ── Kept for backward compat (broadcast page uses this) ──────────────────────
+// ── Kept for backward compat ──────────────────────────────────────────────────
 export async function getMyMembers() {
   const contacts = await getMyContacts();
-  return contacts
-    .filter((c) => c.group === "downline")
-    .map((c) => ({ id: c.id, name: c.name }));
+  return contacts.filter((c) => c.group === "downline").map((c) => ({ id: c.id, name: c.name }));
 }
 
+// ── Broadcast Groups (saved named lists) ─────────────────────────────────────
+
+export type BroadcastGroup = {
+  id: string;
+  name: string;
+  filterType: "all" | "by_role" | "by_stage" | "low_attendance";
+  filterValue: string | null;
+};
+
+export async function getBroadcastGroups(): Promise<BroadcastGroup[]> {
+  const me = await getCurrentUser();
+  if (!me || typeof me === "string") return [];
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("broadcast_groups")
+    .select("id, name, filter_type, filter_value")
+    .eq("created_by", me.id)
+    .order("created_at", { ascending: false });
+
+  return (data ?? []).map((g) => ({
+    id: g.id,
+    name: g.name,
+    filterType: g.filter_type as BroadcastGroup["filterType"],
+    filterValue: g.filter_value,
+  }));
+}
+
+export async function createBroadcastGroup(
+  name: string,
+  filterType: BroadcastGroup["filterType"],
+  filterValue: string | null,
+): Promise<{ id?: string; error?: string }> {
+  const me = await getCurrentUser();
+  if (!me || typeof me === "string") return { error: "Not signed in" };
+  if (me.role === "member") return { error: "Members cannot create broadcast lists." };
+  if (!name.trim()) return { error: "List name required" };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("broadcast_groups")
+    .insert({ name: name.trim(), created_by: me.id, filter_type: filterType, filter_value: filterValue })
+    .select("id")
+    .single();
+
+  if (error) return { error: error.message };
+  revalidatePath("/messages/broadcast");
+  return { id: data.id };
+}
+
+export async function deleteBroadcastGroup(groupId: string): Promise<{ error?: string }> {
+  const me = await getCurrentUser();
+  if (!me || typeof me === "string") return { error: "Not signed in" };
+
+  const supabase = await createClient();
+  await supabase.from("broadcast_groups").delete().eq("id", groupId).eq("created_by", me.id);
+  revalidatePath("/messages/broadcast");
+  return {};
+}
+
+export async function sendBroadcastToGroup(
+  groupId: string,
+  subject: string,
+  body: string,
+): Promise<{ error?: string }> {
+  const me = await getCurrentUser();
+  if (!me || typeof me === "string") return { error: "Not signed in" };
+  if (me.role === "member") return { error: "Members cannot broadcast." };
+  if (!body.trim()) return { error: "Message cannot be empty" };
+
+  const supabase = await createClient();
+
+  const { data: group } = await supabase
+    .from("broadcast_groups")
+    .select("name, filter_type, filter_value")
+    .eq("id", groupId)
+    .eq("created_by", me.id)
+    .single();
+  if (!group) return { error: "List not found" };
+
+  const { data: downline } = await supabase
+    .from("hierarchy_closure")
+    .select("descendant:users!descendant_id(id, role, members(stage))")
+    .eq("ancestor_id", me.id)
+    .gt("depth", 0);
+
+  type DRow = { descendant: { id: string; role: string; members: { stage: number }[] | null } | null };
+  const all = (downline as unknown as DRow[] ?? []).filter((r) => r.descendant);
+
+  const recipients = all.filter((r) => {
+    const d = r.descendant!;
+    if (group.filter_type === "all") return true;
+    if (group.filter_type === "by_role") return d.role === group.filter_value;
+    if (group.filter_type === "by_stage") {
+      const stage = d.members?.[0]?.stage;
+      return stage !== undefined && String(stage) === group.filter_value;
+    }
+    return true;
+  });
+
+  if (!recipients.length) return { error: "No members match this list filter." };
+
+  const threadSubject = subject.trim() || group.name;
+  const { data: thread, error: tErr } = await supabase
+    .from("chat_threads")
+    .insert({ type: "broadcast", coach_id: me.id, subject: threadSubject })
+    .select("id")
+    .single();
+  if (tErr) return { error: tErr.message };
+
+  await supabase.from("chat_messages").insert({ thread_id: thread.id, sender_id: me.id, body: body.trim() });
+
+  const notifs = recipients.map((r) => ({
+    user_id: r.descendant!.id,
+    type: "broadcast" as const,
+    title: threadSubject,
+    body: body.trim().slice(0, 200),
+    broadcast_target: group.name,
+  }));
+  await supabase.from("notifications").insert(notifs);
+
+  revalidatePath("/messages");
+  return {};
+}
+
+// ── Toggle emoji reaction ─────────────────────────────────────────────────────
+export async function toggleReaction(messageId: string, emoji: string): Promise<{ error?: string }> {
+  const me = await getCurrentUser();
+  if (!me || typeof me === "string") return { error: "Not signed in" };
+
+  const supabase = await createClient();
+
+  // Check if already reacted
+  const { data: existing } = await supabase
+    .from("message_reactions")
+    .select("id")
+    .eq("message_id", messageId)
+    .eq("user_id", me.id)
+    .eq("emoji", emoji)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase.from("message_reactions").delete().eq("id", existing.id);
+  } else {
+    const { error } = await supabase.from("message_reactions").insert({
+      message_id: messageId,
+      user_id: me.id,
+      emoji,
+    });
+    if (error) return { error: error.message };
+  }
+
+  return {};
+}

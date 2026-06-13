@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { SignOutButton } from "@/components/SignOutButton";
+import { DarkModeToggle } from "@/components/DarkModeToggle";
 import { ProfileEditForm } from "./ProfileEditForm";
 
 export const dynamic = "force-dynamic";
@@ -10,8 +11,8 @@ export const dynamic = "force-dynamic";
 const ROLE_LABEL: Record<string, string> = {
   upline: "Upline (read-only)",
   club_owner: "Club Owner",
-  nco: "NCO — Senior Club Operator",
-  jco: "JCO — Junior Club Operator",
+  nco: "NCO -- Senior Club Operator",
+  jco: "JCO -- Junior Club Operator",
   coach: "Coach",
   member: "Member",
   privilege: "Privilege Member",
@@ -32,7 +33,6 @@ export default async function ProfilePage() {
   }
   if (me === "pending" || me === "rejected") redirect("/pending");
 
-  // Fetch full user row for editable fields
   const supabase = await createClient();
   const { data: userRow } = await supabase
     .from("users")
@@ -77,11 +77,23 @@ export default async function ProfilePage() {
           href="/admin"
           className="mt-4 flex items-center justify-between rounded-2xl border border-line bg-card p-4 shadow-sm transition hover:bg-cream-2"
         >
-          <span className="font-semibold text-ink">⚙️ Admin Console</span>
-          <span className="text-sage-d">Rules Engine + Users →</span>
+          <span className="font-semibold text-ink">Admin Console</span>
+          <span className="text-sage-d">Rules Engine + Users -&gt;</span>
         </Link>
       )}
 
+      {/* Appearance */}
+      <div className="mt-6 rounded-2xl border border-line bg-card p-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="font-semibold text-ink">Appearance</div>
+            <div className="text-sm text-ink/50">Light / Dark mode</div>
+          </div>
+          <DarkModeToggle />
+        </div>
+      </div>
+
+      {/* Sign out */}
       <div className="mt-6">
         <SignOutButton />
       </div>

@@ -87,7 +87,7 @@ export default async function MembersPage() {
           </Link>
         )}
       </header>
-      <MembersList members={rows} myId={typeof me === "object" ? me.id : ""} />
+      <MembersList rows={rows} />
     </main>
   );
 }

@@ -15,7 +15,7 @@ export default async function AppLayout({
 }) {
   const me = await getCurrentUser();
 
-  // Not signed in → login
+  // Not signed in -> login
   if (me === null) redirect("/login");
 
   // Registered but waiting for approval
@@ -25,7 +25,7 @@ export default async function AppLayout({
   if (me === "rejected") redirect("/login?error=rejected");
 
   // Signed in but auth_id not yet linked to a users row
-  // (handled gracefully inside each page — show "almost there" message)
+  // (handled gracefully inside each page -- show "almost there" message)
 
   const supabase = await createClient();
   const [unread, msgResult, timers] = await Promise.all([
@@ -49,7 +49,6 @@ export default async function AppLayout({
       <BottomNav
         unreadAlerts={unread}
         unreadMessages={unreadMessages}
-        role={typeof me === "object" ? (me.role as "member" | "coach" | "nco" | "jco" | "club_owner") : undefined}
       />
     </div>
   );

@@ -173,9 +173,7 @@ export default async function FollowupPage() {
           Aaj aur agle 7 din
         </h2>
         {(tasks?.length ?? 0) === 0 ? (
-          <div className="rounded-2xl border border-line bg-card px-4 py-8 text-center text-ink/50">
-            Koi task nahi 🎉
-          </div>
+          <p className="text-sm text-ink/50 py-4 text-center">Koi upcoming task nahi!</p>
         ) : (
           <div className="space-y-3">
             {tasks!.map((t) => (
@@ -187,4 +185,3 @@ export default async function FollowupPage() {
     </main>
   );
 }
-
