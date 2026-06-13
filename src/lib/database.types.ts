@@ -34,6 +34,7 @@ export type Database = {
           locale: string | null;
           timezone: string | null;
           created_at: string;
+          last_seen_at: string | null;
         };
         Insert: {
           id?: string;
@@ -49,6 +50,7 @@ export type Database = {
           locale?: string | null;
           timezone?: string | null;
           created_at?: string;
+          last_seen_at?: string | null;
         };
         Update: {
           id?: string;
@@ -64,6 +66,7 @@ export type Database = {
           locale?: string | null;
           timezone?: string | null;
           created_at?: string;
+          last_seen_at?: string | null;
         };
         Relationships: [
           {
@@ -200,28 +203,31 @@ export type Database = {
       chat_threads: {
         Row: {
           id: string;
-          type: "direct" | "broadcast";
+          type: "direct" | "broadcast" | "group";
           coach_id: string;
           member_id: string | null;
           subject: string | null;
+          pinned_message_id: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
-          type: "direct" | "broadcast";
+          type: "direct" | "broadcast" | "group";
           coach_id: string;
           member_id?: string | null;
           subject?: string | null;
+          pinned_message_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
-          type?: "direct" | "broadcast";
+          type?: "direct" | "broadcast" | "group";
           coach_id?: string;
           member_id?: string | null;
           subject?: string | null;
+          pinned_message_id?: string | null;
           updated_at?: string;
         };
         Relationships: [];
@@ -232,6 +238,7 @@ export type Database = {
           thread_id: string;
           sender_id: string;
           body: string;
+          reply_to_message_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -239,10 +246,12 @@ export type Database = {
           thread_id: string;
           sender_id: string;
           body: string;
+          reply_to_message_id?: string | null;
           created_at?: string;
         };
         Update: {
           body?: string;
+          reply_to_message_id?: string | null;
         };
         Relationships: [];
       };
@@ -671,6 +680,78 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      message_reactions: {
+        Row: {
+          id: string;
+          message_id: string;
+          user_id: string;
+          emoji: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          message_id: string;
+          user_id: string;
+          emoji: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          message_id?: string;
+          user_id?: string;
+          emoji?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      broadcast_groups: {
+        Row: {
+          id: string;
+          name: string;
+          created_by: string;
+          filter_type: string;
+          filter_value: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          created_by: string;
+          filter_type?: string;
+          filter_value?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          created_by?: string;
+          filter_type?: string;
+          filter_value?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      chat_group_members: {
+        Row: {
+          thread_id: string;
+          user_id: string;
+          added_by: string | null;
+          joined_at: string;
+        };
+        Insert: {
+          thread_id: string;
+          user_id: string;
+          added_by?: string | null;
+          joined_at?: string;
+        };
+        Update: {
+          thread_id?: string;
+          user_id?: string;
+          added_by?: string | null;
+          joined_at?: string;
+        };
+        Relationships: [];
       };
     };
     Views: Record<string, never>;
