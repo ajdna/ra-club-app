@@ -96,6 +96,36 @@ export async function addMember(formData: FormData): Promise<ActionResult> {
   return { ok: true };
 }
 
+/** Advance a member to the next stage (coaches/owners only). */
+export async function completeStage(memberId: string): Promise<ActionResult> {
+  const me = await getCurrentUser();
+  if (!me || typeof me === "string") return { ok: false, error: "Not signed in." };
+
+  const STAFF = ["club_owner", "nco", "jco", "coach"];
+  if (!STAFF.includes(me.role)) return { ok: false, error: "Not authorized." };
+
+  const supabase = await createClient();
+  const { data: member } = await supabase
+    .from("members")
+    .select("stage")
+    .eq("user_id", memberId)
+    .maybeSingle();
+
+  if (!member) return { ok: false, error: "Member not found." };
+  if ((member.stage ?? 0) >= 6) return { ok: false, error: "Already at final stage." };
+
+  const { error } = await supabase
+    .from("members")
+    .update({ stage: (member.stage ?? 0) + 1 })
+    .eq("user_id", memberId);
+
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/members/${memberId}`);
+  revalidatePath("/members");
+  revalidatePath("/");
+  return { ok: true };
+}
+
 /** Save (upsert) a member's 1st-Home-Visit intake profile. */
 export async function saveIntake(
   memberId: string,

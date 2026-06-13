@@ -9,6 +9,7 @@ import { membershipLabel, type MembershipLabels } from "@/lib/membership";
 import { MarkPresentButton } from "../MarkPresentButton";
 import { LogWeightForm } from "../LogWeightForm";
 import { WeightChart } from "../WeightChart";
+import { StageCompleteButton } from "../StageCompleteButton";
 
 export const dynamic = "force-dynamic";
 
@@ -63,8 +64,9 @@ export default async function MemberDetail({
         .from("attendance")
         .select("date, present")
         .eq("member_id", id)
-        .order("date", { ascending: false })
-        .limit(7),
+        .gte("date", (() => { const d = new Date(); d.setDate(d.getDate() - 89); return d.toISOString().slice(0, 10); })())
+        .order("date", { ascending: true })
+        .limit(90),
       supabase
         .from("follow_up_tasks")
         .select("id, activity, due_date, status, day_number, cycle")
@@ -129,6 +131,16 @@ export default async function MemberDetail({
       ? Math.round((member.current_weight - member.ideal_weight) * 10) / 10
       : null;
 
+  const startWeight = intake?.start_weight ?? null;
+  const lostKg =
+    startWeight != null && member.current_weight != null
+      ? Math.round((startWeight - member.current_weight) * 10) / 10
+      : null;
+  const weightMilestones: { emoji: string; label: string }[] = [];
+  if (lostKg !== null && lostKg >= 5) weightMilestones.push({ emoji: "🥉", label: "5 kg lost" });
+  if (lostKg !== null && lostKg >= 10) weightMilestones.push({ emoji: "🥈", label: "10 kg lost" });
+  if (weightGap !== null && weightGap <= 0) weightMilestones.push({ emoji: "🏆", label: "Goal reached!" });
+
   return (
     <main className="px-4 pb-8 pt-5">
       <Link href="/members" className="text-sm font-semibold text-sage-d">
@@ -158,13 +170,20 @@ export default async function MemberDetail({
       </header>
 
       {/* Quick facts */}
-      <div className="mt-5 grid grid-cols-3 gap-3">
+      <div className="mt-5 grid grid-cols-2 gap-3">
         <Fact
           label="Membership"
           value={membershipLabel(member.membership_type, memLabels)}
         />
-        <Fact label="Stage" value={`${member.stage} / 6`} />
-        <Fact label="Recharges" value={`${member.recharge_count}`} />
+        <Fact label="Recharges" value={String(member.recharge_count)} />
+      </div>
+
+      {/* Stage visual path */}
+      <div className="mt-3">
+        <StageProgress current={member.stage ?? 1} />
+        {["club_owner", "nco", "jco", "coach"].includes(me.role) && (
+          <StageCompleteButton memberId={id} currentStage={member.stage ?? 1} />
+        )}
       </div>
 
       {/* 1st Home Visit intake */}
@@ -216,6 +235,18 @@ export default async function MemberDetail({
                 ? ` · ${weightGap > 0 ? `${weightGap}kg to go` : "at goal 🎉"}`
                 : ""}
             </div>
+            {weightMilestones.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {weightMilestones.map((m) => (
+                  <span
+                    key={m.label}
+                    className="flex items-center gap-1 rounded-full bg-good/15 px-2 py-0.5 text-xs font-semibold text-good"
+                  >
+                    {m.emoji} {m.label}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         <div className="mt-3">
@@ -249,25 +280,9 @@ export default async function MemberDetail({
           </div>
           <MarkPresentButton memberId={id} present={presentToday} />
         </div>
-        {attendance.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {attendance.map((a, i) => (
-              <span
-                key={i}
-                className={`rounded-md px-2 py-1 text-xs ${
-                  a.present
-                    ? "bg-good/15 text-good"
-                    : "bg-line text-ink/50"
-                }`}
-              >
-                {new Date(a.date).toLocaleDateString("en-IN", {
-                  day: "numeric",
-                  month: "short",
-                })}
-              </span>
-            ))}
-          </div>
-        )}
+        <div className="mt-3">
+          <AttendanceHeatmap attendance={attendance} />
+        </div>
       </div>
 
       {/* Follow-up tasks */}
@@ -324,7 +339,112 @@ export default async function MemberDetail({
           <p className="px-3 py-2 text-xs text-ink/40">+{hiddenCount} more tasks hidden</p>
         )}
       </div>
+      {/* Monthly report card link */}
+      <div className="mt-6 text-center">
+        <Link
+          href={"/members/" + id + "/report"}
+          className="inline-flex items-center gap-2 rounded-2xl bg-emerald px-5 py-2.5 text-sm font-semibold text-white shadow-sm"
+        >
+          📊 Monthly Report Card
+        </Link>
+      </div>
     </main>
+  );
+}
+
+function AttendanceHeatmap({
+  attendance,
+}: {
+  attendance: { date: string; present: boolean }[];
+}) {
+  const today = new Date();
+  const attendanceMap = new Map(attendance.map((a) => [a.date, a.present]));
+
+  const days: { date: string; present: boolean; isToday: boolean }[] = [];
+  for (let i = 89; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const iso = d.toISOString().slice(0, 10);
+    days.push({ date: iso, present: attendanceMap.get(iso) ?? false, isToday: i === 0 });
+  }
+
+  // Pad start to align with the weekday of the first day (0=Sun)
+  const firstDayOfWeek = new Date(days[0].date).getDay();
+  const totalPresent = days.filter((d) => d.present).length;
+
+  return (
+    <div>
+      <p className="mb-2 text-xs text-ink/45">
+        {totalPresent} / 90 days present (last 90 days)
+      </p>
+      <div
+        className="grid gap-0.5 overflow-x-auto"
+        style={{ gridTemplateRows: "repeat(7, 10px)", gridAutoFlow: "column", gridAutoColumns: "10px" }}
+      >
+        {Array.from({ length: firstDayOfWeek }, (_, i) => (
+          <div key={"pad-" + i} style={{ height: 10, width: 10 }} />
+        ))}
+        {days.map((day) => (
+          <div
+            key={day.date}
+            title={day.date + (day.present ? " ✓" : " absent")}
+            className={
+              day.present
+                ? "rounded-sm bg-good" + (day.isToday ? " ring-1 ring-offset-0 ring-terra" : "")
+                : "rounded-sm bg-line" + (day.isToday ? " ring-1 ring-offset-0 ring-terra" : "")
+            }
+            style={{ height: 10, width: 10 }}
+          />
+        ))}
+      </div>
+      <div className="mt-2 flex items-center justify-end gap-3 text-xs text-ink/40">
+        <span className="flex items-center gap-1">
+          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-line" />
+          Absent
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-good" />
+          Present
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function StageProgress({ current, total = 6 }: { current: number; total?: number }) {
+  return (
+    <div className="rounded-2xl border border-line bg-card px-4 py-4 shadow-sm">
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-xs text-ink/45">Stage Progress</span>
+        <span className="text-xs font-semibold text-terra">{current} / {total}</span>
+      </div>
+      <div className="flex items-center">
+        {Array.from({ length: total }, (_, i) => {
+          const stage = i + 1;
+          const done = stage < current;
+          const active = stage === current;
+          const isLast = stage === total;
+          return (
+            <div key={stage} className={"flex items-center " + (isLast ? "" : "flex-1")}>
+              <div
+                className={
+                  active
+                    ? "flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-terra text-sm font-bold text-white shadow-lg shadow-terra/30"
+                    : done
+                    ? "flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-terra text-xs font-semibold text-white"
+                    : "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-line bg-card text-xs font-medium text-ink/30"
+                }
+              >
+                {done ? "✓" : stage}
+              </div>
+              {!isLast && (
+                <div className={"h-px flex-1 " + (done ? "bg-terra" : "bg-line")} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

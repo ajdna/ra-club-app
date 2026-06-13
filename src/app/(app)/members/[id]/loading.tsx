@@ -17,11 +17,12 @@ export default function MemberDetailLoading() {
       </header>
 
       {/* Quick facts */}
-      <div className="mt-5 grid grid-cols-3 gap-3">
-        <Pulse className="h-16" />
+      <div className="mt-5 grid grid-cols-2 gap-3">
         <Pulse className="h-16" />
         <Pulse className="h-16" />
       </div>
+      {/* Stage path */}
+      <Pulse className="mt-3 h-16" />
 
       {/* Sections */}
       <Pulse className="mt-6 h-4 w-32" />
