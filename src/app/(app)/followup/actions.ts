@@ -19,7 +19,7 @@ export async function markTaskDone(
               status: "done",
               completed_at: new Date().toISOString(),
               ...(note ? { completion_note: note } : {}),
-      })
+      } as any)
       .eq("id", taskId)
       .eq("coach_id", me.id);
 
