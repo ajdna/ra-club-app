@@ -71,7 +71,7 @@ export default async function MyProgressPage() {
           currentWeight: m?.current_weight ?? null,
           idealWeight: m?.ideal_weight ?? null,
           stage: m?.stage ?? 1,
-          membership: membershipLabel(m?.membership_type ?? null, memLabels),
+          membership: membershipLabel(m?.membership_type ?? "", memLabels),
         }}
         weights={weightRes.data ?? []}
         attendance={attendanceRes.data ?? []}
