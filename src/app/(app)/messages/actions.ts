@@ -44,17 +44,19 @@ export async function getThreads(): Promise<ThreadSummary[]> {
   type RawMsg = { thread_id: string; body: string; created_at: string; sender_id: string };
   type RawRead = { thread_id: string; last_read_at: string };
 
-  const { data: rawMsgs } = await supabase
-    .from("chat_messages")
-    .select("thread_id, body, created_at, sender_id")
-    .in("thread_id", threadIds)
-    .order("created_at", { ascending: false });
+  // Run messages + reads in parallel to cut sequential query time (helps cold-start latency)
+  const [{ data: rawMsgs }, { data: rawReads }] = await Promise.all([
+    supabase
+      .from("chat_messages")
+      .select("thread_id, body, created_at, sender_id")
+      .in("thread_id", threadIds)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("chat_reads")
+      .select("thread_id, last_read_at")
+      .in("thread_id", threadIds),
+  ]);
   const lastMsgs = rawMsgs as RawMsg[] | null;
-
-  const { data: rawReads } = await supabase
-    .from("chat_reads")
-    .select("thread_id, last_read_at")
-    .in("thread_id", threadIds);
   const reads = rawReads as RawRead[] | null;
 
   const lastMsgByThread = new Map<string, RawMsg>();
