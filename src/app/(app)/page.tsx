@@ -194,10 +194,10 @@ export default async function CommandCenter() {
   const recentMembers = [...members].sort((a, b) => (b.join_date ?? "").localeCompare(a.join_date ?? "")).slice(0, 3);
 
   const stats = [
-    { n: members.length, label: "Members", tint: "text-terra-d" },
-    { n: dueToday.length, label: "Due today", tint: "text-emerald" },
-    { n: teamCount, label: "Team", tint: "text-sage-d" },
-    { n: overdue.length, label: "Overdue", tint: overdue.length ? "text-bad" : "text-good" },
+    { n: members.length, label: "Members", tint: "text-terra-d", href: "/members" },
+    { n: dueToday.length, label: "Due today", tint: "text-emerald", href: "/followup" },
+    { n: teamCount, label: "Team", tint: "text-sage-d", href: isLeader ? "#team-overview" : undefined },
+    { n: overdue.length, label: "Overdue", tint: overdue.length ? "text-bad" : "text-good", href: "/followup" },
   ];
 
   return (
@@ -222,19 +222,21 @@ export default async function CommandCenter() {
 
       {/* Stat strip */}
       <div className="grid grid-cols-2 gap-3">
-        {stats.map((s) => (
-          <div key={s.label} className="rounded-2xl border border-line bg-card p-4 shadow-sm">
+        {stats.map((s) => {
+          const tile = (
+            <div className="rounded-2xl border border-line bg-card p-4 shadow-sm transition hover:border-terra/40 hover:shadow">
             <div className={`font-display text-3xl font-semibold ${s.tint}`}>{s.n}</div>
             <div className="mt-0.5 text-sm text-ink/60">{s.label}</div>
-          </div>
-        ))}
+            </div>
+          );
+          return s.href ? <Link key={s.label} href={s.href}>{tile}</Link> : <div key={s.label}>{tile}</div>;
+        })}
       </div>
       {/* Follow-up tasks strip */}
       {dueToday.length > 0 && (
         <>
           <div className="mt-5 flex items-center justify-between px-1">
             <h2 className="font-display text-base font-semibold text-emerald">{homeTitle}</h2>
-            <ClearAllButton count={overdue.length} />
           </div>
           <div className="mt-2 rounded-2xl border border-line bg-card p-2 shadow-sm">
             {dueToday.slice(0, 5).map((t) => (
@@ -258,9 +260,12 @@ export default async function CommandCenter() {
         <>
           <div className="mt-5 flex items-center justify-between px-1">
             <h2 className="font-display text-base font-semibold text-bad">Overdue</h2>
-            <span className="rounded-full bg-bad/15 px-2 py-0.5 text-xs font-semibold text-bad">
-              {overdue.length}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-bad/15 px-2 py-0.5 text-xs font-semibold text-bad">
+                {overdue.length}
+              </span>
+              <ClearAllButton count={overdue.length} />
+            </div>
           </div>
           <div className="mt-2 rounded-2xl border border-bad/20 bg-card p-2 shadow-sm">
             {overdue.slice(0, 3).map((t) => (
@@ -283,6 +288,7 @@ export default async function CommandCenter() {
       {/* NCO/JCO/Owner: team breakdown */}
       {isLeader && coachStats.length > 0 && (
         <>
+          <div id="team-overview" />
           <SectionHeader>Team Overview</SectionHeader>
           <div className="space-y-2">
             {coachStats.slice(0, 6).map((c) => (
@@ -299,7 +305,7 @@ export default async function CommandCenter() {
                     <span className="rounded-full bg-warn/15 px-2 py-0.5 text-warn">{c.dueTodayCount} today</span>
                   )}
                   {c.overdueCount === 0 && c.dueTodayCount === 0 && (
-                    <span className="rounded-full bg-good/15 px-2 py-0.5 text-good">Clear</span>
+                    <span className="rounded-full bg-good/15 px-2 py-0.5 text-good">✓ All clear</span>
                   )}
                 </div>
               </div>
