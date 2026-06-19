@@ -1,0 +1,48 @@
+name: CI
+
+# Smoke gate: type-check + lint + production build on every push and PR to main.
+# Vercel deploys main on its own; this is the source-of-truth check that the
+# code compiles and builds before it ships.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run typecheck
+
+      # Informational only — pre-existing lint issues don't block deploys
+      # (Vercel's build doesn't enforce them). Flip continue-on-error to false
+      # once the lint backlog is cleared to make lint a hard gate.
+      - name: Lint (informational)
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Production build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+          # Public placeholders so `next build` never fails on missing env.
+          # Real values live in Vercel; these are not secrets.
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key

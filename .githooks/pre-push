@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+# Smoke gate: block the push if type-check, lint, or build fails.
+# This is what keeps broken code from ever leaving your machine.
+
+echo "pre-push: running verify gate (typecheck + lint + build)..."
+npm run verify
+status=$?
+if [ $status -ne 0 ]; then
+  echo ""
+  echo "pre-push: BLOCKED — verify failed. Fix the errors above, then push again."
+  echo "  (Emergency override, use sparingly: git push --no-verify)"
+  exit 1
+fi
+echo "pre-push: verify passed. Pushing."
+exit 0

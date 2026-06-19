@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+# Auto-fix the safe stuff (ESLint --fix) on staged JS/TS files, then re-stage.
+# Never blocks a commit; only tidies. The real gate runs on pre-push.
+
+files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx|js|jsx|mjs)$' || true)
+[ -z "$files" ] && exit 0
+
+echo "pre-commit: auto-fixing lint on staged files..."
+echo "$files" | xargs npx eslint --fix
+echo "$files" | xargs git add
+exit 0
