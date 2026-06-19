@@ -31,12 +31,8 @@ jobs:
       - name: Type-check
         run: npm run typecheck
 
-      # Informational only — pre-existing lint issues don't block deploys
-      # (Vercel's build doesn't enforce them). Flip continue-on-error to false
-      # once the lint backlog is cleared to make lint a hard gate.
-      - name: Lint (informational)
+      - name: Lint
         run: npm run lint
-        continue-on-error: true
 
       - name: Production build
         run: npm run build

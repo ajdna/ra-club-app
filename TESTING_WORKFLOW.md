@@ -16,23 +16,24 @@ babysitting.
 One command checks everything:
 
 ```bash
-npm run verify        # = typecheck + production build
+npm run verify        # = typecheck + lint + production build
 ```
-
-The gate mirrors exactly what makes a Vercel deploy succeed or fail:
 
 - **typecheck** (`tsc --noEmit`) — catches the type errors that caused the earlier
   Vercel ERROR deployments.
+- **lint** (`eslint`) — fails on errors; warnings are allowed through.
 - **build** (`next build`) — catches anything that breaks the production bundle.
 
-If `verify` passes, the app compiles and builds across **all** feature files at once.
+If `verify` passes, the app type-checks, lints clean, and builds across **all**
+feature files at once.
 
-**Lint is intentionally not part of the hard gate.** ESLint runs in two places —
-auto-fix on commit (pre-commit hook) and as an *informational* step in CI — but it
-does not block pushes or deploys, because the codebase has pre-existing lint
-findings (mostly strict React-hooks rules) that don't affect the build. Clear that
-backlog when you want, then flip `continue-on-error` to `false` in `ci.yml` and add
-`&& npm run lint` back into `verify` to make lint a hard gate too.
+**Note on lint severity.** The React 19 compiler rule
+`react-hooks/set-state-in-effect` is set to **warn** (see `eslint.config.mjs`),
+because several components deliberately set state in an effect to read browser
+APIs / the DOM on mount — moving that into a lazy state initializer would run
+during SSR and cause hydration mismatches. Those show as warnings (visible, not
+blocking). Genuine issues (`no-explicit-any`, `no-html-link-for-pages`,
+`react-hooks/purity`, etc.) remain hard errors.
 
 ## How a change flows (seamless path)
 
@@ -66,7 +67,7 @@ confident wrong answers.
    "typecheck": "tsc --noEmit",
    "lint": "eslint",
    "lint:fix": "eslint --fix",
-   "verify": "npm run typecheck && npm run build",
+   "verify": "npm run typecheck && npm run lint && npm run build",
    ```
 
    (`lint` already exists — keep one copy.)

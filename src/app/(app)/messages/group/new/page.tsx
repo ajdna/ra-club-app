@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { NewGroupForm } from "./NewGroupForm";
@@ -24,12 +25,12 @@ export default async function NewGroupPage() {
   return (
     <div className="flex h-dvh flex-col bg-cream">
       <header className="flex items-center gap-3 border-b border-line bg-card px-4 py-3 shadow-sm">
-        <a href="/messages" className="text-sage-d">
+        <Link href="/messages" className="text-sage-d">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
             strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
             <path d="M19 12H5M12 5l-7 7 7 7" />
           </svg>
-        </a>
+        </Link>
         <p className="font-semibold text-ink">New Group</p>
       </header>
       <NewGroupForm members={members} />

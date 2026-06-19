@@ -21,7 +21,9 @@ interface Props {
 
 export function InactivityTimer({ timeoutMinutes, warnMinutes }: Props) {
   const router = useRouter();
-  const lastActivityRef = useRef<number>(Date.now());
+  // Init to 0 (pure) and stamp the real time on mount in the listener effect
+  // below — calling Date.now() during render is impure (react-hooks/purity).
+  const lastActivityRef = useRef<number>(0);
   const [showWarning, setShowWarning] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(0);
 
@@ -42,6 +44,7 @@ export function InactivityTimer({ timeoutMinutes, warnMinutes }: Props) {
 
   // Register activity listeners
   useEffect(() => {
+    lastActivityRef.current = Date.now(); // stamp on mount (ref initialised to 0)
     const EVENTS = ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "click"] as const;
     EVENTS.forEach((evt) => window.addEventListener(evt, resetActivity, { passive: true }));
     return () => EVENTS.forEach((evt) => window.removeEventListener(evt, resetActivity));

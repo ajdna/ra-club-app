@@ -19,6 +19,9 @@ export async function markTaskDone(
               status: "done",
               completed_at: new Date().toISOString(),
               ...(note ? { completion_note: note } : {}),
+        // completion_note exists in the DB but is missing from the generated
+        // Supabase types — run `npm run gen:types` to drop this cast.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any)
       .eq("id", taskId)
       .eq("coach_id", me.id);
