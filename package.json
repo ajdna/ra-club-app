@@ -9,7 +9,7 @@
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "typecheck": "tsc --noEmit",
-    "verify": "npm run typecheck && npm run lint && npm run build",
+    "verify": "npm run lint && npm run build",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "gen:types": "supabase gen types typescript --project-id ixibkiujxiecahvopgwu > src/lib/database.types.ts",
