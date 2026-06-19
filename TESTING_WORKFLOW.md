@@ -132,10 +132,33 @@ TEST_EMAIL=test@example.com
 TEST_PASSWORD=your-test-password
 ```
 
-Then `npm run test:e2e` runs the full set. To run the logged-in tests in CI too,
-add `TEST_EMAIL` and `TEST_PASSWORD` as GitHub repository secrets and reference them
-in the `e2e` job. To point tests at the live site instead of a local server:
-`BASE_URL=https://your-app.vercel.app npm run test:e2e`.
+Then `npm run test:e2e` runs the full set. To point tests at the live site instead
+of a local server: `BASE_URL=https://your-app.vercel.app npm run test:e2e`.
+
+### Automatic runs (GitHub Actions)
+
+Two layers run on their own, in the cloud, with no effort from you:
+
+1. **On every push** (`.github/workflows/ci.yml`) — build check + the public
+   browser tests.
+2. **On a daily timer + on demand** (`.github/workflows/e2e-scheduled.yml`) — the
+   **full** suite, including the logged-in flows, run against the **live site**.
+   This is the "always watching production" check.
+
+One-time setup so the scheduled run can log in — add two **repository secrets** in
+GitHub → Settings → Secrets and variables → Actions → New repository secret:
+
+| Secret | Value |
+|--------|-------|
+| `TEST_EMAIL` | `e2e-bot@rubyankur.test` |
+| `TEST_PASSWORD` | the test account password |
+
+If the live URL differs, add a repository **variable** `E2E_BASE_URL`. You can also
+trigger the scheduled suite anytime from the GitHub **Actions** tab → "E2E
+(scheduled …)" → Run workflow.
+
+> The test account is a real login in Supabase. Keep its password only in
+> `.env.test` (local) and the GitHub secret (CI) — never in committed code.
 
 ## Per-feature QA checklist (manual smoke pass)
 

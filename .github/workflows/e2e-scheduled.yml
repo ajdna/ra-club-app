@@ -1,0 +1,46 @@
+name: E2E (scheduled — full suite vs production)
+
+# Runs the complete browser test suite (public + logged-in) against the LIVE site
+# on a timer and on demand. Independent of pushing code — this is the "always
+# watching" check that tells you if production breaks.
+
+on:
+  schedule:
+    - cron: "30 0 * * *" # daily at 06:00 IST (00:30 UTC)
+  workflow_dispatch: {} # lets you trigger it manually from the Actions tab
+
+jobs:
+  e2e-prod:
+    runs-on: ubuntu-latest
+    env:
+      # The live site to test. Override by setting a repo variable E2E_BASE_URL.
+      BASE_URL: ${{ vars.E2E_BASE_URL || 'https://ra-club-app-git-main-ra-club-s-projects.vercel.app' }}
+      # Logged-in tests run only if these secrets are set (otherwise they skip).
+      TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
+      TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      # No build/server needed — BASE_URL points at the deployed site, so
+      # Playwright tests the real production app directly.
+      - name: Run full browser suite against production
+        run: npx playwright test
+
+      - name: Upload report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
