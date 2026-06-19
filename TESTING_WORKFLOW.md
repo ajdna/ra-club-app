@@ -97,6 +97,46 @@ That's it. From then on the loop runs itself.
 
 No manual deploy step. No "did I break prod?" — broken code can't get past the push.
 
+## Automated feature tests (Playwright)
+
+Browser tests that actually open the app and click through it — the layer that
+proves features *work*, not just that the code builds.
+
+First-time install (run once, on your machine):
+
+```bash
+npm install
+npx playwright install
+```
+
+Run them:
+
+```bash
+npm run test:e2e        # headless, all tests
+npm run test:e2e:ui     # opens a visual runner you can watch click through the app
+```
+
+Two groups:
+
+- **`e2e/public.spec.ts`** — no login needed (login screen renders, register and
+  reset-password pages load). These run automatically in CI on every push.
+- **`e2e/authed.spec.ts`** — logged-in flows (redirect when logged out, log in,
+  members page, messages page). These are **skipped** until you provide a test
+  account, so they never touch real club data.
+
+To switch on the logged-in tests, copy `.env.test.example` to `.env.test` and fill
+in a **dedicated test account** (create one in Supabase → Authentication → Users):
+
+```
+TEST_EMAIL=test@example.com
+TEST_PASSWORD=your-test-password
+```
+
+Then `npm run test:e2e` runs the full set. To run the logged-in tests in CI too,
+add `TEST_EMAIL` and `TEST_PASSWORD` as GitHub repository secrets and reference them
+in the `e2e` job. To point tests at the live site instead of a local server:
+`BASE_URL=https://your-app.vercel.app npm run test:e2e`.
+
 ## Per-feature QA checklist (manual smoke pass)
 
 The automated gate proves the app **builds**. This list is the human pass to prove
