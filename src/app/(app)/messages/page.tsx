@@ -31,118 +31,98 @@ export default async function MessagesPage() {
   const groups = threads.filter((t) => t.type === "group");
   const directs = threads.filter((t) => t.type === "direct");
 
-  // Anyone with a downline can broadcast; only members cannot
   const canBroadcast = me.role !== "member" && me.role !== "guest";
 
   return (
     <main className="px-4 pb-24 pt-5">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="font-display text-2xl font-semibold text-emerald">Messages</h1>
-        <div className="flex gap-2">
-          {canBroadcast && (
-            <Link
-              href="/messages/broadcast"
-              className="rounded-xl bg-emerald/10 px-3 py-1.5 text-sm font-semibold text-emerald"
-            >
-              📢 Broadcast
-            </Link>
-          )}
-          {canBroadcast && (
-            <Link
-              href="/messages/group/new"
-              className="rounded-xl bg-emerald/10 px-3 py-1.5 text-sm font-semibold text-emerald"
-            >
-              👥 Group
-            </Link>
-          )}
-          <Link
-            href="/messages/new"
-            className="rounded-xl bg-terra px-3 py-1.5 text-sm font-semibold text-white"
-          >
-            + New
+      <header className="mb-4 flex items-end justify-between px-1">
+        <h1 className="font-display text-[26px] font-medium tracking-tight text-ink">Messages</h1>
+        <Link
+          href="/messages/new"
+          aria-label="New message"
+          className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-emerald text-white shadow-[0_8px_18px_var(--emerald-soft)] transition hover:bg-emerald-2"
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+        </Link>
+      </header>
+
+      {canBroadcast && (
+        <div className="mb-4 flex gap-2">
+          <Link href="/messages/broadcast" className="flex flex-1 items-center justify-center gap-2 rounded-[14px] border border-line bg-card py-2.5 text-[13px] font-semibold text-ink transition hover:border-emerald/40">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 11v2a1 1 0 0 0 1 1h3l4 4V6L7 10H4a1 1 0 0 0-1 1ZM16 8a5 5 0 0 1 0 8" /></svg>
+            Broadcast
+          </Link>
+          <Link href="/messages/group/new" className="flex flex-1 items-center justify-center gap-2 rounded-[14px] border border-line bg-card py-2.5 text-[13px] font-semibold text-ink transition hover:border-emerald/40">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3" /><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.2a3 3 0 0 1 0 5.6M18 19a5.5 5.5 0 0 0-2-4.3" /></svg>
+            Group
           </Link>
         </div>
-      </div>
+      )}
 
       <div className="mb-4">
         <PushSubscribeButton />
       </div>
 
       {threads.length === 0 && (
-        <div className="mt-16 text-center text-ink/50">
+        <div className="mt-16 text-center text-ink-2">
           <div className="text-4xl">💬</div>
-          <p className="mt-3 font-semibold">Koi message nahi abhi</p>
-          <p className="mt-1 text-sm">New tap karke baat shuru karein</p>
+          <p className="mt-3 font-semibold text-ink">Koi message nahi abhi</p>
+          <p className="mt-1 text-sm">+ tap karke baat shuru karein</p>
         </div>
       )}
 
-      {/* Broadcasts */}
       {broadcasts.length > 0 && (
-        <section className="mb-5">
-          <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-ink/50">
-            📢 Team Broadcasts
-          </p>
-          <div className="space-y-2">
-            {broadcasts.map((t) => (
-              <ThreadRow key={t.id} thread={t} />
-            ))}
-          </div>
-        </section>
+        <Section title="Broadcasts">
+          {broadcasts.map((t) => <ThreadRow key={t.id} thread={t} />)}
+        </Section>
       )}
-
-      {/* Groups */}
       {groups.length > 0 && (
-        <section className="mb-5">
-          <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-ink/50">
-            👥 Group Chats
-          </p>
-          <div className="space-y-2">
-            {groups.map((t) => (
-              <ThreadRow key={t.id} thread={t} />
-            ))}
-          </div>
-        </section>
+        <Section title="Groups">
+          {groups.map((t) => <ThreadRow key={t.id} thread={t} />)}
+        </Section>
       )}
-
-      {/* Direct */}
       {directs.length > 0 && (
-        <section>
-          <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-ink/50">
-            💬 Direct Messages
-          </p>
-          <div className="space-y-2">
-            {directs.map((t) => (
-              <ThreadRow key={t.id} thread={t} />
-            ))}
-          </div>
-        </section>
+        <Section title="Direct">
+          {directs.map((t) => <ThreadRow key={t.id} thread={t} />)}
+        </Section>
       )}
     </main>
   );
 }
 
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="mb-5">
+      <p className="mb-2.5 px-1 text-[12px] font-semibold uppercase tracking-[0.14em] text-sage-d">{title}</p>
+      <div className="flex flex-col gap-2.5">{children}</div>
+    </section>
+  );
+}
+
 function ThreadRow({ thread }: { thread: Awaited<ReturnType<typeof getThreads>>[number] }) {
   const hasUnread = thread.unread > 0;
+  const av =
+    thread.type === "broadcast" ? "bg-terra-soft text-terra"
+    : thread.type === "group" ? "bg-emerald-soft text-emerald"
+    : "bg-sage/15 text-sage-d";
   return (
     <Link
       href={`/messages/${thread.id}`}
-      className={`flex items-center gap-3 rounded-2xl border px-3 py-3 shadow-sm transition ${
-        hasUnread ? "border-emerald/30 bg-emerald/5" : "border-line bg-card hover:bg-cream-2"
+      className={`flex items-center gap-3 rounded-[16px] border p-3.5 transition ${
+        hasUnread ? "border-emerald/40 bg-emerald-soft" : "border-line bg-card hover:border-emerald/40"
       }`}
     >
-      <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-full text-sm font-bold text-white ${
-        thread.type === "broadcast" ? "bg-terra" : thread.type === "group" ? "bg-blue-500" : "bg-sage-d"
-      }`}>
+      <span className={`grid h-[46px] w-[46px] shrink-0 place-items-center rounded-full text-[16px] font-semibold ${av}`}>
         {thread.type === "broadcast" ? "📢" : thread.type === "group" ? "👥" : initials(thread.otherName)}
       </span>
       <div className="min-w-0 flex-1">
-        <div className="flex items-baseline justify-between gap-1">
-          <span className={`truncate text-sm font-semibold ${hasUnread ? "text-emerald" : "text-ink"}`}>
+        <div className="flex items-baseline justify-between gap-2">
+          <span className={`truncate text-[15px] font-semibold ${hasUnread ? "text-emerald" : "text-ink"}`}>
             {thread.otherName}
           </span>
-          <span className="shrink-0 text-[11px] text-ink/40">{timeAgo(thread.lastAt)}</span>
+          <span className="shrink-0 text-[11px] font-medium text-ink-3">{timeAgo(thread.lastAt)}</span>
         </div>
-        <p className="truncate text-xs text-ink/60">{thread.lastMessage}</p>
+        <p className="mt-0.5 truncate text-[13px] text-ink-2">{thread.lastMessage}</p>
       </div>
       {hasUnread && (
         <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-emerald px-1 text-[11px] font-bold text-white">

@@ -11,13 +11,17 @@ export const dynamic = "force-dynamic";
 const ROLE_LABEL: Record<string, string> = {
   upline: "Upline (read-only)",
   club_owner: "Club Owner",
-  nco: "NCO -- Senior Club Operator",
-  jco: "JCO -- Junior Club Operator",
+  nco: "NCO — Senior Club Operator",
+  jco: "JCO — Junior Club Operator",
   coach: "Coach",
   member: "Member",
   privilege: "Privilege Member",
   guest: "Guest",
 };
+
+function initials(name: string) {
+  return name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+}
 
 export default async function ProfilePage() {
   const me = await getCurrentUser();
@@ -25,8 +29,8 @@ export default async function ProfilePage() {
   if (me === "unlinked") {
     return (
       <main className="px-5 py-16 text-center">
-        <h1 className="font-display text-2xl font-semibold text-emerald">Profile</h1>
-        <p className="mt-3 text-ink/60">Account not linked yet.</p>
+        <h1 className="font-display text-2xl font-medium text-ink">Profile</h1>
+        <p className="mt-3 text-ink-2">Account not linked yet.</p>
         <div className="mt-6 flex justify-center"><SignOutButton /></div>
       </main>
     );
@@ -41,24 +45,26 @@ export default async function ProfilePage() {
     .maybeSingle();
 
   return (
-    <main className="px-5 py-10 pb-8">
-      <h1 className="font-display text-2xl font-semibold text-emerald">Profile</h1>
+    <main className="px-4 pb-8 pt-5">
+      <h1 className="mb-4 px-1 font-display text-[26px] font-medium tracking-tight text-ink">Profile</h1>
 
       {/* Identity card */}
-      <div className="mt-6 rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <div className="rounded-[18px] border border-line bg-card p-5">
         <div className="flex items-center gap-4">
-          <span className="grid h-14 w-14 place-items-center rounded-full bg-terra text-lg font-semibold text-white">
-            {me.name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase()}
+          <span className="grid h-16 w-16 place-items-center rounded-full bg-emerald text-xl font-semibold text-white">
+            {initials(me.name)}
           </span>
-          <div>
-            <div className="font-display text-lg font-semibold text-ink">{me.name}</div>
-            <div className="text-sm text-sage-d">{ROLE_LABEL[me.role] ?? me.role}</div>
+          <div className="min-w-0">
+            <div className="truncate font-display text-[20px] font-medium text-ink">{me.name}</div>
+            <span className="mt-1 inline-flex items-center rounded-full bg-emerald-soft px-2.5 py-0.5 text-[12px] font-semibold text-emerald">
+              {ROLE_LABEL[me.role] ?? me.role}
+            </span>
           </div>
         </div>
       </div>
 
       {/* Editable personal details */}
-      <h2 className="font-display mt-7 mb-3 text-base font-semibold text-emerald">
+      <h2 className="mb-2.5 mt-6 px-1 text-[12px] font-semibold uppercase tracking-[0.14em] text-sage-d">
         Personal details
       </h2>
       <ProfileEditForm
@@ -75,19 +81,22 @@ export default async function ProfilePage() {
       {me.role === "club_owner" && (
         <Link
           href="/admin"
-          className="mt-4 flex items-center justify-between rounded-2xl border border-line bg-card p-4 shadow-sm transition hover:bg-cream-2"
+          className="mt-4 flex items-center justify-between rounded-[16px] border border-line bg-card p-4 transition hover:border-emerald/40"
         >
           <span className="font-semibold text-ink">Admin Console</span>
-          <span className="text-sage-d">Rules Engine + Users -&gt;</span>
+          <span className="flex items-center gap-1 text-[13px] font-semibold text-emerald">
+            Rules &amp; Users
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+          </span>
         </Link>
       )}
 
       {/* Appearance */}
-      <div className="mt-6 rounded-2xl border border-line bg-card p-4 shadow-sm">
+      <div className="mt-4 rounded-[16px] border border-line bg-card p-4">
         <div className="flex items-center justify-between">
           <div>
             <div className="font-semibold text-ink">Appearance</div>
-            <div className="text-sm text-ink/50">Light / Dark mode</div>
+            <div className="text-[13px] text-ink-2">Light / Dark mode</div>
           </div>
           <DarkModeToggle />
         </div>
