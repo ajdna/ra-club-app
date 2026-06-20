@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/set-state-in-effect -- intentional: syncs theme from DOM on mount (SSR-safe) */
+
 import { useEffect, useState } from "react";
 
 export function DarkModeToggle() {

@@ -13,16 +13,6 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
-  {
-    rules: {
-      // React 19 compiler rule: flags synchronous setState inside an effect.
-      // We use this deliberately to read browser APIs / DOM on mount (capability
-      // detection, theme sync, token verification) — doing it in a lazy state
-      // initializer instead would run during SSR and cause hydration mismatches.
-      // Kept as a warning so it stays visible without blocking the build.
-      "react-hooks/set-state-in-effect": "warn",
-    },
-  },
 ]);
 
 export default eslintConfig;

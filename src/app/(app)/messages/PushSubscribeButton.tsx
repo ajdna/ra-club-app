@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/set-state-in-effect -- intentional: reads browser APIs on mount (SSR-safe) */
+
 import { useEffect, useState, useTransition } from "react";
 import { savePushSubscription, removePushSubscription } from "./actions";
 
