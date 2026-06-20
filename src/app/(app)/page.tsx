@@ -58,7 +58,7 @@ export default async function CommandCenter() {
 
   // ── MEMBER HOME ────────────────────────────────────────────────────────────
   if (me.role === "member") {
-    const [memberRes, weightRes, attendanceRes, tasksRes] = await Promise.all([
+    const [memberRes, , attendanceRes, tasksRes] = await Promise.all([
       supabase.from("members").select("membership_type, stage, current_weight, ideal_weight").eq("user_id", me.id).maybeSingle(),
       supabase.from("weight_logs").select("weight, logged_at").eq("member_id", me.id).order("logged_at", { ascending: false }).limit(1).maybeSingle(),
       supabase.from("attendance").select("date, present").eq("member_id", me.id).order("date", { ascending: false }).limit(90),
@@ -73,14 +73,12 @@ export default async function CommandCenter() {
       );
       let s = 0;
       const cursor = new Date();
-      // If today doesn't have attendance yet, still allow yesterday as anchor
       for (let i = 0; i < 90; i++) {
         const d = cursor.toISOString().split("T")[0];
         if (presentDates.has(d)) {
           s++;
           cursor.setDate(cursor.getDate() - 1);
         } else if (i === 0) {
-          // Today not marked yet — try from yesterday
           cursor.setDate(cursor.getDate() - 1);
         } else {
           break;
@@ -124,15 +122,15 @@ export default async function CommandCenter() {
               <span className="text-xs text-ink/50">Stage {m.stage} / 6</span>
             </div>
             <div className="h-2.5 w-full rounded-full bg-line overflow-hidden">
-              <div className="h-2.5 rounded-full bg-gradient-to-r from-emerald to-terra" style={{ width: `${Math.round((m.stage / 6) * 100)}%` }} />
+              <div className="h-2.5 rounded-full bg-emerald" style={{ width: `${Math.round((m.stage / 6) * 100)}%` }} />
             </div>
           </div>
         )}
 
         <div className="grid grid-cols-2 gap-3 mb-5">
-          <Link href="/my-progress" className="flex items-center gap-2 rounded-2xl border border-emerald/30 bg-emerald/5 px-3 py-3">
+          <Link href="/my-progress" className="flex items-center gap-2 rounded-2xl border border-emerald/30 bg-emerald-soft px-3 py-3">
             <span className="text-xl">📊</span>
-            <div><div className="text-sm font-semibold text-emerald">My Progress</div><div className="text-xs text-ink/50">Weight & attendance</div></div>
+            <div><div className="text-sm font-semibold text-emerald">My Progress</div><div className="text-xs text-ink/50">Weight &amp; attendance</div></div>
           </Link>
           <Link href="/messages" className="flex items-center gap-2 rounded-2xl border border-line bg-card px-3 py-3">
             <span className="text-xl">💬</span>
@@ -182,7 +180,6 @@ export default async function CommandCenter() {
   const coaches = users.filter((u) => ["coach", "jco", "nco"].includes(u.role as string));
   const teamCount = coaches.length;
 
-  // Per-coach stats (for leader view)
   const coachStats = coaches.map((c) => {
     const coachTasks = tasks.filter((t) => t.coach_id === c.id);
     const coachMembers = members.filter((m) => m.coach_id === c.id);
@@ -193,109 +190,144 @@ export default async function CommandCenter() {
 
   const recentMembers = [...members].sort((a, b) => (b.join_date ?? "").localeCompare(a.join_date ?? "")).slice(0, 3);
 
+  const roleLabel =
+    me.role === "club_owner" ? "Club Owner"
+    : me.role === "nco" ? "NCO — Team Leader"
+    : me.role === "jco" ? "JCO — Area Leader"
+    : null;
+
   const stats = [
-    { n: members.length, label: "Members", tint: "text-terra-d", href: "/members" },
-    { n: dueToday.length, label: "Due today", tint: "text-emerald", href: "/followup" },
-    { n: teamCount, label: "Team", tint: "text-sage-d", href: isLeader ? "#team-overview" : undefined },
-    { n: overdue.length, label: "Overdue", tint: overdue.length ? "text-bad" : "text-good", href: "/followup" },
+    { n: members.length, label: "Members", href: "/members", icon: "users", tone: "ink" as const },
+    { n: dueToday.length, label: "Due today", href: "/followup", icon: "clock", tone: "emerald" as const },
+    { n: teamCount, label: "Team", href: isLeader ? "#team-overview" : undefined, icon: "team", tone: "ink" as const },
+    { n: overdue.length, label: "Overdue", href: "/followup", icon: "alert", tone: overdue.length ? "bad" : "good" as const },
   ];
 
   return (
-    <main className="px-4 pb-6 pt-6">
-      {/* Header */}
-      <header className="mb-5 px-1">
-        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-sage-d">{dateLabel}</p>
-        <h1 className="font-display mt-1 text-3xl font-semibold text-emerald">
-          Namaste, {me.name.split(" ")[0]} 🙏
+    <main className="px-4 pb-8 pt-5">
+      {/* greeting */}
+      <header className="mb-4 px-1">
+        <p className="text-[12.5px] font-medium text-ink-2">Namaste,</p>
+        <h1 className="font-display text-[28px] font-medium leading-tight tracking-tight text-ink">
+          {me.name}
         </h1>
-        {dmoTotal !== null && (
-          <p className="mt-1 text-sm text-ink/60">
-            DMO score: <span className="font-semibold text-terra-d">{dmoTotal}</span> · keep it up! 🌱
-          </p>
-        )}
-        {isLeader && (
-          <p className="mt-1 text-xs font-semibold text-sage-d uppercase tracking-wide">
-            {me.role === "club_owner" ? "🏆 Club Owner" : me.role === "nco" ? "⭐ NCO — Team Leader" : "🔷 JCO — Area Leader"}
-          </p>
+        {roleLabel && (
+          <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-sage-d">{roleLabel}</p>
         )}
       </header>
 
-      {/* Stat strip */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* hero — today's follow-ups */}
+      <Link
+        href="/followup"
+        className="block overflow-hidden rounded-[20px] bg-emerald p-5 text-white shadow-[0_14px_30px_var(--emerald-soft)]"
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-[12.5px] font-semibold text-white/80">Aaj ke follow-ups</span>
+          <span className={`inline-flex h-6 items-center rounded-full px-2.5 text-[11px] font-semibold ${overdue.length ? "bg-white/20 text-white" : "bg-white/15 text-white"}`}>
+            {overdue.length ? `${overdue.length} overdue` : "On track"}
+          </span>
+        </div>
+        <div className="mt-2 flex items-baseline gap-2">
+          <span className="font-display text-[52px] font-medium leading-none tracking-tight">{dueToday.length}</span>
+          <span className="text-sm font-semibold text-white/70">baaki</span>
+        </div>
+        <svg width="100%" height="42" viewBox="0 0 300 42" fill="none" preserveAspectRatio="none" className="my-3 block" aria-hidden="true">
+          <path d="M0 36 50 30 100 33 150 21 200 25 240 13 280 7 296 5 296 42 0 42Z" fill="rgba(255,255,255,.18)" />
+          <path d="M0 36 50 30 100 33 150 21 200 25 240 13 280 7 296 5" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx="293" cy="5" r="4" fill="#fff" />
+        </svg>
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-white/80">{members.length} members · {teamCount} team</span>
+          <span className="inline-flex items-center gap-1 text-[13px] font-semibold">
+            Shuru karein
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+          </span>
+        </div>
+      </Link>
+
+      {dmoTotal !== null && (
+        <p className="mt-3 px-1 text-sm text-ink-2">
+          DMO score: <span className="font-semibold text-terra-d">{dmoTotal}</span> · keep it up! 🌱
+        </p>
+      )}
+
+      {/* stat tiles */}
+      <div className="mt-4 grid grid-cols-2 gap-3">
         {stats.map((s) => {
           const tile = (
-            <div className="rounded-2xl border border-line bg-card p-4 shadow-sm transition hover:border-terra/40 hover:shadow">
-            <div className={`font-display text-3xl font-semibold ${s.tint}`}>{s.n}</div>
-            <div className="mt-0.5 text-sm text-ink/60">{s.label}</div>
+            <div className="rounded-[16px] border border-line bg-card p-4 transition hover:border-emerald/40">
+              <div className="mb-2.5 flex items-center gap-2 text-ink-2">
+                <StatIcon name={s.icon} />
+                <span className="text-[12.5px] font-semibold">{s.label}</span>
+              </div>
+              <div className={`font-display text-[30px] font-medium leading-none tracking-tight ${s.tone === "bad" ? "text-bad" : s.tone === "good" ? "text-good" : s.tone === "emerald" ? "text-emerald" : "text-ink"}`}>
+                {s.n}
+              </div>
             </div>
           );
           return s.href ? <Link key={s.label} href={s.href}>{tile}</Link> : <div key={s.label}>{tile}</div>;
         })}
       </div>
-      {/* Follow-up tasks strip */}
+
+      {/* Up next (due today) */}
       {dueToday.length > 0 && (
         <>
-          <div className="mt-5 flex items-center justify-between px-1">
-            <h2 className="font-display text-base font-semibold text-emerald">{homeTitle}</h2>
+          <div className="mt-6 mb-2.5 flex items-center justify-between px-1">
+            <h2 className="text-base font-semibold text-ink">{homeTitle}</h2>
+            <Link href="/followup" className="text-[13px] font-semibold text-emerald">Sabhi dekhein</Link>
           </div>
-          <div className="mt-2 rounded-2xl border border-line bg-card p-2 shadow-sm">
+          <div className="flex flex-col gap-2.5">
             {dueToday.slice(0, 5).map((t) => (
-              <Row
+              <TaskCard
                 key={t.id}
-                avatar={initials(nameById.get(t.member_id) ?? "?")}
-                avatarClass={avColor(t.member_id)}
-                title={nameById.get(t.member_id) ?? "Member"}
+                name={nameById.get(t.member_id) ?? "Member"}
                 sub={ACTIVITY_LABEL[t.activity] ?? t.activity}
                 href={"/members/" + t.member_id}
+                tone="due"
               />
             ))}
             {dueToday.length > 5 && (
-              <p className="px-3 py-2 text-xs text-ink/40">+{dueToday.length - 5} more</p>
+              <p className="px-1 text-xs text-ink-3">+{dueToday.length - 5} aur</p>
             )}
           </div>
         </>
       )}
 
+      {/* Overdue */}
       {overdue.length > 0 && (
         <>
-          <div className="mt-5 flex items-center justify-between px-1">
-            <h2 className="font-display text-base font-semibold text-bad">Overdue</h2>
-            <div className="flex items-center gap-2">
-              <span className="rounded-full bg-bad/15 px-2 py-0.5 text-xs font-semibold text-bad">
-                {overdue.length}
-              </span>
-              <ClearAllButton count={overdue.length} />
-            </div>
+          <div className="mt-6 mb-2.5 flex items-center justify-between px-1">
+            <h2 className="text-base font-semibold text-bad">Overdue</h2>
+            <ClearAllButton count={overdue.length} />
           </div>
-          <div className="mt-2 rounded-2xl border border-bad/20 bg-card p-2 shadow-sm">
+          <div className="flex flex-col gap-2.5">
             {overdue.slice(0, 3).map((t) => (
-              <Row
+              <TaskCard
                 key={t.id}
-                avatar={initials(nameById.get(t.member_id) ?? "?")}
-                avatarClass={avColor(t.member_id)}
-                title={nameById.get(t.member_id) ?? "Member"}
-                sub={ACTIVITY_LABEL[t.activity] ?? t.activity}
+                name={nameById.get(t.member_id) ?? "Member"}
+                sub={`${ACTIVITY_LABEL[t.activity] ?? t.activity} • overdue`}
                 href={"/members/" + t.member_id}
+                tone="overdue"
               />
             ))}
             {overdue.length > 3 && (
-              <p className="px-3 py-2 text-xs text-ink/40">+{overdue.length - 3} more</p>
+              <p className="px-1 text-xs text-ink-3">+{overdue.length - 3} aur</p>
             )}
           </div>
         </>
       )}
 
-      {/* NCO/JCO/Owner: team breakdown */}
+      {/* Team overview */}
       {isLeader && coachStats.length > 0 && (
         <>
           <div id="team-overview" />
-          <SectionHeader>Team Overview</SectionHeader>
-          <div className="space-y-2">
+          <SectionHeader>Team overview</SectionHeader>
+          <div className="space-y-2.5">
             {coachStats.slice(0, 6).map((c) => (
-              <div key={c.id} className="flex items-center justify-between rounded-2xl border border-line bg-card px-4 py-3 shadow-sm">
+              <div key={c.id} className="flex items-center justify-between rounded-[16px] border border-line bg-card px-4 py-3">
                 <div>
                   <div className="font-semibold text-ink">{c.name}</div>
-                  <div className="text-xs text-ink/50">{c.memberCount} members</div>
+                  <div className="text-xs text-ink-2">{c.memberCount} members</div>
                 </div>
                 <div className="flex gap-2 text-xs font-semibold">
                   {c.overdueCount > 0 && (
@@ -314,19 +346,18 @@ export default async function CommandCenter() {
         </>
       )}
 
-      {/* Recent members */}
+      {/* Recently joined */}
       {recentMembers.length > 0 && (
         <>
-          <SectionHeader>Recently Joined</SectionHeader>
-          <div className="rounded-2xl border border-line bg-card p-2 shadow-sm">
+          <SectionHeader>Recently joined</SectionHeader>
+          <div className="flex flex-col gap-2.5">
             {recentMembers.map((m) => (
-              <Row
+              <TaskCard
                 key={m.user_id}
-                avatar={initials(nameById.get(m.user_id) ?? "?")}
-                avatarClass={avColor(m.user_id)}
-                title={nameById.get(m.user_id) ?? "Member"}
+                name={nameById.get(m.user_id) ?? "Member"}
                 sub={membershipLabel(m.membership_type, memLabels) + " · Stage " + m.stage}
                 href={"/members/" + m.user_id}
+                tone="due"
               />
             ))}
           </div>
@@ -336,11 +367,40 @@ export default async function CommandCenter() {
   );
 }
 
+function StatIcon({ name }: { name: string }) {
+  const common = { width: 17, height: 17, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
+  if (name === "users") return (<svg {...common}><circle cx="9" cy="8" r="3.2" /><path d="M3.5 19a5.5 5.5 0 0 1 11 0" /><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6M17.5 19a5.5 5.5 0 0 0-2.3-4.5" /></svg>);
+  if (name === "clock") return (<svg {...common}><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 1.8" /></svg>);
+  if (name === "team") return (<svg {...common}><circle cx="12" cy="8" r="3.2" /><path d="M6 19a6 6 0 0 1 12 0" /></svg>);
+  return (<svg {...common}><path d="M12 4 2.5 20h19L12 4Z" /><path d="M12 10v4" /><circle cx="12" cy="17.5" r="0.6" fill="currentColor" /></svg>);
+}
+
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="font-display mt-6 mb-2 text-sm font-semibold uppercase tracking-wide text-sage-d">
+    <h2 className="mb-2.5 mt-6 text-[12px] font-semibold uppercase tracking-[0.14em] text-sage-d">
       {children}
     </h2>
+  );
+}
+
+function TaskCard({
+  name, sub, href, tone,
+}: {
+  name: string; sub: string; href: string; tone: "due" | "overdue";
+}) {
+  const av = tone === "overdue" ? "bg-terra-soft text-terra" : "bg-emerald-soft text-emerald";
+  const subColor = tone === "overdue" ? "text-bad" : "text-ink-2";
+  return (
+    <Link href={href} className="flex items-center gap-3 rounded-[16px] border border-line bg-card p-3.5 transition hover:border-emerald/40">
+      <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-[14px] text-[15px] font-semibold ${av}`}>
+        {initials(name)}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[15px] font-semibold text-ink">{name}</div>
+        <div className={`truncate text-[13px] font-medium ${subColor}`}>{sub}</div>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-ink-3" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+    </Link>
   );
 }
 

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<style>@keyframes raShimmer{0%{background-position:140% 0}100%{background-position:-40% 0}}</style>
+</helmet>
+
+<div style="width:100%;height:100%;display:flex;flex-direction:column;background:var(--bg,#f5f0e6);font-family:Manrope,system-ui,sans-serif;color:var(--ink,#1c1409);overflow:hidden;-webkit-font-smoothing:antialiased;">
+
+  <div style="height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 26px 0 30px;flex:none;">
+    <span style="font:600 15px Manrope;color:var(--ink,#1c1409);letter-spacing:.2px;">9:41</span>
+    <div style="display:flex;align-items:center;gap:6px;color:var(--ink,#1c1409);">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+      <svg width="16" height="11" viewBox="0 0 16 12" fill="none"><path d="M8 10.5 1 4.2A10 10 0 0 1 15 4.2L8 10.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-width="1.2" opacity=".5"/><rect x="2.8" y="2.8" width="14" height="6.4" rx="1.6" fill="currentColor"/><rect x="22.5" y="4" width="1.6" height="4" rx="1" fill="currentColor" opacity=".6"/></svg>
+    </div>
+  </div>
+
+  <!-- consistent post-login app bar -->
+  <div style="flex:none;height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 18px 0 16px;background:var(--card,#fffefb);border-bottom:1px solid var(--line,#e0d8c6);">
+    <div style="display:flex;align-items:center;gap:9px;">
+      <div style="width:32px;height:32px;border-radius:10px;background:var(--em,#15663b);display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 4px 12px var(--emS,rgba(21,102,59,.22));">
+        <svg width="18" height="18" viewBox="0 0 32 32" fill="none"><path d="M16 25 Q8 21 9 9 Q10 4 16 20 Z" fill="white"/><path d="M16 22 Q24 17 22 6 Q21 2 16 17 Z" fill="white"/><path d="M16 28 L16 24" stroke="white" stroke-width="2.4" stroke-linecap="round"/></svg>
+      </div>
+      <span style="font:500 20px Fraunces,serif;color:var(--ink,#1c1409);letter-spacing:-.2px;">Ruby Ankur</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:38px;height:38px;border-radius:12px;border:1px solid var(--line,#e0d8c6);background:var(--bg,#f5f0e6);display:flex;align-items:center;justify-content:center;">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--ink,#1c1409)" stroke-width="1.7"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z" stroke-linejoin="round"/><path d="M10 19a2 2 0 0 0 4 0" stroke-linecap="round"/></svg>
+      </div>
+      <div style="width:38px;height:38px;border-radius:50%;background:var(--em,#15663b);color:#fff;display:flex;align-items:center;justify-content:center;font:600 13px Manrope;">AV</div>
+    </div>
+  </div>
+
+  <!-- header -->
+  <div style="flex:none;padding:6px 22px 14px;display:flex;flex-direction:column;gap:14px;">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;">
+      <div>
+        <div style="font:500 28px Fraunces,serif;color:var(--ink,#1c1409);letter-spacing:-.4px;line-height:1;">Members</div>
+        <div style="font:600 13px Manrope;color:var(--ink2,#6b6253);margin-top:5px;">248 total • 6 aaj naye</div>
+      </div>
+      <button style="width:44px;height:44px;border:none;border-radius:14px;background:var(--em,#15663b);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 18px var(--emS,rgba(21,102,59,.10));"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+    </div>
+
+    <!-- search -->
+    <div style="height:48px;border:1px solid var(--line,#e0d8c6);border-radius:14px;background:var(--card,#fffefb);display:flex;align-items:center;padding:0 14px;gap:10px;">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--ink3,#9a9180)" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2" stroke-linecap="round"/></svg>
+      <span style="font:500 15px Manrope;color:var(--ink3,#9a9180);">Naam ya phone dhundein</span>
+    </div>
+
+    <!-- segmented -->
+    <div style="height:42px;background:var(--bg2,#ede5d4);border-radius:999px;padding:4px;display:flex;gap:4px;">
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;border-radius:999px;background:var(--card,#fffefb);font:600 13.5px Manrope;color:var(--ink,#1c1409);box-shadow:0 1px 3px rgba(0,0,0,.06);">All</div>
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;border-radius:999px;font:600 13.5px Manrope;color:var(--ink2,#6b6253);">Active</div>
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;border-radius:999px;font:600 13.5px Manrope;color:var(--ink2,#6b6253);">New</div>
+    </div>
+  </div>
+
+  <!-- LIST -->
+  <sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}">
+  <div style="flex:1;overflow-y:auto;padding:0 22px 22px;display:flex;flex-direction:column;gap:10px;">
+
+    <div style="background:var(--card,#fffefb);border:1px solid var(--line,#e0d8c6);border-radius:16px;padding:13px 14px;display:flex;align-items:center;gap:13px;">
+      <div style="width:46px;height:46px;border-radius:50%;background:var(--terraS,rgba(224,114,40,.12));color:var(--terra,#e07228);display:flex;align-items:center;justify-content:center;font:600 16px Manrope;flex:none;">PS</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font:600 15.5px Manrope;color:var(--ink,#1c1409);">Priya Sharma</div>
+        <div style="display:flex;align-items:center;gap:7px;margin-top:3px;"><span style="display:inline-flex;height:20px;align-items:center;padding:0 9px;border-radius:999px;background:var(--emS,rgba(21,102,59,.10));color:var(--em,#15663b);font:600 11px Manrope;">Active</span><span style="font:500 12.5px Manrope;color:var(--ink2,#6b6253);">Stage 3 • 12 hafte</span></div>
+      </div>
+      <div style="text-align:right;flex:none;">
+        <div style="font:500 18px Fraunces,serif;color:var(--ink,#1c1409);">72.4<span style="font:600 11px Manrope;color:var(--ink3,#9a9180);"> kg</span></div>
+        <div style="font:600 12px Manrope;color:var(--good,#2e7d4f);">↓ 2.1</div>
+      </div>
+    </div>
+
+    <div style="background:var(--card,#fffefb);border:1px solid var(--line,#e0d8c6);border-radius:16px;padding:13px 14px;display:flex;align-items:center;gap:13px;">
+      <div style="width:46px;height:46px;border-radius:50%;background:var(--emS,rgba(21,102,59,.10));color:var(--em,#15663b);display:flex;align-items:center;justify-content:center;font:600 16px Manrope;flex:none;">RK</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font:600 15.5px Manrope;color:var(--ink,#1c1409);">Rohit Kumar</div>
+        <div style="display:flex;align-items:center;gap:7px;margin-top:3px;"><span style="display:inline-flex;height:20px;align-items:center;padding:0 9px;border-radius:999px;background:var(--terraS,rgba(224,114,40,.12));color:var(--terra,#e07228);font:600 11px Manrope;">New</span><span style="font:500 12.5px Manrope;color:var(--ink2,#6b6253);">Stage 1 • 2 hafte</span></div>
+      </div>
+      <div style="text-align:right;flex:none;">
+        <div style="font:500 18px Fraunces,serif;color:var(--ink,#1c1409);">88.0<span style="font:600 11px Manrope;color:var(--ink3,#9a9180);"> kg</span></div>
+        <div style="font:600 12px Manrope;color:var(--good,#2e7d4f);">↓ 0.5</div>
+      </div>
+    </div>
+
+    <div style="background:var(--card,#fffefb);border:1px solid var(--line,#e0d8c6);border-radius:16px;padding:13px 14px;display:flex;align-items:center;gap:13px;">
+      <div style="width:46px;height:46px;border-radius:50%;background:rgba(200,154,60,.16);color:var(--gold,#c89a3c);display:flex;align-items:center;justify-content:center;font:600 16px Manrope;flex:none;">MN</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font:600 15.5px Manrope;color:var(--ink,#1c1409);">Meena Nair</div>
+        <div style="display:flex;align-items:center;gap:7px;margin-top:3px;"><span style="display:inline-flex;height:20px;align-items:center;gap:4px;padding:0 9px;border-radius:999px;background:rgba(200,154,60,.16);color:var(--gold,#c89a3c);font:600 11px Manrope;">★ Goal</span><span style="font:500 12.5px Manrope;color:var(--ink2,#6b6253);">Maintenance</span></div>
+      </div>
+      <div style="text-align:right;flex:none;">
+        <div style="font:500 18px Fraunces,serif;color:var(--ink,#1c1409);">61.0<span style="font:600 11px Manrope;color:var(--ink3,#9a9180);"> kg</span></div>
+        <div style="font:600 12px Manrope;color:var(--gold,#c89a3c);">Goal hit</div>
+      </div>
+    </div>
+
+    <div style="background:var(--card,#fffefb);border:1px solid var(--line,#e0d8c6);border-radius:16px;padding:13px 14px;display:flex;align-items:center;gap:13px;">
+      <div style="width:46px;height:46px;border-radius:50%;background:rgba(107,143,94,.18);color:var(--sage,#6b8f5e);display:flex;align-items:center;justify-content:center;font:600 16px Manrope;flex:none;">AP</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font:600 15.5px Manrope;color:var(--ink,#1c1409);">Arjun Patel</div>
+        <div style="display:flex;align-items:center;gap:7px;margin-top:3px;"><span style="display:inline-flex;height:20px;align-items:center;padding:0 9px;border-radius:999px;background:rgba(200,144,43,.18);color:var(--warn,#c8902b);font:600 11px Manrope;">Plateau</span><span style="font:500 12.5px Manrope;color:var(--ink2,#6b6253);">Stage 2 • 8 hafte</span></div>
+      </div>
+      <div style="text-align:right;flex:none;">
+        <div style="font:500 18px Fraunces,serif;color:var(--ink,#1c1409);">79.5<span style="font:600 11px Manrope;color:var(--ink3,#9a9180);"> kg</span></div>
+        <div style="font:600 12px Manrope;color:var(--warn,#c8902b);">→ 0.0</div>
+      </div>
+    </div>
+
+    <div style="background:var(--card,#fffefb);border:1px solid var(--line,#e0d8c6);border-radius:16px;padding:13px 14px;display:flex;align-items:center;gap:13px;">
+      <div style="width:46px;height:46px;border-radius:50%;background:var(--emS,rgba(21,102,59,.10));color:var(--em,#15663b);display:flex;align-items:center;justify-content:center;font:600 16px Manrope;flex:none;">SD</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font:600 15.5px Manrope;color:var(--ink,#1c1409);">Sunita Devi</div>
+        <div style="display:flex;align-items:center;gap:7px;margin-top:3px;"><span style="display:inline-flex;height:20px;align-items:center;padding:0 9px;border-radius:999px;background:var(--emS,rgba(21,102,59,.10));color:var(--em,#15663b);font:600 11px Manrope;">Active</span><span style="font:500 12.5px Manrope;color:var(--ink2,#6b6253);">Stage 4 • 20 hafte</span></div>
+      </div>
+      <div style="text-align:right;flex:none;">
+        <div style="font:500 18px Fraunces,serif;color:var(--ink,#1c1409);">65.2<span style="font:600 11px Manrope;color:var(--ink3,#9a9180);"> kg</span></div>
+        <div style="font:600 12px Manrope;color:var(--good,#2e7d4f);">↓ 1.4</div>
+      </div>
+    </div>
+
+    <div style="background:var(--card,#fffefb);border:1px solid var(--line,#e0d8c6);border-radius:16px;padding:13px 14px;display:flex;align-items:center;gap:13px;">
+      <div style="width:46px;height:46px;border-radius:50%;background:var(--terraS,rgba(224,114,40,.12));color:var(--terra,#e07228);display:flex;align-items:center;justify-content:center;font:600 16px Manrope;flex:none;">VS</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font:600 15.5px Manrope;color:var(--ink,#1c1409);">Vikram Singh</div>
+        <div style="display:flex;align-items:center;gap:7px;margin-top:3px;"><span style="display:inline-flex;height:20px;align-items:center;padding:0 9px;border-radius:999px;background:var(--terraS,rgba(224,114,40,.12));color:var(--terra,#e07228);font:600 11px Manrope;">New</span><span style="font:500 12.5px Manrope;color:var(--ink2,#6b6253);">Stage 1 • 1 hafta</span></div>
+      </div>
+      <div style="text-align:right;flex:none;">
+        <div style="font:500 18px Fraunces,serif;color:var(--ink,#1c1409);">94.3<span style="font:600 11px Manrope;color:var(--ink3,#9a9180);"> kg</span></div>
+        <div style="font:600 12px Manrope;color:var(--ink3,#9a9180);">↑ 0.3</div>
+      </div>
+    </div>
+
+  </div>
+  </sc-if>
+
+  <!-- EMPTY -->
+  <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 40px 60px;">
+    <div style="width:88px;height:88px;border-radius:28px;background:var(--emS,rgba(21,102,59,.10));display:flex;align-items:center;justify-content:center;margin-bottom:22px;">
+      <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="var(--em,#15663b)" stroke-width="1.6"><circle cx="9" cy="8" r="3.4"/><path d="M3 19c0-3 2.7-5 6-5 1 0 1.9.2 2.7.5" stroke-linecap="round"/><circle cx="17.5" cy="15.5" r="4.5"/><path d="M17.5 13.7v3.6M15.7 15.5h3.6" stroke-linecap="round"/></svg>
+    </div>
+    <div style="font:500 22px Fraunces,serif;color:var(--ink,#1c1409);margin-bottom:9px;">Abhi koi member nahi</div>
+    <div style="font:500 14.5px Manrope;color:var(--ink2,#6b6253);line-height:1.55;max-width:250px;margin-bottom:24px;">Apna pehla member add karein — naam, phone aur shuruaati weight se shuru karein.</div>
+    <button style="height:50px;padding:0 26px;border:none;border-radius:999px;background:var(--em,#15663b);color:#fff;font:600 15px Manrope;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 8px 18px var(--emS,rgba(21,102,59,.10));"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Member add karein</button>
+  </div>
+  </sc-if>
+
+  <!-- LOADING -->
+  <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;overflow:hidden;padding:0 22px 22px;display:flex;flex-direction:column;gap:10px;">
+    <div style="background:var(--card,#fffefb);border:1px solid var(--line,#e0d8c6);border-radius:16px;padding:13px 14px;display:flex;align-items:center;gap:13px;"><div style="width:46px;height:46px;border-radius:50%;background:linear-gradient(90deg,var(--bg2,#ede5d4) 25%,var(--line,#e0d8c6) 45%,var(--bg2,#ede5d4) 65%);background-size:220% 100%;animation:raShimmer 1.4s linear infinite;flex:none;"></div><div style="flex:1;display:flex;flex-direction:column;gap:8px;"><div style="width:55%;height:13px;border-radius:7px;background:linear-gradient(90deg,var(--bg2,#ede5d4) 25%,var(--line,#e0d8c6) 45%,var(--bg2,#ede5d4) 65%);background-size:220% 100%;animation:raShimmer 1.4s linear infinite;"></div><div style="width:78%;height:11px;border-radius:7px;background:linear-gradient(90deg,var(--bg2,#ede5d4) 25%,var(--line,#e0d8c6) 45%,var(--bg2,#ede5d4) 65%);background-size:220% 100%;animation:raShimmer 1.4s linear infinite;"></div></div><div style="width:42px;height:26px;border-radius:8px;background:linear-gradient(90deg,var(--bg2,#ede5d4) 25%,var(--line,#e0d8c6) 45%,var(--bg2,#ede5d4) 65%);background-size:220% 100%;animation:raShimmer 1.4s linear infinite;"></div></div>
+    <div style="background:var(--card,#fffefb);border:1px solid var(--line,#e0d8c6);border-radius:16px;padding:13px 14px;display:flex;align-items:center;gap:13px;"><div style="width:46px;height:46px;border-radius:50%;background:linear-gradient(90deg,var(--bg2,#ede5d4) 25%,var(--line,#e0d8c6) 45%,var(--bg2,#ede5d4) 65%);background-size:220% 100%;animation:raShimmer 1.4s linear infinite;flex:none;"></div><div style="flex:1;display:flex;flex-direction:column;gap:8px;"><div style="width:48%;height:13px;border-radius:7px;background:linear-gradient(90deg,var(--bg2,#ede5d4) 25%,var(--line,#e0d8c6) 45%,var(--bg2,#ede5d4) 65%);background-size:220% 100%;animation:raShimmer 1.4s linear infinite;"></div><div style="width:70%;height:11px;border-radius:7px;background:linear-gradient(90deg,var(--bg2,#ede5d4) 25%,var(--line,#e0d8c6) 45%,var(--bg2,#ede5d4) 65%);background-size:220% 100%;animation:raShimmer 1.4s linear infinite;"></div></div><div style="width:42px;height:26px;border-radius:8px;background:linear-gradient(90deg,var(--bg2,#ede5d4) 25%,var(--line,#e0d8c6) 45%,var(--bg2,#ede5d4) 65%);background-size:220% 100%;animation:raShimmer 1.4s linear infinite;"></div></div>
+    <div style="background:var(--card,#fffefb);border:1px solid var(--line,#e0d8c6);border-radius:16px;padding:13px 14px;display:flex;align-items:center;gap:13px;"><div style="width:46px;height:46px;border-radius:50%;background:linear-gradient(90deg,var(--bg2,#ede5d4) 25%,var(--line,#e0d8c6) 45%,var(--bg2,#ede5d4) 65%);background-size:220% 100%;animation:raShimmer 1.4s linear infinite;flex:none;"></div><div style="flex:1;display:flex;flex-direction:column;gap:8px;"><div style="width:60%;height:13px;border-radius:7px;background:linear-gradient(90deg,var(--bg2,#ede5d4) 25%,var(--line,#e0d8c6) 45%,var(--bg2,#ede5d4) 65%);background-size:220% 100%;animation:raShimmer 1.4s linear infinite;"></div><div style="width:74%;height:11px;border-radius:7px;background:linear-gradient(90deg,var(--bg2,#ede5d4) 25%,var(--line,#e0d8c6) 45%,var(--bg2,#ede5d4) 65%);background-size:220% 100%;animation:raShimmer 1.4s linear infinite;"></div></div><div style="width:42px;height:26px;border-radius:8px;background:linear-gradient(90deg,var(--bg2,#ede5d4) 25%,var(--line,#e0d8c6) 45%,var(--bg2,#ede5d4) 65%);background-size:220% 100%;animation:raShimmer 1.4s linear infinite;"></div></div>
+    <div style="background:var(--card,#fffefb);border:1px solid var(--line,#e0d8c6);border-radius:16px;padding:13px 14px;display:flex;align-items:center;gap:13px;opacity:.6;"><div style="width:46px;height:46px;border-radius:50%;background:linear-gradient(90deg,var(--bg2,#ede5d4) 25%,var(--line,#e0d8c6) 45%,var(--bg2,#ede5d4) 65%);background-size:220% 100%;animation:raShimmer 1.4s linear infinite;flex:none;"></div><div style="flex:1;display:flex;flex-direction:column;gap:8px;"><div style="width:52%;height:13px;border-radius:7px;background:linear-gradient(90deg,var(--bg2,#ede5d4) 25%,var(--line,#e0d8c6) 45%,var(--bg2,#ede5d4) 65%);background-size:220% 100%;animation:raShimmer 1.4s linear infinite;"></div><div style="width:66%;height:11px;border-radius:7px;background:linear-gradient(90deg,var(--bg2,#ede5d4) 25%,var(--line,#e0d8c6) 45%,var(--bg2,#ede5d4) 65%);background-size:220% 100%;animation:raShimmer 1.4s linear infinite;"></div></div></div>
+  </div>
+  </sc-if>
+
+  <!-- tab bar -->
+  <div style="flex:none;height:74px;display:flex;border-top:1px solid var(--line,#e0d8c6);background:var(--card,#fffefb);padding-bottom:12px;">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--ink3,#9a9180);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" stroke-linejoin="round"/></svg><span style="font:600 11px Manrope;">Home</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--em,#15663b);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c0-2.8 2.5-4.6 5.5-4.6s5.5 1.8 5.5 4.6"/><path d="M16 5.4a2.9 2.9 0 0 1 0 5.4M16.6 14.6c2.2.4 3.9 1.8 3.9 4.4" stroke-linecap="round"/></svg><span style="font:600 11px Manrope;">Members</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--ink3,#9a9180);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 14.5A2.5 2.5 0 0 1 17.5 17H8l-4 3.2V6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5z" stroke-linejoin="round"/></svg><span style="font:600 11px Manrope;">Chat</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--ink3,#9a9180);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span style="font:600 11px Manrope;">More</span></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:820},&quot;state&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;list&quot;,&quot;empty&quot;,&quot;loading&quot;],&quot;default&quot;:&quot;list&quot;,&quot;tsType&quot;:&quot;'list'|'empty'|'loading'&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const s = this.props.state || 'list';
+    return { isList: s === 'list', isEmpty: s === 'empty', isLoading: s === 'loading' };
+  }
+}
+</script>
+</body>
+</html>

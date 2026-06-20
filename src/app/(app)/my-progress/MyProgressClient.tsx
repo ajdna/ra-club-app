@@ -35,6 +35,18 @@ function WeightChart({ weights }: { weights: WeightLog[] }) {
     const w = canvas.offsetWidth;
     const h = canvas.offsetHeight;
     const pad = { top: 12, right: 16, bottom: 28, left: 36 };
+
+    // Theme-aware colors from CSS tokens (light/dark).
+    const cs = getComputedStyle(document.documentElement);
+    const ACCENT = cs.getPropertyValue("--terra").trim() || "#e07228";
+    const LABEL = cs.getPropertyValue("--ink-2").trim() || "#6b6253";
+    const GRID = cs.getPropertyValue("--line").trim() || "#e0d8c6";
+    const toRGBA = (hex: string, a: number) => {
+      const hx = hex.replace("#", "");
+      const n = hx.length === 3 ? hx.split("").map((c) => c + c).join("") : hx;
+      const r = parseInt(n.slice(0, 2), 16), g = parseInt(n.slice(2, 4), 16), b = parseInt(n.slice(4, 6), 16);
+      return `rgba(${r},${g},${b},${a})`;
+    };
     const pts = [...weights].reverse();
     const vals = pts.map((p) => Number(p.weight));
     const minV = Math.min(...vals) - 2;
@@ -44,7 +56,7 @@ function WeightChart({ weights }: { weights: WeightLog[] }) {
     function yOf(v: number) { return pad.top + ((maxV - v) / (maxV - minV)) * (h - pad.top - pad.bottom); }
 
     // Grid lines
-    ctx.strokeStyle = "rgba(0,0,0,0.06)";
+    ctx.strokeStyle = GRID;
     ctx.lineWidth = 1;
     for (let i = 0; i <= 3; i++) {
       const y = pad.top + (i / 3) * (h - pad.top - pad.bottom);
@@ -53,8 +65,8 @@ function WeightChart({ weights }: { weights: WeightLog[] }) {
 
     // Fill
     const grad = ctx.createLinearGradient(0, pad.top, 0, h - pad.bottom);
-    grad.addColorStop(0, "rgba(211,84,0,0.18)");
-    grad.addColorStop(1, "rgba(211,84,0,0)");
+    grad.addColorStop(0, toRGBA(ACCENT, 0.18));
+    grad.addColorStop(1, toRGBA(ACCENT, 0));
     ctx.beginPath();
     ctx.moveTo(xOf(0), yOf(vals[0]));
     pts.forEach((_, i) => { if (i > 0) ctx.lineTo(xOf(i), yOf(vals[i])); });
@@ -66,7 +78,7 @@ function WeightChart({ weights }: { weights: WeightLog[] }) {
 
     // Line
     ctx.beginPath();
-    ctx.strokeStyle = "#d35400";
+    ctx.strokeStyle = ACCENT;
     ctx.lineWidth = 2.5;
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
@@ -81,17 +93,17 @@ function WeightChart({ weights }: { weights: WeightLog[] }) {
       const x = xOf(i), y = yOf(vals[i]);
       ctx.beginPath();
       ctx.arc(x, y, 3.5, 0, Math.PI * 2);
-      ctx.fillStyle = "#d35400";
+      ctx.fillStyle = ACCENT;
       ctx.fill();
 
-      ctx.fillStyle = "#5a4a3a";
+      ctx.fillStyle = LABEL;
       ctx.font = `bold ${10 * dpr / dpr}px sans-serif`;
       ctx.textAlign = "center";
       ctx.fillText(`${vals[i]}`, x, y - 8);
     });
 
     // X labels (dates)
-    ctx.fillStyle = "rgba(90,74,58,0.55)";
+    ctx.fillStyle = LABEL;
     ctx.font = `${9 * dpr / dpr}px sans-serif`;
     pts.forEach((p, i) => {
       const label = new Date(p.logged_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" });

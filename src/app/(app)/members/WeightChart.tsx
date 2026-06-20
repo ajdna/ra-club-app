@@ -20,6 +20,19 @@ export function WeightChart({ weights }: { weights: Point[] }) {
     const ctx = canvas.getContext("2d")!;
     ctx.scale(dpr, dpr);
 
+    // Theme-aware colors read from CSS tokens (adapts to light/dark).
+    const cs = getComputedStyle(document.documentElement);
+    const ACCENT = cs.getPropertyValue("--terra").trim() || "#e07228";
+    const LABEL = cs.getPropertyValue("--ink-2").trim() || "#6b6253";
+    const GRID = cs.getPropertyValue("--line").trim() || "#e0d8c6";
+    const CARD = cs.getPropertyValue("--card").trim() || "#fffefb";
+    const toRGBA = (hex: string, a: number) => {
+      const h = hex.replace("#", "");
+      const n = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+      const r = parseInt(n.slice(0, 2), 16), g = parseInt(n.slice(2, 4), 16), b = parseInt(n.slice(4, 6), 16);
+      return `rgba(${r},${g},${b},${a})`;
+    };
+
     const W = canvas.offsetWidth;
     const H = canvas.offsetHeight;
     const PAD = { top: 16, right: 16, bottom: 32, left: 40 };
@@ -33,13 +46,13 @@ export function WeightChart({ weights }: { weights: Point[] }) {
     const yOf = (v: number) => PAD.top + ((maxV - v) / (maxV - minV)) * (H - PAD.top - PAD.bottom);
 
     function drawGrid() {
-      ctx.strokeStyle = "rgba(0,0,0,0.05)";
+      ctx.strokeStyle = GRID;
       ctx.lineWidth = 1;
       [0, 0.25, 0.5, 0.75, 1].forEach((f) => {
         const y = PAD.top + f * (H - PAD.top - PAD.bottom);
         const v = maxV - f * (maxV - minV);
         ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(W - PAD.right, y); ctx.stroke();
-        ctx.fillStyle = "rgba(90,74,58,0.45)";
+        ctx.fillStyle = LABEL;
         ctx.font = `${10}px system-ui`;
         ctx.textAlign = "right";
         ctx.fillText(`${v.toFixed(1)}`, PAD.left - 4, y + 4);
@@ -47,7 +60,7 @@ export function WeightChart({ weights }: { weights: Point[] }) {
     }
 
     function drawXLabels() {
-      ctx.fillStyle = "rgba(90,74,58,0.5)";
+      ctx.fillStyle = LABEL;
       ctx.font = `9px system-ui`;
       pts.forEach((p, i) => {
         const label = new Date(p.logged_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
@@ -65,8 +78,8 @@ export function WeightChart({ weights }: { weights: Point[] }) {
 
       // Fill
       const grad = ctx.createLinearGradient(0, PAD.top, 0, H - PAD.bottom);
-      grad.addColorStop(0, "rgba(211,84,0,0.18)");
-      grad.addColorStop(1, "rgba(211,84,0,0)");
+      grad.addColorStop(0, toRGBA(ACCENT, 0.18));
+      grad.addColorStop(1, toRGBA(ACCENT, 0));
       ctx.beginPath();
       ctx.moveTo(xOf(0), yOf(vals[0]));
       vals.forEach((v, i) => { if (i > 0) ctx.lineTo(xOf(i), yOf(v)); });
@@ -78,7 +91,7 @@ export function WeightChart({ weights }: { weights: Point[] }) {
 
       // Line
       ctx.beginPath();
-      ctx.strokeStyle = "#d35400";
+      ctx.strokeStyle = ACCENT;
       ctx.lineWidth = 2.5;
       ctx.lineJoin = "round";
       ctx.lineCap = "round";
@@ -92,10 +105,10 @@ export function WeightChart({ weights }: { weights: Point[] }) {
       vals.forEach((v, i) => {
         const x = xOf(i), y = yOf(v);
         ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = "#d35400"; ctx.fill();
-        ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.fillStyle = ACCENT; ctx.fill();
+        ctx.strokeStyle = CARD; ctx.lineWidth = 1.5; ctx.stroke();
 
-        ctx.fillStyle = "#5a4a3a";
+        ctx.fillStyle = LABEL;
         ctx.font = `bold 10px system-ui`;
         ctx.textAlign = "center";
         ctx.fillText(`${v}`, x, y - 10);

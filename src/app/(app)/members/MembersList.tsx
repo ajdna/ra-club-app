@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { HEALTH_DOT, type Health } from "@/lib/health";
+import { type Health } from "@/lib/health";
 
 export type MemberRow = {
   id: string;
@@ -27,40 +27,57 @@ type CoachGroup = {
 
 const FILTERS: { key: "all" | Health; label: string }[] = [
   { key: "all", label: "All" },
-  { key: "green", label: "🟢 On track" },
-  { key: "yellow", label: "🟡 Watch" },
-  { key: "red", label: "🔴 Action" },
+  { key: "green", label: "On track" },
+  { key: "yellow", label: "Watch" },
+  { key: "red", label: "Action" },
 ];
 
+const HEALTH_STYLE: Record<Health, { av: string; chip: string }> = {
+  green: { av: "bg-emerald-soft text-emerald", chip: "bg-emerald-soft text-emerald" },
+  yellow: { av: "bg-warn/15 text-warn", chip: "bg-warn/15 text-warn" },
+  red: { av: "bg-bad/10 text-bad", chip: "bg-bad/10 text-bad" },
+};
+
 function initials(name: string) {
-  return name
-    .split(" ")
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  return name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 }
 
 function MemberCard({ m }: { m: MemberRow }) {
+  const s = HEALTH_STYLE[m.health];
+  const toGoal =
+    m.currentWeight != null && m.idealWeight != null
+      ? Math.round((m.currentWeight - m.idealWeight) * 10) / 10
+      : null;
   return (
     <Link
       href={`/members/${m.id}`}
-      className="flex items-center gap-3 rounded-2xl border border-line bg-card p-3 shadow-sm transition hover:bg-cream-2"
+      className="flex items-center gap-3 rounded-[16px] border border-line bg-card p-3.5 transition hover:border-emerald/40"
     >
-      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-sage-d text-sm font-semibold text-white">
+      <span className={`grid h-[46px] w-[46px] shrink-0 place-items-center rounded-full text-[16px] font-semibold ${s.av}`}>
         {initials(m.name)}
       </span>
       <div className="min-w-0 flex-1">
-        <div className="truncate font-semibold text-ink">{m.name}</div>
-        <div className="truncate text-xs text-ink/55">
-          {m.membershipLabel} · stage {m.stage}
-          {m.currentWeight ? ` · ${m.currentWeight}kg` : ""} · {m.healthLabel}
+        <div className="truncate text-[15.5px] font-semibold text-ink">{m.name}</div>
+        <div className="mt-1 flex items-center gap-2">
+          <span className={`inline-flex h-5 items-center rounded-full px-2.5 text-[11px] font-semibold ${s.chip}`}>
+            {m.healthLabel}
+          </span>
+          <span className="truncate text-[12.5px] font-medium text-ink-2">
+            {m.membershipLabel} · Stage {m.stage}
+          </span>
         </div>
       </div>
-      <span
-        aria-label={m.healthLabel}
-        className={`h-2.5 w-2.5 shrink-0 rounded-full ${HEALTH_DOT[m.health]}`}
-      />
+      <div className="shrink-0 text-right">
+        <div className="font-display text-[18px] font-medium text-ink">
+          {m.currentWeight ?? "—"}
+          {m.currentWeight != null && <span className="text-[11px] font-semibold text-ink-3"> kg</span>}
+        </div>
+        {toGoal != null && (
+          <div className={`text-[12px] font-semibold ${toGoal <= 0 ? "text-good" : "text-ink-2"}`}>
+            {toGoal <= 0 ? "Goal hit" : `${toGoal} kg left`}
+          </div>
+        )}
+      </div>
     </Link>
   );
 }
@@ -75,7 +92,6 @@ export function MembersList({
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | Health>("all");
 
-  // Filter first
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return members.filter((m) => {
@@ -85,27 +101,15 @@ export function MembersList({
     });
   }, [members, query, filter]);
 
-  // Group by coach, logged-in coach first, then alphabetically by coach name
   const groups = useMemo<CoachGroup[]>(() => {
     const map = new Map<string, CoachGroup>();
     for (const m of filtered) {
       if (!map.has(m.coachId)) {
-        map.set(m.coachId, {
-          coachId: m.coachId,
-          coachName: m.coachName,
-          isMine: m.coachId === myId,
-          members: [],
-        });
+        map.set(m.coachId, { coachId: m.coachId, coachName: m.coachName, isMine: m.coachId === myId, members: [] });
       }
       map.get(m.coachId)!.members.push(m);
     }
-
-    // Sort members within each group by name
-    for (const g of map.values()) {
-      g.members.sort((a, b) => a.name.localeCompare(b.name));
-    }
-
-    // Sort groups: mine first, then alphabetically by coach name
+    for (const g of map.values()) g.members.sort((a, b) => a.name.localeCompare(b.name));
     return Array.from(map.values()).sort((a, b) => {
       if (a.isMine && !b.isMine) return -1;
       if (!a.isMine && b.isMine) return 1;
@@ -122,18 +126,23 @@ export function MembersList({
     [members],
   );
 
-  const totalShown = filtered.length;
-
   return (
     <div>
-      <input
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search by name…"
-        className="mb-3 w-full rounded-xl border border-line bg-card px-3 py-2.5 text-ink outline-none focus:border-terra"
-      />
+      {/* search */}
+      <div className="relative mb-3">
+        <svg className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-3" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" strokeLinecap="round" />
+        </svg>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Naam dhundein"
+          className="h-12 w-full rounded-[14px] border border-line bg-card pl-11 pr-4 text-[15px] text-ink outline-none transition focus:border-emerald focus:ring-4 focus:ring-emerald/10 placeholder:text-ink-3"
+        />
+      </div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      {/* segmented filter */}
+      <div className="mb-4 flex gap-1 rounded-full bg-cream-2 p-1">
         {FILTERS.map((f) => {
           const active = filter === f.key;
           const count = f.key === "all" ? members.length : counts[f.key as Health];
@@ -142,46 +151,36 @@ export function MembersList({
               key={f.key}
               type="button"
               onClick={() => setFilter(f.key)}
-              className={`rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
-                active
-                  ? "border-terra bg-terra/10 text-terra-d"
-                  : "border-line bg-card text-sage-d"
+              className={`flex-1 rounded-full px-2 py-2 text-[13px] font-semibold transition ${
+                active ? "bg-card text-ink shadow-sm" : "text-ink-2"
               }`}
             >
-              {f.label} ({count})
+              {f.label}
+              <span className={active ? "text-ink-3" : "text-ink-3"}> {count}</span>
             </button>
           );
         })}
       </div>
 
-      {totalShown === 0 ? (
-        <p className="py-10 text-center text-sm text-ink/50">
-          Koi member nahi mila.
-        </p>
+      {filtered.length === 0 ? (
+        <p className="py-12 text-center text-sm text-ink-2">Koi member nahi mila.</p>
       ) : (
         <div className="space-y-6">
           {groups.map((g) => (
             <section key={g.coachId}>
-              {/* Coach section header */}
-              <div className="mb-2 flex items-center gap-2 px-1">
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-emerald text-xs font-bold text-white">
+              <div className="mb-2.5 flex items-center gap-2 px-1">
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-emerald text-[11px] font-bold text-white">
                   {initials(g.coachName)}
                 </span>
-                <span className="text-sm font-semibold text-emerald">
-                  {g.coachName}
-                  {g.isMine && (
-                    <span className="ml-1.5 rounded-full bg-emerald/15 px-2 py-0.5 text-xs font-semibold text-emerald">
-                      You
-                    </span>
-                  )}
-                </span>
-                <span className="ml-auto text-xs text-ink/40">
+                <span className="text-[13px] font-semibold text-ink">{g.coachName}</span>
+                {g.isMine && (
+                  <span className="rounded-full bg-emerald-soft px-2 py-0.5 text-[11px] font-semibold text-emerald">You</span>
+                )}
+                <span className="ml-auto text-[12px] font-medium text-ink-3">
                   {g.members.length} member{g.members.length !== 1 ? "s" : ""}
                 </span>
               </div>
-
-              {/* Members under this coach */}
-              <div className="space-y-2">
+              <div className="flex flex-col gap-2.5">
                 {g.members.map((m) => (
                   <MemberCard key={m.id} m={m} />
                 ))}

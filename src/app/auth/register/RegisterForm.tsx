@@ -68,10 +68,10 @@ export function RegisterForm({
       <div className="w-full max-w-sm">
         {/* Branding */}
         <div className="mb-8 text-center">
-          <h1 className="font-display text-4xl font-semibold leading-none text-emerald">
-            Ruby Ankur
+          <h1 className="font-display text-3xl font-semibold leading-tight text-emerald">
+            Ruby Nutrition
             <br />
-            <span className="text-terra">Wellness</span>
+            <span className="text-terra">Center</span>
           </h1>
           <p className="mt-3 text-sm font-semibold uppercase tracking-[0.15em] text-sage-d">
             Account banao

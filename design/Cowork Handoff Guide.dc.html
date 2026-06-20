@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+</helmet>
+
+<div style="width:100%;min-height:100vh;background:#f5f0e6;font-family:Manrope,system-ui,sans-serif;color:#1c1409;padding:48px 48px 80px;box-sizing:border-box;-webkit-font-smoothing:antialiased;">
+
+  <!-- header -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:40px;">
+    <div style="width:42px;height:42px;border-radius:13px;background:#15663b;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(21,102,59,.22);">
+      <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><path d="M16 25 Q8 21 9 9 Q10 4 16 20 Z" fill="white"/><path d="M16 22 Q24 17 22 6 Q21 2 16 17 Z" fill="white"/><path d="M16 28 L16 24" stroke="white" stroke-width="2.4" stroke-linecap="round"/></svg>
+    </div>
+    <div>
+      <div style="font:600 11px Manrope;letter-spacing:2.4px;text-transform:uppercase;color:#15663b;">Ruby Ankur Wellness</div>
+      <div style="font:500 28px Fraunces,serif;color:#1c1409;letter-spacing:-.3px;line-height:1.05;">Claude Cowork — Handoff Guide</div>
+    </div>
+  </div>
+
+  <div style="max-width:860px;display:flex;flex-direction:column;gap:32px;">
+
+    <!-- step 1 -->
+    <div style="background:#fffefb;border:1px solid #e0d8c6;border-radius:20px;padding:28px 30px;">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:#15663b;color:#fff;display:flex;align-items:center;justify-content:center;font:600 16px Manrope;flex:none;">1</div>
+        <div style="font:500 22px Fraunces,serif;color:#1c1409;">Drop the token file into globals.css</div>
+      </div>
+      <p style="font:500 15px Manrope;color:#6b6253;line-height:1.6;margin:0 0 16px 0;">Open <code style="background:#ede5d4;padding:2px 8px;border-radius:6px;font-size:13px;">handoff/globals.css</code> from this project. Copy the entire <code style="background:#ede5d4;padding:2px 8px;border-radius:6px;font-size:13px;">:root { … }</code>, <code style="background:#ede5d4;padding:2px 8px;border-radius:6px;font-size:13px;">.dark { … }</code> and <code style="background:#ede5d4;padding:2px 8px;border-radius:6px;font-size:13px;">@theme inline { … }</code> blocks. Paste them into your app's <code style="background:#ede5d4;padding:2px 8px;border-radius:6px;font-size:13px;">src/app/globals.css</code>, replacing the existing color/token section.</p>
+      <div style="background:#1c1409;border-radius:14px;padding:18px 20px;">
+        <div style="font:600 11px Manrope;color:#6b6253;letter-spacing:1.4px;margin-bottom:10px;">IN CLAUDE COWORK — tell it:</div>
+        <div style="font:500 14px ui-monospace,monospace;color:#f3ecdc;line-height:1.7;">"Replace the token/color section in <span style="color:#3fae78;">globals.css</span> with the contents of the @theme block from the handoff. Variable names are <span style="color:#3fae78;">--emerald, --terra, --cream, --card, --ink, --ink-2, --ink-3, --line, --gold, --good, --warn, --bad</span>."</div>
+      </div>
+    </div>
+
+    <!-- step 2 -->
+    <div style="background:#fffefb;border:1px solid #e0d8c6;border-radius:20px;padding:28px 30px;">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:#15663b;color:#fff;display:flex;align-items:center;justify-content:center;font:600 16px Manrope;flex:none;">2</div>
+        <div style="font:500 22px Fraunces,serif;color:#1c1409;">Install the two fonts</div>
+      </div>
+      <p style="font:500 15px Manrope;color:#6b6253;line-height:1.6;margin:0 0 16px 0;">The design uses <b style="color:#1c1409;">Fraunces</b> (display/headings) + <b style="color:#1c1409;">Manrope</b> (UI body). Add them to your Next.js layout so they're available app-wide.</p>
+      <div style="background:#1c1409;border-radius:14px;padding:18px 20px;">
+        <div style="font:600 11px Manrope;color:#6b6253;letter-spacing:1.4px;margin-bottom:10px;">IN CLAUDE COWORK — tell it:</div>
+        <div style="font:500 14px ui-monospace,monospace;color:#f3ecdc;line-height:1.7;">"In <span style="color:#3fae78;">layout.tsx</span>, import Fraunces and Manrope from next/font/google. Apply them as CSS variables <span style="color:#3fae78;">--font-display</span> and <span style="color:#font-sans">--font-sans</span> on the html tag."</div>
+      </div>
+    </div>
+
+    <!-- step 3 -->
+    <div style="background:#fffefb;border:1px solid #e0d8c6;border-radius:20px;padding:28px 30px;">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:#15663b;color:#fff;display:flex;align-items:center;justify-content:center;font:600 16px Manrope;flex:none;">3</div>
+        <div style="font:500 22px Fraunces,serif;color:#1c1409;">Show it the screen designs screen by screen</div>
+      </div>
+      <p style="font:500 15px Manrope;color:#6b6253;line-height:1.6;margin:0 0 18px 0;">Open <b style="color:#1c1409;">Ruby Ankur Wellness.dc.html</b> in this project's preview. Scroll to each screen section. Screenshot it (or share the link) and paste into Claude Cowork with the prompt below for that screen.</p>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+
+        <div style="border:1px solid #e0d8c6;border-radius:14px;overflow:hidden;">
+          <div style="background:#ede5d4;padding:10px 16px;font:600 12.5px Manrope;color:#3a342a;display:flex;align-items:center;gap:8px;"><span style="width:8px;height:8px;border-radius:50%;background:#15663b;"></span>Login / Onboarding</div>
+          <div style="padding:14px 16px;font:500 13.5px Manrope;color:#6b6253;line-height:1.6;">"Redesign the login screen to match this design. Warm cream background <span style="font-family:ui-monospace,monospace;font-size:12px;color:#1c1409;">#f5f0e6</span>, white card inputs with <span style="font-family:ui-monospace,monospace;font-size:12px;color:#1c1409;">border-radius:14px</span>, emerald CTA button <span style="font-family:ui-monospace,monospace;font-size:12px;color:#1c1409;">#15663b</span>, Fraunces display heading, Manrope body. Also add the pending-approval state shown."</div>
+        </div>
+
+        <div style="border:1px solid #e0d8c6;border-radius:14px;overflow:hidden;">
+          <div style="background:#ede5d4;padding:10px 16px;font:600 12.5px Manrope;color:#3a342a;display:flex;align-items:center;gap:8px;"><span style="width:8px;height:8px;border-radius:50%;background:#15663b;"></span>App bar (all post-login screens)</div>
+          <div style="padding:14px 16px;font:500 13.5px Manrope;color:#6b6253;line-height:1.6;">"Add a consistent top app bar to every post-login page: height 54px, white background, 1px bottom border <span style="font-family:ui-monospace,monospace;font-size:12px;color:#1c1409;">#e0d8c6</span>. Left: 32px leaf logo mark (emerald) + 'Ruby Ankur' in Fraunces 20px. Right: bell icon (with terra dot badge) + avatar initials in 38px circle."</div>
+        </div>
+
+        <div style="border:1px solid #e0d8c6;border-radius:14px;overflow:hidden;">
+          <div style="background:#ede5d4;padding:10px 16px;font:600 12.5px Manrope;color:#3a342a;display:flex;align-items:center;gap:8px;"><span style="width:8px;height:8px;border-radius:50%;background:#15663b;"></span>Home Dashboard</div>
+          <div style="padding:14px 16px;font:500 13.5px Manrope;color:#6b6253;line-height:1.6;">"Redesign the home screen: greeting + coach name at top, then a full-width emerald hero card showing 'Aaj ke follow-ups' count (large Fraunces numeral) + a small area/line sparkline chart below the number, then a 2×2 stat grid (Members, Due today, Team, Overdue), then an 'Up next' list with member rows."</div>
+        </div>
+
+        <div style="border:1px solid #e0d8c6;border-radius:14px;overflow:hidden;">
+          <div style="background:#ede5d4;padding:10px 16px;font:600 12.5px Manrope;color:#3a342a;display:flex;align-items:center;gap:8px;"><span style="width:8px;height:8px;border-radius:50%;background:#15663b;"></span>Members list</div>
+          <div style="padding:14px 16px;font:500 13.5px Manrope;color:#6b6253;line-height:1.6;">"Redesign the members list: heading + count, search bar with 14px radius, All/Active/New segmented control. Each row is a white card (16px radius) with avatar initials circle, name, stage chip (Active=emerald, New=terra, Plateau=warm amber), current weight on the right with colour-coded delta. Include empty + shimmer loading states."</div>
+        </div>
+
+        <div style="border:1px solid #e0d8c6;border-radius:14px;overflow:hidden;">
+          <div style="background:#ede5d4;padding:10px 16px;font:600 12.5px Manrope;color:#3a342a;display:flex;align-items:center;gap:8px;"><span style="width:8px;height:8px;border-radius:50%;background:#15663b;"></span>Member Profile</div>
+          <div style="padding:14px 16px;font:500 13.5px Manrope;color:#6b6253;line-height:1.6;">"Redesign the member profile: identity header (name + stage), then a white card with current weight in large Fraunces + total loss pill + goal, then an SVG area/line weight chart with a dashed gold goal line. Then a 4-step stage tracker, weekly attendance bar, and key-value info rows. Sticky bottom bar with 'Weight log karein' CTA."</div>
+        </div>
+
+        <div style="border:1px solid #e0d8c6;border-radius:14px;overflow:hidden;">
+          <div style="background:#ede5d4;padding:10px 16px;font:600 12.5px Manrope;color:#3a342a;display:flex;align-items:center;gap:8px;"><span style="width:8px;height:8px;border-radius:50%;background:#15663b;"></span>Messaging</div>
+          <div style="padding:14px 16px;font:500 13.5px Manrope;color:#6b6253;line-height:1.6;">"Redesign messaging: thread list with emerald broadcast row at top, then per-member rows (avatar initials, preview, time, unread badge). Chat view: cream background, coach bubbles in emerald, member bubbles in white card. Bottom composer: + icon, pill text input, emerald send button. Broadcast composer: audience chips, message textarea, preview bubble, send CTA."</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- step 4 -->
+    <div style="background:#fffefb;border:1px solid #e0d8c6;border-radius:20px;padding:28px 30px;">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:#15663b;color:#fff;display:flex;align-items:center;justify-content:center;font:600 16px Manrope;flex:none;">4</div>
+        <div style="font:500 22px Fraunces,serif;color:#1c1409;">Enable dark mode</div>
+      </div>
+      <p style="font:500 15px Manrope;color:#6b6253;line-height:1.6;margin:0 0 16px 0;">The <code style="background:#ede5d4;padding:2px 8px;border-radius:6px;font-size:13px;">.dark</code> override block in globals.css handles all color flips automatically. Just tell Cowork to wire up the toggle.</p>
+      <div style="background:#1c1409;border-radius:14px;padding:18px 20px;">
+        <div style="font:600 11px Manrope;color:#6b6253;letter-spacing:1.4px;margin-bottom:10px;">IN CLAUDE COWORK — tell it:</div>
+        <div style="font:500 14px ui-monospace,monospace;color:#f3ecdc;line-height:1.7;">"Add a dark/light mode toggle that adds/removes the <span style="color:#3fae78;">.dark</span> class on the html element. All colours are already defined in globals.css under <span style="color:#3fae78;">.dark { … }</span> — no other changes needed."</div>
+      </div>
+    </div>
+
+    <!-- step 5 -->
+    <div style="background:#fffefb;border:1px solid #e0d8c6;border-radius:20px;padding:28px 30px;">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:#e07228;color:#fff;display:flex;align-items:center;justify-content:center;font:600 16px Manrope;flex:none;">5</div>
+        <div style="font:500 22px Fraunces,serif;color:#1c1409;">Quick reference — paste this into Cowork anytime</div>
+      </div>
+      <p style="font:500 15px Manrope;color:#6b6253;line-height:1.6;margin:0 0 16px 0;">This master token cheat-sheet is safe to paste at the start of any Cowork session to give it full context:</p>
+      <div style="background:#1c1409;border-radius:14px;padding:20px 22px;font:500 13px ui-monospace,monospace;color:#f3ecdc;line-height:1.85;">
+        <span style="color:#6b6253;">/* Ruby Ankur Wellness — design context */</span><br>
+        <span style="color:#3fae78;">Background</span>: --cream #f5f0e6 | card #fffefb | secondary #ede5d4<br>
+        <span style="color:#3fae78;">Brand</span>: --emerald #15663b (primary) | --terra #e07228 (accent)<br>
+        <span style="color:#3fae78;">Text</span>: --ink #1c1409 | --ink-2 #6b6253 | --ink-3 #9a9180<br>
+        <span style="color:#3fae78;">Status</span>: good #2e7d4f | warn #c8902b | bad #b04830<br>
+        <span style="color:#3fae78;">Border</span>: --line #e0d8c6 | radius: chips 10 | inputs 14 | cards 16–18 | pills 999<br>
+        <span style="color:#3fae78;">Type</span>: Fraunces 500 (headings/metrics) + Manrope 500/600 (body/labels)<br>
+        <span style="color:#3fae78;">Tone</span>: Hinglish copy, calm + premium, coach-to-member trust
+      </div>
+    </div>
+
+    <!-- file map -->
+    <div style="background:#fffefb;border:1px solid #e0d8c6;border-radius:20px;padding:28px 30px;">
+      <div style="font:500 22px Fraunces,serif;color:#1c1409;margin-bottom:18px;">Files in this project</div>
+      <div style="display:flex;flex-direction:column;gap:0;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #ede5d4;">
+          <code style="font:600 13px ui-monospace,monospace;color:#15663b;">Ruby Ankur Wellness.dc.html</code>
+          <span style="font:500 13px Manrope;color:#6b6253;">Full design gallery (all screens, tokens, components)</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #ede5d4;">
+          <code style="font:600 13px ui-monospace,monospace;color:#15663b;">handoff/globals.css</code>
+          <span style="font:500 13px Manrope;color:#6b6253;">Tailwind v4 @theme — drop into src/app/globals.css</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #ede5d4;">
+          <code style="font:600 13px ui-monospace,monospace;color:#15663b;">handoff/tokens.json</code>
+          <span style="font:500 13px Manrope;color:#6b6253;">Machine-readable token map (light + dark)</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #ede5d4;">
+          <code style="font:600 13px ui-monospace,monospace;color:#15663b;">screens/Onboarding.dc.html</code>
+          <span style="font:500 13px Manrope;color:#6b6253;">login · register · pending (3 views)</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #ede5d4;">
+          <code style="font:600 13px ui-monospace,monospace;color:#15663b;">screens/Home.dc.html</code>
+          <span style="font:500 13px Manrope;color:#6b6253;">Dashboard with hero card, stats, up-next</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #ede5d4;">
+          <code style="font:600 13px ui-monospace,monospace;color:#15663b;">screens/Members.dc.html</code>
+          <span style="font:500 13px Manrope;color:#6b6253;">list · empty · loading shimmer</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #ede5d4;">
+          <code style="font:600 13px ui-monospace,monospace;color:#15663b;">screens/Profile.dc.html</code>
+          <span style="font:500 13px Manrope;color:#6b6253;">Weight chart, stage tracker, attendance</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;">
+          <code style="font:600 13px ui-monospace,monospace;color:#15663b;">screens/Messaging.dc.html</code>
+          <span style="font:500 13px Manrope;color:#6b6253;">threads · chat · broadcast composer</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

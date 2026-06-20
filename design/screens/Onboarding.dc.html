@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+</helmet>
+
+<div style="width:100%;height:100%;display:flex;flex-direction:column;background:var(--bg,#f5f0e6);font-family:Manrope,system-ui,sans-serif;color:var(--ink,#1c1409);overflow:hidden;-webkit-font-smoothing:antialiased;">
+
+  <div style="height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 26px 0 30px;flex:none;">
+    <span style="font:600 15px Manrope,sans-serif;color:var(--ink,#1c1409);letter-spacing:.2px;">9:41</span>
+    <div style="display:flex;align-items:center;gap:6px;color:var(--ink,#1c1409);">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+      <svg width="16" height="11" viewBox="0 0 16 12" fill="none"><path d="M8 10.5 1 4.2A10 10 0 0 1 15 4.2L8 10.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-width="1.2" opacity=".5"/><rect x="2.8" y="2.8" width="14" height="6.4" rx="1.6" fill="currentColor"/><rect x="22.5" y="4" width="1.6" height="4" rx="1" fill="currentColor" opacity=".6"/></svg>
+    </div>
+  </div>
+
+  <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;padding:0 26px;">
+
+    <!-- LOGIN -->
+    <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;display:flex;flex-direction:column;">
+      <div style="flex:none;height:34px;"></div>
+      <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;">
+        <div style="width:74px;height:74px;border-radius:24px;background:var(--em,#15663b);display:flex;align-items:center;justify-content:center;box-shadow:0 12px 30px var(--emS,rgba(21,102,59,.22));">
+          <svg width="42" height="42" viewBox="0 0 32 32" fill="none"><path d="M16 25 Q8 21 9 9 Q10 4 16 20 Z" fill="white"/><path d="M16 22 Q24 17 22 6 Q21 2 16 17 Z" fill="white"/><path d="M16 28 L16 24" stroke="white" stroke-width="2.4" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <div style="font:500 30px Fraunces,serif;color:var(--ink,#1c1409);letter-spacing:-.4px;line-height:1.05;">Ruby Ankur</div>
+          <div style="font:600 12px Manrope;letter-spacing:2.4px;text-transform:uppercase;color:var(--em,#15663b);margin-top:6px;">Wellness Club</div>
+        </div>
+        <div style="font:500 15px Manrope;color:var(--ink2,#6b6253);max-width:230px;line-height:1.45;">Sehat, streak aur saath — sab ek jagah.</div>
+      </div>
+
+      <div style="flex:none;height:34px;"></div>
+
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;flex-direction:column;gap:7px;">
+          <span style="font:600 13px Manrope;color:var(--ink2,#6b6253);">Email ya phone</span>
+          <div style="height:54px;border:1px solid var(--line,#e0d8c6);border-radius:14px;background:var(--card,#fffefb);display:flex;align-items:center;padding:0 16px;gap:11px;">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--ink3,#9a9180)" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6" stroke-linecap="round"/></svg>
+            <span style="font:500 15px Manrope;color:var(--ink3,#9a9180);">ankur<span>@</span>rubyankur.in</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px;">
+          <span style="font:600 13px Manrope;color:var(--ink2,#6b6253);">Password</span>
+          <div style="height:54px;border:1px solid var(--em,#15663b);border-radius:14px;background:var(--card,#fffefb);display:flex;align-items:center;padding:0 16px;gap:11px;box-shadow:0 0 0 3px var(--emS,rgba(21,102,59,.10));">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--ink3,#9a9180)" stroke-width="1.7"><rect x="4" y="10" width="16" height="10" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke-linecap="round"/></svg>
+            <span style="flex:1;font:600 16px Manrope;color:var(--ink,#1c1409);letter-spacing:3px;">••••••••</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink3,#9a9180)" stroke-width="1.7"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.7"/></svg>
+          </div>
+          <div style="display:flex;justify-content:flex-end;">
+            <span style="font:600 13px Manrope;color:var(--em,#15663b);">Password bhool gaye?</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex:none;height:22px;"></div>
+      <button style="height:54px;border:none;border-radius:999px;background:var(--em,#15663b);color:#fff;font:600 16px Manrope;width:100%;cursor:pointer;box-shadow:0 8px 22px var(--emS,rgba(21,102,59,.10));" style-active="background:var(--em2,#1c7a47);">Log in</button>
+
+      <div style="display:flex;align-items:center;gap:14px;margin:22px 0;">
+        <div style="flex:1;height:1px;background:var(--line,#e0d8c6);"></div>
+        <span style="font:500 12px Manrope;color:var(--ink3,#9a9180);">ya</span>
+        <div style="flex:1;height:1px;background:var(--line,#e0d8c6);"></div>
+      </div>
+      <button style="height:54px;border:1px solid var(--line,#e0d8c6);border-radius:999px;background:transparent;color:var(--ink,#1c1409);font:600 16px Manrope;width:100%;cursor:pointer;">Naya account banayein</button>
+
+      <div style="flex:1;"></div>
+      <div style="text-align:center;font:500 12px Manrope;color:var(--ink3,#9a9180);padding:18px 12px;line-height:1.5;">Aage badhne ka matlab hai aap hamari <span style="color:var(--ink2,#6b6253);text-decoration:underline;">Terms</span> aur <span style="color:var(--ink2,#6b6253);text-decoration:underline;">Privacy</span> se sehmat hain.</div>
+    </div>
+    </sc-if>
+
+    <!-- REGISTER -->
+    <sc-if value="{{ isRegister }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="flex:none;height:8px;"></div>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+        <div style="width:42px;height:42px;border-radius:12px;border:1px solid var(--line,#e0d8c6);display:flex;align-items:center;justify-content:center;background:var(--card,#fffefb);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink,#1c1409)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg>
+        </div>
+        <div>
+          <div style="font:500 24px Fraunces,serif;color:var(--ink,#1c1409);letter-spacing:-.3px;">Account banayein</div>
+          <div style="font:500 13px Manrope;color:var(--ink2,#6b6253);">Coach ke approval ke baad shuru karein</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:13px;">
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <span style="font:600 12px Manrope;color:var(--ink2,#6b6253);">Poora naam</span>
+          <div style="height:50px;border:1px solid var(--line,#e0d8c6);border-radius:14px;background:var(--card,#fffefb);display:flex;align-items:center;padding:0 16px;"><span style="font:500 15px Manrope;color:var(--ink,#1c1409);">Priya Sharma</span></div>
+        </div>
+        <div style="display:flex;gap:11px;">
+          <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+            <span style="font:600 12px Manrope;color:var(--ink2,#6b6253);">Phone</span>
+            <div style="height:50px;border:1px solid var(--line,#e0d8c6);border-radius:14px;background:var(--card,#fffefb);display:flex;align-items:center;padding:0 16px;"><span style="font:500 15px Manrope;color:var(--ink3,#9a9180);">98xxxxxxxx</span></div>
+          </div>
+          <div style="width:128px;display:flex;flex-direction:column;gap:6px;">
+            <span style="font:600 12px Manrope;color:var(--ink2,#6b6253);">Coach code</span>
+            <div style="height:50px;border:1px solid var(--line,#e0d8c6);border-radius:14px;background:var(--card,#fffefb);display:flex;align-items:center;padding:0 16px;"><span style="font:600 15px Manrope;color:var(--em,#15663b);letter-spacing:1px;">RA-42</span></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <span style="font:600 12px Manrope;color:var(--ink2,#6b6253);">Password banayein</span>
+          <div style="height:50px;border:1px solid var(--line,#e0d8c6);border-radius:14px;background:var(--card,#fffefb);display:flex;align-items:center;padding:0 16px;justify-content:space-between;"><span style="font:600 15px Manrope;color:var(--ink,#1c1409);letter-spacing:3px;">••••••••</span><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--ink3,#9a9180)" stroke-width="1.7"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.7"/></svg></div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;background:var(--terraS,rgba(224,114,40,.12));border-radius:14px;padding:13px 15px;display:flex;gap:11px;align-items:flex-start;">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--terra,#e07228)" stroke-width="1.8" style="flex:none;margin-top:1px;"><circle cx="12" cy="12" r="9"/><path d="M12 8v5" stroke-linecap="round"/><circle cx="12" cy="16" r="1" fill="var(--terra,#e07228)" stroke="none"/></svg>
+        <span style="font:500 13px Manrope;color:var(--ink2,#6b6253);line-height:1.45;">Approval ke baad hi aap login kar payenge. Aapke coach ko notification chala jayega.</span>
+      </div>
+
+      <div style="flex:1;"></div>
+      <button style="height:54px;border:none;border-radius:999px;background:var(--em,#15663b);color:#fff;font:600 16px Manrope;width:100%;cursor:pointer;box-shadow:0 8px 22px var(--emS,rgba(21,102,59,.10));margin-bottom:8px;">Request bhejein</button>
+      <div style="text-align:center;font:500 13px Manrope;color:var(--ink2,#6b6253);padding-bottom:16px;">Pehle se account hai? <span style="color:var(--em,#15663b);font-weight:600;">Log in</span></div>
+    </div>
+    </sc-if>
+
+    <!-- PENDING -->
+    <sc-if value="{{ isPending }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding-bottom:40px;">
+      <div style="width:104px;height:104px;border-radius:32px;background:var(--card,#fffefb);border:1px solid var(--line,#e0d8c6);display:flex;align-items:center;justify-content:center;margin-bottom:26px;position:relative;">
+        <div style="position:absolute;inset:0;border-radius:32px;background:var(--emS,rgba(21,102,59,.10));"></div>
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--em,#15663b)" stroke-width="1.6" style="position:relative;"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div style="font:500 27px Fraunces,serif;color:var(--ink,#1c1409);letter-spacing:-.3px;margin-bottom:12px;">Approval pending hai</div>
+      <div style="font:500 15px Manrope;color:var(--ink2,#6b6253);line-height:1.55;max-width:280px;margin-bottom:24px;">Aapka request coach <b style="color:var(--ink,#1c1409);font-weight:600;">Ankur Verma</b> ko bhej diya hai. Approve hote hi aapko message milega — aam taur par 24 ghante mein.</div>
+      <div style="display:inline-flex;align-items:center;gap:9px;height:40px;padding:0 18px;border-radius:999px;background:var(--terraS,rgba(224,114,40,.12));">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--terra,#e07228);"></span>
+        <span style="font:600 13px Manrope;color:var(--terra,#e07228);">Review mein</span>
+      </div>
+      <div style="flex:1;"></div>
+      <button style="height:50px;border:1px solid var(--line,#e0d8c6);border-radius:999px;background:transparent;color:var(--ink2,#6b6253);font:600 15px Manrope;width:100%;cursor:pointer;">Logout</button>
+    </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:820},&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;login&quot;,&quot;register&quot;,&quot;pending&quot;],&quot;default&quot;:&quot;login&quot;,&quot;tsType&quot;:&quot;'login'|'register'|'pending'&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const v = this.props.view || 'login';
+    return { isLogin: v === 'login', isRegister: v === 'register', isPending: v === 'pending' };
+  }
+}
+</script>
+</body>
+</html>

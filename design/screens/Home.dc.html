@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+</helmet>
+
+<div style="width:100%;height:100%;display:flex;flex-direction:column;background:var(--bg,#f5f0e6);font-family:Manrope,system-ui,sans-serif;color:var(--ink,#1c1409);overflow:hidden;-webkit-font-smoothing:antialiased;">
+
+  <!-- status bar -->
+  <div style="height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 26px 0 30px;flex:none;">
+    <span style="font:600 15px Manrope;color:var(--ink,#1c1409);letter-spacing:.2px;">9:41</span>
+    <div style="display:flex;align-items:center;gap:6px;color:var(--ink,#1c1409);">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+      <svg width="16" height="11" viewBox="0 0 16 12" fill="none"><path d="M8 10.5 1 4.2A10 10 0 0 1 15 4.2L8 10.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-width="1.2" opacity=".5"/><rect x="2.8" y="2.8" width="14" height="6.4" rx="1.6" fill="currentColor"/><rect x="22.5" y="4" width="1.6" height="4" rx="1" fill="currentColor" opacity=".6"/></svg>
+    </div>
+  </div>
+
+  <!-- consistent post-login app bar -->
+  <div style="flex:none;height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 18px 0 16px;background:var(--card,#fffefb);border-bottom:1px solid var(--line,#e0d8c6);">
+    <div style="display:flex;align-items:center;gap:9px;">
+      <div style="width:32px;height:32px;border-radius:10px;background:var(--em,#15663b);display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 4px 12px var(--emS,rgba(21,102,59,.22));">
+        <svg width="18" height="18" viewBox="0 0 32 32" fill="none"><path d="M16 25 Q8 21 9 9 Q10 4 16 20 Z" fill="white"/><path d="M16 22 Q24 17 22 6 Q21 2 16 17 Z" fill="white"/><path d="M16 28 L16 24" stroke="white" stroke-width="2.4" stroke-linecap="round"/></svg>
+      </div>
+      <span style="font:500 20px Fraunces,serif;color:var(--ink,#1c1409);letter-spacing:-.2px;">Ruby Ankur</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:38px;height:38px;border-radius:12px;border:1px solid var(--line,#e0d8c6);background:var(--bg,#f5f0e6);display:flex;align-items:center;justify-content:center;position:relative;">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--ink,#1c1409)" stroke-width="1.7"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z" stroke-linejoin="round"/><path d="M10 19a2 2 0 0 0 4 0" stroke-linecap="round"/></svg>
+        <span style="position:absolute;top:8px;right:9px;width:6px;height:6px;border-radius:50%;background:var(--terra,#e07228);border:1.5px solid var(--bg,#f5f0e6);"></span>
+      </div>
+      <div style="width:38px;height:38px;border-radius:50%;background:var(--em,#15663b);color:#fff;display:flex;align-items:center;justify-content:center;font:600 13px Manrope;">AV</div>
+    </div>
+  </div>
+
+  <div style="flex:1;overflow-y:auto;padding:14px 22px 22px;display:flex;flex-direction:column;gap:16px;">
+
+    <!-- greeting -->
+    <div>
+      <div style="font:500 12.5px Manrope;color:var(--ink2,#6b6253);">Namaste,</div>
+      <div style="font:500 28px Fraunces,serif;color:var(--ink,#1c1409);letter-spacing:-.4px;line-height:1.05;">Ankur Verma</div>
+    </div>
+
+    <!-- hero: stacked layout — no horizontal clipping -->
+    <div style="background:var(--em,#15663b);border-radius:20px;padding:18px 20px 16px;color:#fff;position:relative;overflow:hidden;box-shadow:0 14px 30px var(--emS,rgba(21,102,59,.10));">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span style="font:600 12.5px Manrope;color:rgba(255,255,255,.78);">Aaj ke follow-ups</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:rgba(255,255,255,.16);font:600 11px Manrope;color:#fff;">On track</span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:12px;">
+        <span style="font:500 52px Fraunces,serif;line-height:1;letter-spacing:-1px;">12</span>
+        <span style="font:600 14px Manrope;color:rgba(255,255,255,.7);">baaki</span>
+      </div>
+      <svg width="100%" height="42" viewBox="0 0 300 42" fill="none" preserveAspectRatio="none" style="display:block;margin-bottom:12px;">
+        <path d="M0 36 50 30 100 33 150 21 200 25 240 13 280 7 296 5 296 42 0 42Z" fill="rgba(255,255,255,.18)"/>
+        <path d="M0 36 50 30 100 33 150 21 200 25 240 13 280 7 296 5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="293" cy="5" r="4" fill="#fff"/>
+      </svg>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font:600 12px Manrope;color:rgba(255,255,255,.8);">↑ 3 kal se zyada complete</span>
+        <span style="display:inline-flex;align-items:center;gap:5px;font:600 13px Manrope;color:#fff;">Shuru karein<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></span>
+      </div>
+    </div>
+
+    <!-- stat tiles -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="background:var(--card,#fffefb);border:1px solid var(--line,#e0d8c6);border-radius:16px;padding:15px 16px;">
+        <div style="display:flex;align-items:center;gap:8px;color:var(--ink2,#6b6253);margin-bottom:9px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--em,#15663b)" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c0-2.8 2.5-4.6 5.5-4.6s5.5 1.8 5.5 4.6"/><path d="M16 5.4a2.9 2.9 0 0 1 0 5.4M16.6 14.6c2.2.4 3.9 1.8 3.9 4.4" stroke-linecap="round"/></svg><span style="font:600 12.5px Manrope;">Members</span></div>
+        <div style="font:500 30px Fraunces,serif;color:var(--ink,#1c1409);letter-spacing:-.5px;line-height:1;">248</div>
+      </div>
+      <div style="background:var(--card,#fffefb);border:1px solid var(--line,#e0d8c6);border-radius:16px;padding:15px 16px;">
+        <div style="display:flex;align-items:center;gap:8px;color:var(--ink2,#6b6253);margin-bottom:9px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--em,#15663b)" stroke-width="1.8"><rect x="3.5" y="4.5" width="17" height="16" rx="3"/><path d="M3.5 9h17M8 3v3M16 3v3" stroke-linecap="round"/></svg><span style="font:600 12.5px Manrope;">Due today</span></div>
+        <div style="font:500 30px Fraunces,serif;color:var(--ink,#1c1409);letter-spacing:-.5px;line-height:1;">12</div>
+      </div>
+      <div style="background:var(--card,#fffefb);border:1px solid var(--line,#e0d8c6);border-radius:16px;padding:15px 16px;">
+        <div style="display:flex;align-items:center;gap:8px;color:var(--ink2,#6b6253);margin-bottom:9px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--em,#15663b)" stroke-width="1.8"><path d="M12 3l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 16.3 7.2 18.7l.9-5.4L4.2 8.7l5.4-.8Z" stroke-linejoin="round"/></svg><span style="font:600 12.5px Manrope;">Team</span></div>
+        <div style="font:500 30px Fraunces,serif;color:var(--ink,#1c1409);letter-spacing:-.5px;line-height:1;">6</div>
+      </div>
+      <div style="background:var(--card,#fffefb);border:1px solid var(--line,#e0d8c6);border-radius:16px;padding:15px 16px;">
+        <div style="display:flex;align-items:center;gap:8px;color:var(--ink2,#6b6253);margin-bottom:9px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--bad,#b04830)" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5" stroke-linecap="round"/><circle cx="12" cy="16" r="1" fill="var(--bad,#b04830)" stroke="none"/></svg><span style="font:600 12.5px Manrope;">Overdue</span></div>
+        <div style="font:500 30px Fraunces,serif;color:var(--bad,#b04830);letter-spacing:-.5px;line-height:1;">3</div>
+      </div>
+    </div>
+
+    <!-- up next -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px;">
+      <span style="font:600 16px Manrope;color:var(--ink,#1c1409);">Up next</span>
+      <span style="font:600 13px Manrope;color:var(--em,#15663b);">Sabhi dekhein</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+
+      <div style="background:var(--card,#fffefb);border:1px solid var(--line,#e0d8c6);border-radius:16px;padding:13px 14px;display:flex;align-items:center;gap:13px;">
+        <div style="width:44px;height:44px;border-radius:14px;background:var(--terraS,rgba(224,114,40,.12));color:var(--terra,#e07228);display:flex;align-items:center;justify-content:center;font:600 15px Manrope;flex:none;">PS</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font:600 15px Manrope;color:var(--ink,#1c1409);">Priya Sharma</div>
+          <div style="font:500 13px Manrope;color:var(--bad,#b04830);">Weight check • 2 din overdue</div>
+        </div>
+        <span style="display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:999px;background:var(--bg2,#ede5d4);font:600 12px Manrope;color:var(--ink2,#6b6253);">9:30</span>
+      </div>
+
+      <div style="background:var(--card,#fffefb);border:1px solid var(--line,#e0d8c6);border-radius:16px;padding:13px 14px;display:flex;align-items:center;gap:13px;">
+        <div style="width:44px;height:44px;border-radius:14px;background:var(--emS,rgba(21,102,59,.10));color:var(--em,#15663b);display:flex;align-items:center;justify-content:center;font:600 15px Manrope;flex:none;">RK</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font:600 15px Manrope;color:var(--ink,#1c1409);">Rohit Kumar</div>
+          <div style="font:500 13px Manrope;color:var(--ink2,#6b6253);">Daily check-in</div>
+        </div>
+        <span style="display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:999px;background:var(--bg2,#ede5d4);font:600 12px Manrope;color:var(--ink2,#6b6253);">11:00</span>
+      </div>
+
+      <div style="background:var(--card,#fffefb);border:1px solid var(--line,#e0d8c6);border-radius:16px;padding:13px 14px;display:flex;align-items:center;gap:13px;">
+        <div style="width:44px;height:44px;border-radius:14px;background:rgba(200,154,60,.16);color:var(--gold,#c89a3c);display:flex;align-items:center;justify-content:center;font:600 15px Manrope;flex:none;">MN</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font:600 15px Manrope;color:var(--ink,#1c1409);">Meena Nair</div>
+          <div style="font:500 13px Manrope;color:var(--ink2,#6b6253);">Goal hit — badhai dein</div>
+        </div>
+        <span style="display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:999px;background:var(--bg2,#ede5d4);font:600 12px Manrope;color:var(--ink2,#6b6253);">2:15</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- tab bar -->
+  <div style="flex:none;height:74px;display:flex;border-top:1px solid var(--line,#e0d8c6);background:var(--card,#fffefb);padding-bottom:12px;">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--em,#15663b);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" stroke-linejoin="round"/></svg><span style="font:600 11px Manrope;">Home</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--ink3,#9a9180);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c0-2.8 2.5-4.6 5.5-4.6s5.5 1.8 5.5 4.6"/><path d="M16 5.4a2.9 2.9 0 0 1 0 5.4M16.6 14.6c2.2.4 3.9 1.8 3.9 4.4" stroke-linecap="round"/></svg><span style="font:600 11px Manrope;">Members</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--ink3,#9a9180);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 14.5A2.5 2.5 0 0 1 17.5 17H8l-4 3.2V6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5z" stroke-linejoin="round"/></svg><span style="font:600 11px Manrope;">Chat</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--ink3,#9a9180);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span style="font:600 11px Manrope;">More</span></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:820}}"></script>
+</body>
+</html>

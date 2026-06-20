@@ -24,6 +24,7 @@ function LoginForm() {
   const [otpSent, setOtpSent] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,183 +70,195 @@ function LoginForm() {
     router.refresh();
   }
 
+  const fieldBase =
+    "h-[54px] w-full rounded-[14px] border border-line bg-card pr-4 text-[15px] text-ink outline-none transition focus:border-emerald focus:ring-4 focus:ring-emerald/10 placeholder:text-ink-3";
+
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center bg-cream px-6 py-10">
       <div className="w-full max-w-sm">
         {/* Branding */}
-        <div className="mb-8 text-center">
-          <h1 className="font-display text-4xl font-semibold leading-none text-emerald">
-            Ruby Ankur
-            <br />
-            <span className="text-terra">Wellness</span>
-          </h1>
-          <p className="mt-3 text-sm font-semibold uppercase tracking-[0.15em] text-sage-d">
-            GUMS Club Manager
-          </p>
-          <p className="mt-1 text-xs text-ink/50">
-            2A · Club Code RA
+        <div className="mb-8 flex flex-col items-center text-center">
+          <div className="rounded-[24px] bg-white p-5 shadow-[0_12px_30px_var(--emerald-soft)]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-home.png" alt="Ruby Nutrition Center" width={220} height={198} className="h-auto w-[220px]" />
+          </div>
+          <p className="mt-5 max-w-[240px] text-[15px] font-medium leading-snug text-ink-2">
+            Sehat, streak aur saath — sab ek jagah.
           </p>
         </div>
 
-        {/* Auth card */}
-        <div className="rounded-2xl border border-line bg-card p-5 shadow-sm">
-          <p className="font-display text-lg font-semibold text-ink">
-            Apne account se login karo
-          </p>
-          <p className="mt-1 text-sm text-ink/60">
-            Aapki role aur visibility account se decide hoti hai — choose nahi ki
-            jaati.
-          </p>
+        {/* Method toggle — only when Phone OTP is enabled */}
+        {phoneOtpEnabled && (
+          <div className="mb-5 grid grid-cols-2 gap-1 rounded-full bg-cream-2 p-1">
+            {(["password", "otp"] as Method[]).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => {
+                  setMethod(m);
+                  setError(null);
+                }}
+                className={`rounded-full px-3 py-2 text-sm font-semibold transition ${
+                  method === m ? "bg-card text-emerald shadow-sm" : "text-ink-2"
+                }`}
+              >
+                {m === "otp" ? "Phone OTP" : "Email + Password"}
+              </button>
+            ))}
+          </div>
+        )}
 
-          {/* Method toggle — only shown when Phone OTP is enabled.
-              Email + Password is listed first (the default). */}
-          {phoneOtpEnabled && (
-            <div className="mt-4 grid grid-cols-2 gap-1 rounded-xl bg-cream-2 p-1">
-              {(["password", "otp"] as Method[]).map((m) => (
+        {/* Phone OTP */}
+        {phoneOtpEnabled && method === "otp" && (
+          <div className="flex flex-col gap-3">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[13px] font-semibold text-ink-2">Phone number</span>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                disabled={otpSent}
+                className={`${fieldBase} px-4 disabled:opacity-60`}
+                placeholder="+91 98xxx xxxxx"
+              />
+            </label>
+
+            {!otpSent ? (
+              <button
+                type="button"
+                onClick={sendOtp}
+                disabled={loading || phone.length < 8}
+                className="h-[54px] w-full rounded-full bg-emerald text-[16px] font-semibold text-white shadow-[0_8px_22px_var(--emerald-soft)] transition hover:bg-emerald-2 disabled:opacity-50"
+              >
+                {loading ? "Bhej rahe hain…" : "Send OTP"}
+              </button>
+            ) : (
+              <>
+                <p className="text-sm text-ink-2">
+                  Humne OTP bheja hai aapke number par. Enter karke verify karo.
+                </p>
+                <input
+                  inputMode="numeric"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  className={`${fieldBase} px-4 tracking-[0.3em]`}
+                  placeholder="6-digit code"
+                />
                 <button
-                  key={m}
+                  type="button"
+                  onClick={verifyOtp}
+                  disabled={loading || code.length < 4}
+                  className="h-[54px] w-full rounded-full bg-emerald text-[16px] font-semibold text-white shadow-[0_8px_22px_var(--emerald-soft)] transition hover:bg-emerald-2 disabled:opacity-50"
+                >
+                  {loading ? "Verify ho raha hai…" : "Verify & Login"}
+                </button>
+                <button
                   type="button"
                   onClick={() => {
-                    setMethod(m);
-                    setError(null);
+                    setOtpSent(false);
+                    setCode("");
                   }}
-                  className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
-                    method === m
-                      ? "bg-card text-terra-d shadow-sm"
-                      : "text-sage-d"
-                  }`}
+                  className="w-full text-center text-sm font-medium text-emerald underline"
                 >
-                  {m === "otp" ? "Phone OTP" : "Email + Password"}
+                  Number change karein
                 </button>
-              ))}
-            </div>
-          )}
+              </>
+            )}
+          </div>
+        )}
 
-          {/* Phone OTP */}
-          {phoneOtpEnabled && method === "otp" && (
-            <div className="mt-4 space-y-3">
-              <label className="block text-sm">
-                <span className="text-sage-d">Phone number</span>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  disabled={otpSent}
-                  className="mt-1 w-full rounded-xl border border-line bg-cream px-3 py-2.5 text-ink outline-none focus:border-terra disabled:opacity-60"
-                  placeholder="+91 98xxx xxxxx"
-                />
-              </label>
-
-              {!otpSent ? (
-                <button
-                  type="button"
-                  onClick={sendOtp}
-                  disabled={loading || phone.length < 8}
-                  className="w-full rounded-xl bg-terra px-4 py-3 font-semibold text-white transition hover:bg-terra-d disabled:opacity-50"
-                >
-                  {loading ? "Bhej rahe hain…" : "Send OTP"}
-                </button>
-              ) : (
-                <>
-                  <p className="text-sm text-ink/60">
-                    Humne OTP bheja hai aapke number par. Enter karke verify
-                    karo.
-                  </p>
-                  <input
-                    inputMode="numeric"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    className="w-full rounded-xl border border-line bg-cream px-3 py-2.5 tracking-[0.3em] text-ink outline-none focus:border-terra"
-                    placeholder="6-digit code"
-                  />
-                  <button
-                    type="button"
-                    onClick={verifyOtp}
-                    disabled={loading || code.length < 4}
-                    className="w-full rounded-xl bg-emerald px-4 py-3 font-semibold text-white transition hover:bg-emerald-2 disabled:opacity-50"
-                  >
-                    {loading ? "Verify ho raha hai…" : "Verify & Login"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOtpSent(false);
-                      setCode("");
-                    }}
-                    className="w-full text-center text-sm text-sage-d underline"
-                  >
-                    Number change karein
-                  </button>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Email + Password */}
-          {method === "password" && (
-            <div className="mt-4 space-y-3">
-              <label className="block text-sm">
-                <span className="text-sage-d">Email</span>
+        {/* Email + Password */}
+        {method === "password" && (
+          <div className="flex flex-col gap-3.5">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[13px] font-semibold text-ink-2">Email</span>
+              <div className="relative">
+                <svg className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-3" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+                  <rect x="3" y="5" width="18" height="14" rx="3" />
+                  <path d="m4 7 8 6 8-6" strokeLinecap="round" />
+                </svg>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-line bg-cream px-3 py-2.5 text-ink outline-none focus:border-terra"
+                  className={`${fieldBase} pl-11`}
                   placeholder="you@example.com"
                 />
-              </label>
-              <label className="block text-sm">
-                <span className="text-sage-d">Password</span>
+              </div>
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[13px] font-semibold text-ink-2">Password</span>
+              <div className="relative">
+                <svg className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-3" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+                  <rect x="4" y="10" width="16" height="10" rx="3" />
+                  <path d="M8 10V7a4 4 0 0 1 8 0v3" strokeLinecap="round" />
+                </svg>
                 <input
-                  type="password"
+                  type={showPw ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-line bg-cream px-3 py-2.5 text-ink outline-none focus:border-terra"
+                  className={`${fieldBase} pl-11 pr-12`}
                   placeholder="••••••••"
                 />
-              </label>
-              <button
-                type="button"
-                onClick={signInPassword}
-                disabled={loading || !email || !password}
-                className="w-full rounded-xl bg-terra px-4 py-3 font-semibold text-white transition hover:bg-terra-d disabled:opacity-50"
-              >
-                {loading ? "Login ho raha hai…" : "Login"}
-              </button>
-              <div className="flex flex-col items-center gap-1.5 text-sm">
-                <Link
-                  href="/auth/reset-password"
-                  className="text-sage-d underline"
+                <button
+                  type="button"
+                  onClick={() => setShowPw((s) => !s)}
+                  aria-label={showPw ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-ink-3"
                 >
-                  Password bhool gaye?
-                </Link>
-                <span className="text-ink/30">·</span>
-                <Link
-                  href="/auth/register"
-                  className="font-semibold text-terra-d underline"
-                >
-                  Naya account banao →
-                </Link>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+                    <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />
+                    <circle cx="12" cy="12" r="2.7" />
+                  </svg>
+                </button>
               </div>
+            </label>
+
+            <div className="-mt-1 flex justify-end">
+              <Link href="/auth/reset-password" className="text-[13px] font-semibold text-emerald">
+                Password bhool gaye?
+              </Link>
             </div>
-          )}
 
-          {rejected && (
-            <p role="alert" className="mt-3 rounded-lg bg-bad/10 px-3 py-2 text-sm text-bad">
-              Aapki registration reject ho gayi. Zyada jaankari ke liye apne
-              coach se baat karein.
-            </p>
-          )}
-          {error && (
-            <p role="alert" className="mt-3 rounded-lg bg-bad/10 px-3 py-2 text-sm text-bad">
-              {error}
-            </p>
-          )}
+            <button
+              type="button"
+              onClick={signInPassword}
+              disabled={loading || !email || !password}
+              className="mt-1 h-[54px] w-full rounded-full bg-emerald text-[16px] font-semibold text-white shadow-[0_8px_22px_var(--emerald-soft)] transition hover:bg-emerald-2 disabled:opacity-50"
+            >
+              {loading ? "Login ho raha hai…" : "Log in"}
+            </button>
 
-          <p className="mt-4 text-center text-xs text-ink/50">
-            🛡 OTP-verified login · data server-side protected
+            <div className="my-2 flex items-center gap-3.5">
+              <div className="h-px flex-1 bg-line" />
+              <span className="text-[12px] font-medium text-ink-3">ya</span>
+              <div className="h-px flex-1 bg-line" />
+            </div>
+
+            <Link
+              href="/auth/register"
+              className="flex h-[54px] w-full items-center justify-center rounded-full border border-line bg-transparent text-[16px] font-semibold text-ink transition hover:bg-cream-2"
+            >
+              Naya account banayein
+            </Link>
+          </div>
+        )}
+
+        {rejected && (
+          <p role="alert" className="mt-4 rounded-[14px] bg-bad/10 px-3 py-2.5 text-sm text-bad">
+            Aapki registration reject ho gayi. Zyada jaankari ke liye apne coach se baat karein.
           </p>
-        </div>
+        )}
+        {error && (
+          <p role="alert" className="mt-4 rounded-[14px] bg-bad/10 px-3 py-2.5 text-sm text-bad">
+            {error}
+          </p>
+        )}
+
+        <p className="mt-6 text-center text-[12px] font-medium leading-relaxed text-ink-3">
+          🛡 OTP-verified login · data server-side protected
+        </p>
       </div>
     </main>
   );

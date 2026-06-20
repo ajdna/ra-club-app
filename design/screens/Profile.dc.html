@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+</helmet>
+
+<div style="width:100%;height:100%;display:flex;flex-direction:column;background:var(--bg,#f5f0e6);font-family:Manrope,system-ui,sans-serif;color:var(--ink,#1c1409);overflow:hidden;-webkit-font-smoothing:antialiased;">
+
+  <div style="height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 26px 0 30px;flex:none;">
+    <span style="font:600 15px Manrope;color:var(--ink,#1c1409);letter-spacing:.2px;">9:41</span>
+    <div style="display:flex;align-items:center;gap:6px;color:var(--ink,#1c1409);">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+      <svg width="16" height="11" viewBox="0 0 16 12" fill="none"><path d="M8 10.5 1 4.2A10 10 0 0 1 15 4.2L8 10.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-width="1.2" opacity=".5"/><rect x="2.8" y="2.8" width="14" height="6.4" rx="1.6" fill="currentColor"/><rect x="22.5" y="4" width="1.6" height="4" rx="1" fill="currentColor" opacity=".6"/></svg>
+    </div>
+  </div>
+
+  <!-- app bar (consistent) -->
+  <div style="flex:none;height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:var(--card,#fffefb);border-bottom:1px solid var(--line,#e0d8c6);">
+    <div style="width:40px;height:40px;border-radius:12px;border:1px solid var(--line,#e0d8c6);background:var(--bg,#f5f0e6);display:flex;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink,#1c1409)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg></div>
+    <span style="font:500 18px Fraunces,serif;color:var(--ink,#1c1409);">Priya Sharma</span>
+    <div style="width:40px;height:40px;border-radius:12px;border:1px solid var(--line,#e0d8c6);background:var(--bg,#f5f0e6);display:flex;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="var(--ink,#1c1409)"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></div>
+  </div>
+
+  <div style="flex:1;overflow-y:auto;padding:8px 22px 18px;display:flex;flex-direction:column;gap:16px;">
+
+    <!-- identity -->
+    <div style="display:flex;align-items:center;gap:15px;">
+      <div style="width:66px;height:66px;border-radius:22px;background:var(--terraS,rgba(224,114,40,.12));color:var(--terra,#e07228);display:flex;align-items:center;justify-content:center;font:600 24px Manrope;flex:none;">PS</div>
+      <div style="flex:1;">
+        <div style="font:500 25px Fraunces,serif;color:var(--ink,#1c1409);letter-spacing:-.3px;line-height:1.05;">Priya Sharma</div>
+        <div style="display:flex;align-items:center;gap:7px;margin-top:6px;"><span style="display:inline-flex;height:21px;align-items:center;padding:0 9px;border-radius:999px;background:var(--emS,rgba(21,102,59,.10));color:var(--em,#15663b);font:600 11.5px Manrope;">Active</span><span style="font:500 13px Manrope;color:var(--ink2,#6b6253);">Stage 3 • 12 hafte se</span></div>
+      </div>
+    </div>
+
+    <!-- weight + chart -->
+    <div style="background:var(--card,#fffefb);border:1px solid var(--line,#e0d8c6);border-radius:18px;padding:18px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+        <div>
+          <div style="font:600 12.5px Manrope;color:var(--ink2,#6b6253);">Current weight</div>
+          <div style="display:flex;align-items:baseline;gap:6px;margin-top:3px;"><span style="font:500 42px Fraunces,serif;color:var(--ink,#1c1409);letter-spacing:-1px;line-height:.9;">72.4</span><span style="font:600 14px Manrope;color:var(--ink2,#6b6253);">kg</span></div>
+        </div>
+        <div style="text-align:right;">
+          <span style="display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 11px;border-radius:999px;background:var(--emS,rgba(21,102,59,.10));color:var(--good,#2e7d4f);font:600 12.5px Manrope;">↓ 5.6 kg total</span>
+          <div style="font:500 12.5px Manrope;color:var(--ink2,#6b6253);margin-top:8px;">Goal <b style="color:var(--ink,#1c1409);font-weight:600;">68 kg</b></div>
+        </div>
+      </div>
+
+      <svg width="100%" viewBox="0 0 320 130" fill="none" preserveAspectRatio="none" style="margin-top:14px;display:block;">
+        <defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--em,#15663b)" stop-opacity=".22"/><stop offset="1" stop-color="var(--em,#15663b)" stop-opacity="0"/></linearGradient></defs>
+        <line x1="10" y1="111" x2="310" y2="111" stroke="var(--gold,#c89a3c)" stroke-width="1.3" stroke-dasharray="4 4" opacity=".7"/>
+        <path d="M10 31 L53 38 L96 47 L139 53 L182 63 L225 67 L268 73 L310 76 L310 120 L10 120 Z" fill="url(#wg)"/>
+        <path d="M10 31 L53 38 L96 47 L139 53 L182 63 L225 67 L268 73 L310 76" stroke="var(--em,#15663b)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="310" cy="76" r="4.5" fill="var(--em,#15663b)" stroke="var(--card,#fffefb)" stroke-width="2.5"/>
+      </svg>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;font:600 10.5px Manrope;color:var(--ink3,#9a9180);"><span>W1</span><span>W4</span><span>W8</span><span>Goal 68</span></div>
+    </div>
+
+    <!-- stage tracker -->
+    <div style="background:var(--card,#fffefb);border:1px solid var(--line,#e0d8c6);border-radius:18px;padding:18px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;"><span style="font:600 14px Manrope;color:var(--ink,#1c1409);">Progress stages</span><span style="font:600 12.5px Manrope;color:var(--em,#15663b);">3 / 4</span></div>
+      <div style="display:flex;align-items:center;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:7px;"><div style="width:26px;height:26px;border-radius:50%;background:var(--em,#15663b);color:#fff;display:flex;align-items:center;justify-content:center;font:600 12px Manrope;">✓</div><span style="font:600 10.5px Manrope;color:var(--ink2,#6b6253);">Intake</span></div>
+        <div style="flex:1;height:3px;background:var(--em,#15663b);border-radius:2px;margin:0 4px;margin-bottom:18px;"></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:7px;"><div style="width:26px;height:26px;border-radius:50%;background:var(--em,#15663b);color:#fff;display:flex;align-items:center;justify-content:center;font:600 12px Manrope;">✓</div><span style="font:600 10.5px Manrope;color:var(--ink2,#6b6253);">Ramp</span></div>
+        <div style="flex:1;height:3px;background:var(--em,#15663b);border-radius:2px;margin:0 4px;margin-bottom:18px;"></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:7px;"><div style="width:30px;height:30px;border-radius:50%;background:var(--card,#fffefb);border:2.5px solid var(--em,#15663b);color:var(--em,#15663b);display:flex;align-items:center;justify-content:center;font:600 12px Manrope;box-shadow:0 0 0 4px var(--emS,rgba(21,102,59,.10));">3</div><span style="font:600 10.5px Manrope;color:var(--em,#15663b);">Build</span></div>
+        <div style="flex:1;height:3px;background:var(--line,#e0d8c6);border-radius:2px;margin:0 4px;margin-bottom:18px;"></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:7px;"><div style="width:26px;height:26px;border-radius:50%;background:var(--bg2,#ede5d4);color:var(--ink3,#9a9180);display:flex;align-items:center;justify-content:center;font:600 12px Manrope;">4</div><span style="font:600 10.5px Manrope;color:var(--ink3,#9a9180);">Goal</span></div>
+      </div>
+    </div>
+
+    <!-- attendance -->
+    <div style="background:var(--card,#fffefb);border:1px solid var(--line,#e0d8c6);border-radius:18px;padding:18px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:15px;"><span style="font:600 14px Manrope;color:var(--ink,#1c1409);">Attendance</span><div style="display:flex;align-items:center;gap:6px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--terra,#e07228)" stroke-width="1.8"><path d="M12 3c1.5 3 4 4 4 7a4 4 0 0 1-8 0c0-1.2.5-2 1-2.5 0 1.5 1 2 1.5 2 .5-2-.5-3 1.5-6.5Z" stroke-linejoin="round"/></svg><span style="font:600 12.5px Manrope;color:var(--terra,#e07228);">14 din streak</span></div></div>
+      <div style="display:flex;justify-content:space-between;gap:6px;">
+        <div style="flex:1;text-align:center;"><div style="height:34px;border-radius:9px;background:var(--em,#15663b);"></div><span style="font:600 10px Manrope;color:var(--ink3,#9a9180);display:block;margin-top:6px;">M</span></div>
+        <div style="flex:1;text-align:center;"><div style="height:34px;border-radius:9px;background:var(--em,#15663b);"></div><span style="font:600 10px Manrope;color:var(--ink3,#9a9180);display:block;margin-top:6px;">T</span></div>
+        <div style="flex:1;text-align:center;"><div style="height:34px;border-radius:9px;background:var(--em,#15663b);"></div><span style="font:600 10px Manrope;color:var(--ink3,#9a9180);display:block;margin-top:6px;">W</span></div>
+        <div style="flex:1;text-align:center;"><div style="height:34px;border-radius:9px;background:var(--bg2,#ede5d4);border:1px dashed var(--line,#e0d8c6);"></div><span style="font:600 10px Manrope;color:var(--ink3,#9a9180);display:block;margin-top:6px;">T</span></div>
+        <div style="flex:1;text-align:center;"><div style="height:34px;border-radius:9px;background:var(--em,#15663b);"></div><span style="font:600 10px Manrope;color:var(--ink3,#9a9180);display:block;margin-top:6px;">F</span></div>
+        <div style="flex:1;text-align:center;"><div style="height:34px;border-radius:9px;background:var(--em,#15663b);"></div><span style="font:600 10px Manrope;color:var(--ink3,#9a9180);display:block;margin-top:6px;">S</span></div>
+        <div style="flex:1;text-align:center;"><div style="height:34px;border-radius:9px;background:var(--emS,rgba(21,102,59,.10));border:1px solid var(--em,#15663b);"></div><span style="font:600 10px Manrope;color:var(--em,#15663b);display:block;margin-top:6px;">S</span></div>
+      </div>
+      <div style="font:500 12.5px Manrope;color:var(--ink2,#6b6253);margin-top:13px;">Is mahine <b style="color:var(--ink,#1c1409);font-weight:600;">18/20</b> sessions • 90%</div>
+    </div>
+
+    <!-- intake summary -->
+    <div style="background:var(--card,#fffefb);border:1px solid var(--line,#e0d8c6);border-radius:18px;padding:6px 18px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--line,#e0d8c6);"><span style="font:500 13.5px Manrope;color:var(--ink2,#6b6253);">Diet plan</span><span style="font:600 13.5px Manrope;color:var(--ink,#1c1409);">High-protein veg</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--line,#e0d8c6);"><span style="font:500 13.5px Manrope;color:var(--ink2,#6b6253);">Joined</span><span style="font:600 13.5px Manrope;color:var(--ink,#1c1409);">14 March 2026</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 0;"><span style="font:500 13.5px Manrope;color:var(--ink2,#6b6253);">Coach</span><span style="font:600 13.5px Manrope;color:var(--ink,#1c1409);">Ankur Verma</span></div>
+    </div>
+
+  </div>
+
+  <!-- bottom action bar -->
+  <div style="flex:none;padding:12px 22px 22px;background:var(--card,#fffefb);border-top:1px solid var(--line,#e0d8c6);display:flex;gap:11px;">
+    <button style="flex:1;height:52px;border:none;border-radius:999px;background:var(--em,#15663b);color:#fff;font:600 15px Manrope;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 8px 18px var(--emS,rgba(21,102,59,.10));"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Weight log karein</button>
+    <button style="width:52px;height:52px;border:1px solid var(--line,#e0d8c6);border-radius:999px;background:transparent;color:var(--ink,#1c1409);display:flex;align-items:center;justify-content:center;cursor:pointer;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7 9.5 17.5 4 12" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button style="width:52px;height:52px;border:1px solid var(--line,#e0d8c6);border-radius:999px;background:transparent;color:var(--ink,#1c1409);display:flex;align-items:center;justify-content:center;cursor:pointer;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 14.5A2.5 2.5 0 0 1 17.5 17H8l-4 3.2V6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5z" stroke-linejoin="round"/></svg></button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:820}}"></script>
+</body>
+</html>

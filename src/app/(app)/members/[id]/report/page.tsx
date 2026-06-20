@@ -112,7 +112,7 @@ export default async function ReportPage({
         {/* Card header */}
         <div className="bg-emerald px-6 py-5 text-white">
           <p className="text-xs font-semibold uppercase tracking-widest opacity-70">
-            Ruby Ankur Wellness — GUMS Club
+            Ruby Nutrition Center
           </p>
           <h2 className="font-display mt-1 text-2xl font-bold">{name}</h2>
           <p className="mt-0.5 text-sm opacity-75">{monthName}</p>

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { BottomNav } from "@/components/BottomNav";
+import { AppBar } from "@/components/AppBar";
 import { PushPermission } from "@/components/PushPermission";
 import { PushNavigator } from "@/components/PushNavigator";
 import { InactivityTimer } from "@/components/InactivityTimer";
@@ -45,6 +46,7 @@ export default async function AppLayout({
       <InactivityTimer timeoutMinutes={timeoutMinutes} warnMinutes={warnMinutes} />
       <PushPermission />
       <PushNavigator />
+      <AppBar />
       <div className="flex-1 overflow-y-auto">{children}</div>
       <BottomNav
         unreadAlerts={unread}

@@ -74,16 +74,20 @@ export default async function MembersPage() {
 
   return (
     <main className="px-4 pb-6 pt-6">
-      <header className="mb-4 flex items-center justify-between px-1">
-        <h1 className="font-display text-2xl font-semibold text-emerald">
-          {title}
-        </h1>
+      <header className="mb-4 flex items-end justify-between px-1">
+        <div>
+          <h1 className="font-display text-[26px] font-medium tracking-tight text-ink">
+            {title}
+          </h1>
+          <p className="mt-1 text-[13px] font-semibold text-ink-2">{rows.length} total</p>
+        </div>
         {typeof me === "object" && me.role !== "member" && (
           <Link
             href="/add"
-            className="rounded-xl bg-terra px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-terra-d"
+            aria-label="Add member"
+            className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-emerald text-white shadow-[0_8px_18px_var(--emerald-soft)] transition hover:bg-emerald-2"
           >
-            + Add
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
           </Link>
         )}
       </header>

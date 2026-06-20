@@ -1,0 +1,161 @@
+/* ============================================================
+   Ruby Ankur Wellness — Design tokens (drop-in)
+   Tailwind CSS v4 · @theme · light + dark
+   Names map 1:1 to the brief's Section 4 + a few additions.
+   Paste into src/app/globals.css (replacing the token block).
+   ============================================================ */
+
+@import "tailwindcss";
+
+/* Dark mode: system + manual (.dark on <html>) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---- LIGHT (default :root) ---------------------------------- */
+:root {
+  /* surfaces */
+  --cream:        #f5f0e6;   /* app background (warm ivory)  */
+  --cream-2:      #ede5d4;   /* secondary surface / track    */
+  --card:         #fffefb;   /* card surface                 */
+
+  /* brand */
+  --emerald:      #15663b;   /* PRIMARY — refined from #1a5e32 (see note) */
+  --emerald-2:    #1c7a47;   /* primary hover                */
+  --emerald-soft: rgba(21,102,59,.10); /* tint fills/rings   */
+
+  --terra:        #e07228;   /* ACCENT — saffron             */
+  --terra-d:      #b55d18;   /* accent hover                 */
+  --terra-soft:   rgba(224,114,40,.12);
+
+  --sage:         #6b8f5e;   /* supporting leaf green        */
+  --sage-d:       #4a6642;
+
+  /* text */
+  --ink:          #1c1409;   /* primary text (warm near-black) */
+  --ink-2:        #6b6253;   /* secondary text               */
+  --ink-3:        #9a9180;   /* tertiary / placeholder       */
+
+  /* accents / status */
+  --gold:         #c89a3c;   /* awards / ambassador tiers    */
+  --good:         #2e7d4f;
+  --warn:         #c8902b;
+  --bad:          #b04830;
+
+  --line:         #e0d8c6;   /* dividers / borders           */
+
+  /* radius (one soft scale) */
+  --radius-sm:   10px;       /* chips, small controls        */
+  --radius-md:   14px;       /* inputs, search               */
+  --radius-lg:   16px;       /* stat tiles, list rows        */
+  --radius-xl:   18px;       /* cards, sheets                */
+  --radius-full: 9999px;     /* pills, buttons, avatars      */
+
+  /* elevation (prefer hairlines; 2 soft levels max) */
+  --shadow-1: 0 1px 3px rgba(28,20,9,.08);
+  --shadow-2: 0 14px 30px rgba(21,102,59,.16);
+
+  color-scheme: light;
+}
+
+/* ---- DARK ---------------------------------------------------- */
+.dark {
+  --cream:        #14110b;
+  --cream-2:      #1c1810;
+  --card:         #211c13;
+
+  --emerald:      #3fae78;
+  --emerald-2:    #4cbf86;
+  --emerald-soft: rgba(63,174,120,.16);
+
+  --terra:        #f08a44;
+  --terra-d:      #d97328;
+
+  --sage:         #8fae82;
+  --sage-d:       #6b8f5e;
+
+  --ink:          #f3ecdc;
+  --ink-2:        #b9b09c;
+  --ink-3:        #8a8170;
+
+  --gold:         #d9b057;
+  --good:         #4fb87a;
+  --warn:         #e0ad4a;
+  --bad:          #d56a52;
+
+  --line:         #322b1d;
+
+  --shadow-1: 0 1px 3px rgba(0,0,0,.4);
+  --shadow-2: 0 14px 30px rgba(0,0,0,.45);
+
+  color-scheme: dark;
+}
+
+/* Auto dark when no .dark/.light class is set (system preference) */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --cream:#14110b; --cream-2:#1c1810; --card:#211c13;
+    --emerald:#3fae78; --emerald-2:#4cbf86; --emerald-soft:rgba(63,174,120,.16);
+    --terra:#f08a44; --terra-d:#d97328; --sage:#8fae82; --sage-d:#6b8f5e;
+    --ink:#f3ecdc; --ink-2:#b9b09c; --ink-3:#8a8170;
+    --gold:#d9b057; --good:#4fb87a; --warn:#e0ad4a; --bad:#d56a52;
+    --line:#322b1d;
+    --shadow-1:0 1px 3px rgba(0,0,0,.4); --shadow-2:0 14px 30px rgba(0,0,0,.45);
+    color-scheme: dark;
+  }
+}
+
+/* ---- Tailwind theme mapping (generates bg-*/text-*/etc.) ----- */
+@theme inline {
+  --color-cream:        var(--cream);
+  --color-cream-2:      var(--cream-2);
+  --color-card:         var(--card);
+  --color-emerald:      var(--emerald);
+  --color-emerald-2:    var(--emerald-2);
+  --color-emerald-soft: var(--emerald-soft);
+  --color-terra:        var(--terra);
+  --color-terra-d:      var(--terra-d);
+  --color-sage:         var(--sage);
+  --color-sage-d:       var(--sage-d);
+  --color-ink:          var(--ink);
+  --color-ink-2:        var(--ink-2);
+  --color-ink-3:        var(--ink-3);
+  --color-gold:         var(--gold);
+  --color-good:         var(--good);
+  --color-warn:         var(--warn);
+  --color-bad:          var(--bad);
+  --color-line:         var(--line);
+
+  --radius-sm:   var(--radius-sm);
+  --radius-md:   var(--radius-md);
+  --radius-lg:   var(--radius-lg);
+  --radius-xl:   var(--radius-xl);
+
+  --shadow-soft: var(--shadow-1);
+  --shadow-lift: var(--shadow-2);
+
+  /* Type — two families, two weights */
+  --font-sans:    "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+
+  --text-caption: 0.75rem;   /* 12 — Manrope 600 */
+  --text-label:   0.8125rem; /* 13 — Manrope 600 */
+  --text-body:    0.9375rem; /* 15 — Manrope 500 */
+  --text-title:   1rem;      /* 16 — Manrope 600 */
+  --text-h3:      1.125rem;  /* 18 — Fraunces 500 */
+  --text-h2:      1.375rem;  /* 22 — Fraunces 500 */
+  --text-h1:      1.75rem;   /* 28 — Fraunces 500 */
+  --text-metric:  3.5rem;    /* 56 — Fraunces 500, "one big number" */
+}
+
+/* ---- base ---------------------------------------------------- */
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* NOTE on the one refined value:
+   --emerald moved from the brief's #1a5e32 → #15663b (a touch more
+   vibrant, still a deep forest). White text on it passes WCAG AA
+   (contrast ~5.4:1); the dark-mode #3fae78 reads AA on #14110b.
+   Every other token keeps its Section-4 value. */

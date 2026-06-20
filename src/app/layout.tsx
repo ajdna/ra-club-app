@@ -17,24 +17,24 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Ruby Ankur Wellness — Club App",
+  title: "Ruby Nutrition Center",
   description:
-    "Club management platform for Ruby Ankur Wellness (2A · RA). Two-track health + business operations.",
+    "Club management platform for Ruby Nutrition Center. Two-track health + business operations.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "RA Club",
+    title: "Ruby NC",
   },
   formatDetection: { telephone: false },
   icons: {
-    icon: "/icon.svg",
-    apple: "/icon.svg",
+    icon: "/icon-192.png",
+    apple: "/icon-192.png",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1a5e32",
+  themeColor: "#15663b",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

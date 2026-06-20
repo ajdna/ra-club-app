@@ -1,115 +1,163 @@
 @import "tailwindcss";
 
 /*
-  Ruby Ankur Wellness — brand-matched design system.
-  Colors extracted from the RA brand identity:
-    Primary green  #1a5e32 — the deep forest green of the RA logo circle
-    Saffron orange #e07228 — the warm accent used in marketing posts
-    Cream          #f5f0e6 — warm ivory background (wellness premium feel)
+  Ruby Ankur Wellness — design tokens.
+  Values applied from the Claude Design handoff (handoff/tokens.json, v1.0.0).
+  Only --emerald changed value (#1a5e32 -> #15663b: more vibrant, still WCAG AA).
+  Fonts stay wired to next/font (--font-manrope / --font-fraunces from layout.tsx).
 */
 :root {
-  --cream:     #f5f0e6;
-  --cream-2:   #ede5d4;
-  --card:      #fffefb;
-  --terra:     #e07228;   /* saffron-orange — RA brand accent */
-  --terra-d:   #b55d18;   /* darker saffron for hover/active */
-  --sage:      #6b8f5e;   /* leaf green — supporting colour */
-  --sage-d:    #4a6642;   /* darker leaf green */
-  --emerald:   #1a5e32;   /* deep forest green — RA logo primary */
-  --emerald-2: #236b3c;   /* lighter variant for hover states */
-  --ink:       #1c1409;   /* near-black with warm undertone */
-  --gold:      #c89a3c;   /* gold accent (awards, ambassador tiers) */
-  --good:      #2e7d4f;   /* success — positive health green */
-  --warn:      #c8902b;   /* warning — amber */
-  --bad:       #b04830;   /* error — terracotta red */
-  --line:      #e0d8c6;   /* dividers / borders */
-  --shadow:    0 1px 2px rgba(26, 94, 50, 0.06), 0 8px 28px rgba(26, 94, 50, 0.10);
-  --shadow-sm: 0 1px 3px rgba(26, 94, 50, 0.09);
+  /* surfaces */
+  --cream:        #f5f0e6;
+  --cream-2:      #ede5d4;
+  --card:         #fffefb;
+
+  /* brand */
+  --emerald:      #15663b;
+  --emerald-2:    #1c7a47;
+  --emerald-soft: rgba(21,102,59,.10);
+  --terra:        #e07228;
+  --terra-d:      #b55d18;
+  --terra-soft:   rgba(224,114,40,.12);
+  --sage:         #6b8f5e;
+  --sage-d:       #4a6642;
+
+  /* text */
+  --ink:          #1c1409;
+  --ink-2:        #6b6253;
+  --ink-3:        #9a9180;
+
+  /* accents / status */
+  --gold:         #c89a3c;
+  --good:         #2e7d4f;
+  --warn:         #c8902b;
+  --bad:          #b04830;
+  --line:         #e0d8c6;
+
+  /* radius */
+  --radius-sm:   10px;
+  --radius-md:   14px;
+  --radius-lg:   16px;
+  --radius-xl:   18px;
+
+  /* elevation */
+  --shadow-1: 0 1px 3px rgba(28,20,9,.08);
+  --shadow-2: 0 14px 30px rgba(21,102,59,.16);
 
   --background: var(--cream);
   --foreground: var(--ink);
+  color-scheme: light;
 }
 
-/* Expose tokens to Tailwind utilities (bg-terra, text-emerald, etc.). */
+/* Expose tokens to Tailwind utilities (bg-terra, text-emerald, rounded-lg, etc.). */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-cream:      var(--cream);
-  --color-cream-2:    var(--cream-2);
-  --color-card:       var(--card);
-  --color-terra:      var(--terra);
-  --color-terra-d:    var(--terra-d);
-  --color-sage:       var(--sage);
-  --color-sage-d:     var(--sage-d);
-  --color-emerald:    var(--emerald);
-  --color-emerald-2:  var(--emerald-2);
-  --color-ink:        var(--ink);
-  --color-gold:       var(--gold);
-  --color-good:       var(--good);
-  --color-warn:       var(--warn);
-  --color-bad:        var(--bad);
-  --color-line:       var(--line);
+  --color-background:   var(--background);
+  --color-foreground:   var(--foreground);
+  --color-cream:        var(--cream);
+  --color-cream-2:      var(--cream-2);
+  --color-card:         var(--card);
+  --color-emerald:      var(--emerald);
+  --color-emerald-2:    var(--emerald-2);
+  --color-emerald-soft: var(--emerald-soft);
+  --color-terra:        var(--terra);
+  --color-terra-d:      var(--terra-d);
+  --color-terra-soft:   var(--terra-soft);
+  --color-sage:         var(--sage);
+  --color-sage-d:       var(--sage-d);
+  --color-ink:          var(--ink);
+  --color-ink-2:        var(--ink-2);
+  --color-ink-3:        var(--ink-3);
+  --color-gold:         var(--gold);
+  --color-good:         var(--good);
+  --color-warn:         var(--warn);
+  --color-bad:          var(--bad);
+  --color-line:         var(--line);
 
-  --font-sans:    var(--font-manrope);
-  --font-display: var(--font-fraunces);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  --shadow-soft: var(--shadow-1);
+  --shadow-lift: var(--shadow-2);
+
+  /* Type — two families (kept wired to next/font), with fallbacks */
+  --font-sans:    var(--font-manrope), "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), "Fraunces", ui-serif, Georgia, serif;
+
+  --text-caption: 0.75rem;
+  --text-label:   0.8125rem;
+  --text-body:    0.9375rem;
+  --text-title:   1rem;
+  --text-h3:      1.125rem;
+  --text-h2:      1.375rem;
+  --text-h1:      1.75rem;
+  --text-metric:  3.5rem;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-manrope), "Manrope", system-ui, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
 .font-display {
-  font-family: var(--font-fraunces), "Fraunces", Georgia, serif;
+  font-family: var(--font-display);
 }
 
-/* ── Dark mode — system-aware ───────────────────────────────────────────── */
+/* ── Dark mode — shared token values ─────────────────────────────────────── */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --cream:     #1a1510;
-    --cream-2:   #221c14;
-    --card:      #201a12;
-    --ink:       #f0ead8;
-    --line:      #332b1e;
-    --terra:     #e8834a;
-    --terra-d:   #f09050;
-    --sage:      #7aa36c;
-    --sage-d:    #8fb880;
-    --emerald:   #3a9e62;
-    --emerald-2: #44b870;
-    --gold:      #d4a84a;
-    --good:      #4aaa70;
-    --warn:      #d49830;
-    --bad:       #d06050;
-    --background: var(--cream);
-    --foreground: var(--ink);
-    --shadow:    0 1px 2px rgba(0,0,0,0.3), 0 8px 28px rgba(0,0,0,0.4);
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.25);
+  :root:not(.light) {
+    --cream:        #14110b;
+    --cream-2:      #1c1810;
+    --card:         #211c13;
+    --emerald:      #3fae78;
+    --emerald-2:    #4cbf86;
+    --emerald-soft: rgba(63,174,120,.16);
+    --terra:        #f08a44;
+    --terra-d:      #d97328;
+    --terra-soft:   rgba(240,138,68,.16);
+    --sage:         #8fae82;
+    --sage-d:       #6b8f5e;
+    --ink:          #f3ecdc;
+    --ink-2:        #b9b09c;
+    --ink-3:        #8a8170;
+    --gold:         #d9b057;
+    --good:         #4fb87a;
+    --warn:         #e0ad4a;
+    --bad:          #d56a52;
+    --line:         #322b1d;
+    --shadow-1: 0 1px 3px rgba(0,0,0,.4);
+    --shadow-2: 0 14px 30px rgba(0,0,0,.45);
+    color-scheme: dark;
   }
 }
 
-/* ── Dark mode — manual in-app toggle (.dark class on <html>) ────────────── */
+/* Manual in-app toggle (.dark on <html>, set by ThemeProvider/DarkModeToggle) */
 html.dark {
-  --cream:     #1a1510;
-  --cream-2:   #221c14;
-  --card:      #201a12;
-  --ink:       #f0ead8;
-  --line:      #332b1e;
-  --terra:     #e8834a;
-  --terra-d:   #f09050;
-  --sage:      #7aa36c;
-  --sage-d:    #8fb880;
-  --emerald:   #3a9e62;
-  --emerald-2: #44b870;
-  --gold:      #d4a84a;
-  --good:      #4aaa70;
-  --warn:      #d49830;
-  --bad:       #d06050;
-  --background: var(--cream);
-  --foreground: var(--ink);
-  --shadow:    0 1px 2px rgba(0,0,0,0.3), 0 8px 28px rgba(0,0,0,0.4);
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.25);
+  --cream:        #14110b;
+  --cream-2:      #1c1810;
+  --card:         #211c13;
+  --emerald:      #3fae78;
+  --emerald-2:    #4cbf86;
+  --emerald-soft: rgba(63,174,120,.16);
+  --terra:        #f08a44;
+  --terra-d:      #d97328;
+  --terra-soft:   rgba(240,138,68,.16);
+  --sage:         #8fae82;
+  --sage-d:       #6b8f5e;
+  --ink:          #f3ecdc;
+  --ink-2:        #b9b09c;
+  --ink-3:        #8a8170;
+  --gold:         #d9b057;
+  --good:         #4fb87a;
+  --warn:         #e0ad4a;
+  --bad:          #d56a52;
+  --line:         #322b1d;
+  --shadow-1: 0 1px 3px rgba(0,0,0,.4);
+  --shadow-2: 0 14px 30px rgba(0,0,0,.45);
+  color-scheme: dark;
 }
 
 /* ── Smooth scrolling + tap highlight removal ───────────────────────────── */

@@ -1,13 +1,13 @@
 {
-  "name": "Ruby Ankur Wellness",
-  "short_name": "RA Club",
-  "description": "Club management for Ruby Ankur Wellness — GUMS platform (Org 2A · RA)",
+  "name": "Ruby Nutrition Center",
+  "short_name": "Ruby NC",
+  "description": "Club management for Ruby Nutrition Center — health + business operations",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#f5f0e6",
-  "theme_color": "#1a5e32",
+  "theme_color": "#15663b",
   "categories": ["health", "fitness", "business"],
   "icons": [
     {
