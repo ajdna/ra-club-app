@@ -1,7 +1,5 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect -- intentional: one-shot toast on mount */
-
 import { useEffect, useState } from "react";
 
 const MILESTONES = [3, 7, 14, 30, 60, 90];
