@@ -43,7 +43,7 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
         {CAN_CLEAR.includes(me.role) && (
           <ClearChatButton threadId={id} />
         )}
-        {thread.coachId === me.id && (
+        {(thread.coachId === me.id || me.role === "club_owner") && (
           <DeleteThreadButton threadId={id} redirectTo="/messages" />
         )}
       </header>

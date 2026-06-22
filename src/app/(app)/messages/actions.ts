@@ -421,7 +421,8 @@ export async function deleteThread(threadId: string): Promise<{ error?: string }
   const supabase = await createClient();
   const { data: thread } = await supabase.from("chat_threads").select("coach_id").eq("id", threadId).single();
   if (!thread) return { error: "Thread not found" };
-  if (thread.coach_id !== me.id) return { error: "Sirf initiator hi delete kar sakta hai." };
+  if (thread.coach_id !== me.id && me.role !== "club_owner")
+    return { error: "Sirf initiator ya club owner delete kar sakta hai." };
 
   const { error: delErr } = await supabase.from("chat_threads").delete().eq("id", threadId);
   if (delErr) return { error: delErr.message };

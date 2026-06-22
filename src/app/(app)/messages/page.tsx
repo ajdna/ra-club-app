@@ -85,17 +85,17 @@ export default async function MessagesPage() {
 
       {broadcasts.length > 0 && (
         <Section title="Broadcasts">
-          {broadcasts.map((t) => <ThreadRow key={t.id} thread={t} myId={me.id} />)}
+          {broadcasts.map((t) => <ThreadRow key={t.id} thread={t} myId={me.id} myRole={me.role} />)}
         </Section>
       )}
       {groups.length > 0 && (
         <Section title="Groups">
-          {groups.map((t) => <ThreadRow key={t.id} thread={t} myId={me.id} />)}
+          {groups.map((t) => <ThreadRow key={t.id} thread={t} myId={me.id} myRole={me.role} />)}
         </Section>
       )}
       {directs.length > 0 && (
         <Section title="Direct">
-          {directs.map((t) => <ThreadRow key={t.id} thread={t} myId={me.id} />)}
+          {directs.map((t) => <ThreadRow key={t.id} thread={t} myId={me.id} myRole={me.role} />)}
         </Section>
       )}
     </main>
@@ -111,9 +111,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function ThreadRow({ thread, myId }: { thread: Awaited<ReturnType<typeof getThreads>>[number]; myId: string }) {
+function ThreadRow({ thread, myId, myRole }: { thread: Awaited<ReturnType<typeof getThreads>>[number]; myId: string; myRole: string }) {
   const hasUnread = thread.unread > 0;
-  const canDelete = thread.coachId === myId;
+  const canDelete = thread.coachId === myId || myRole === "club_owner";
   const av =
     thread.type === "broadcast" ? "bg-terra-soft text-terra"
     : thread.type === "group" ? "bg-emerald-soft text-emerald"
