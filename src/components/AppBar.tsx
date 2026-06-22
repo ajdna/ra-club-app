@@ -37,9 +37,9 @@ export function AppBar() {
         <img
           src="/logo-icon.png"
           alt="Ruby Nutrition Center"
-          width={34}
-          height={34}
-          className="h-[34px] w-[34px] rounded-[10px] bg-white object-contain p-1 ring-1 ring-line"
+          width={36}
+          height={36}
+          className="h-9 w-9 object-contain"
         />
         <span className="font-display text-[16px] font-medium tracking-tight text-ink">
           Ruby Nutrition Center
