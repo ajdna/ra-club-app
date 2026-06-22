@@ -78,10 +78,10 @@ function LoginForm() {
       <div className="w-full max-w-sm">
         {/* Branding */}
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="rounded-[24px] bg-white p-5 shadow-[0_12px_30px_var(--emerald-soft)]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-home.png" alt="Ruby Nutrition Center" width={220} height={198} className="h-auto w-[220px]" />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-home.png" alt="Ruby Nutrition Center" width={240} height={216} className="brand-logo brand-logo-light h-auto w-[240px]" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-home-dark.png" alt="" aria-hidden="true" width={240} height={216} className="brand-logo brand-logo-dark h-auto w-[240px]" />
           <p className="mt-5 max-w-[240px] text-[15px] font-medium leading-snug text-ink-2">
             Sehat, streak aur saath — sab ek jagah.
           </p>

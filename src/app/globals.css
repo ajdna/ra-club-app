@@ -106,6 +106,35 @@ body {
   font-family: var(--font-display);
 }
 
+/* Brand logo (login) — transparent, blends both themes, soft 3D depth.
+   Light: warm elevation shadow. Dark: deeper shadow + faint light rim so the
+   dark-green wordmark stays legible on the dark background. */
+.brand-logo {
+  filter: drop-shadow(0 12px 20px rgba(28, 20, 9, 0.22))
+          drop-shadow(0 3px 5px rgba(28, 20, 9, 0.16));
+}
+html.dark .brand-logo {
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.55))
+          drop-shadow(0 0 1px rgba(255, 255, 255, 0.55))
+          drop-shadow(0 0 4px rgba(255, 255, 255, 0.22));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) .brand-logo {
+    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.55))
+            drop-shadow(0 0 1px rgba(255, 255, 255, 0.55))
+            drop-shadow(0 0 4px rgba(255, 255, 255, 0.22));
+  }
+}
+
+/* Theme-swapped brand logo: dark-mode variant has a light wordmark. */
+.brand-logo-dark { display: none; }
+html.dark .brand-logo-light { display: none; }
+html.dark .brand-logo-dark { display: block; }
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) .brand-logo-light { display: none; }
+  :root:not(.light) .brand-logo-dark { display: block; }
+}
+
 /* ── Dark mode — shared token values ─────────────────────────────────────── */
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
