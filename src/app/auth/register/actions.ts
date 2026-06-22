@@ -27,13 +27,19 @@ export async function registerUser(
   if (!parentId) return { ok: false, error: "Apna coach / upline choose karein." };
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("register_user_v2", {
+  // register_user_v2 is newer than the generated DB types; typed cast until
+  // `npm run gen:types` is re-run.
+  const rpc = supabase.rpc as unknown as (
+    fn: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ error: { message: string } | null }>;
+  const { error } = await rpc("register_user_v2", {
     p_name: name.trim(),
     p_username: username.trim(),
     p_email: email.trim().toLowerCase(),
     p_phone: phone.trim(),
     p_whatsapp: whatsapp.trim(),
-    p_role: role as "member" | "coach",
+    p_role: role,
     p_parent_id: parentId,
   });
 

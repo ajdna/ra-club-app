@@ -65,12 +65,14 @@ function LoginForm() {
     // Allow login by email OR user id (username). Resolve username -> email.
     let loginEmail = email.trim();
     if (loginEmail && !loginEmail.includes("@")) {
-      const { data, error: rpcErr } = await supabase.rpc("get_login_email", {
-        p_identifier: loginEmail,
-      });
+      const rpc = supabase.rpc as unknown as (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: string | null; error: { message: string } | null }>;
+      const { data, error: rpcErr } = await rpc("get_login_email", { p_identifier: loginEmail });
       if (rpcErr) return fail(rpcErr.message);
       if (!data) return fail("Is user id se koi account nahi mila.");
-      loginEmail = data as string;
+      loginEmail = data;
     }
 
     const { error } = await supabase.auth.signInWithPassword({
