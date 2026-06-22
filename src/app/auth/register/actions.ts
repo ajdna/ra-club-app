@@ -1,38 +1,38 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { isEmail, isE164 } from "@/lib/validate";
 
-type RegisterResult =
-  | { ok: true }
-  | { ok: false; error: string };
+type RegisterResult = { ok: true } | { ok: false; error: string };
 
 /**
  * Called AFTER supabase.auth.signUp() succeeds on the client.
- * At this point the user has an active auth session, so auth.uid() is available.
- * This calls the register_user() SECURITY DEFINER RPC which:
- *   - Creates a users row with status = 'pending'
- *   - Sets auth_id = auth.uid() so the row is linked immediately
- *   - Triggers hierarchy_closure so the upline can see the pending user
+ * Creates a pending users row via register_user_v2 (username + whatsapp aware).
+ * Username defaults to email when blank (handled in the RPC).
  */
 export async function registerUser(
   name: string,
+  username: string,
   email: string,
   phone: string,
+  whatsapp: string,
   role: string,
   parentId: string,
 ): Promise<RegisterResult> {
-  if (!name.trim()) return { ok: false, error: "Name required." };
-  if (!email.trim()) return { ok: false, error: "Email required." };
-  if (!["member", "coach"].includes(role))
-    return { ok: false, error: "Invalid role." };
-  if (!parentId) return { ok: false, error: "Please choose your coach / upline." };
+  if (!name.trim()) return { ok: false, error: "Apna naam likhein." };
+  if (!isEmail(email)) return { ok: false, error: "Valid email daalein." };
+  if (!isE164(phone)) return { ok: false, error: "Valid phone number daalein (+country code, e.g. +9198xxxxxxxx)." };
+  if (whatsapp.trim() && !isE164(whatsapp)) return { ok: false, error: "Valid WhatsApp number daalein (+country code)." };
+  if (!["member", "coach"].includes(role)) return { ok: false, error: "Invalid role." };
+  if (!parentId) return { ok: false, error: "Apna coach / upline choose karein." };
 
   const supabase = await createClient();
-
-  const { error } = await supabase.rpc("register_user", {
+  const { error } = await supabase.rpc("register_user_v2", {
     p_name: name.trim(),
+    p_username: username.trim(),
     p_email: email.trim().toLowerCase(),
     p_phone: phone.trim(),
+    p_whatsapp: whatsapp.trim(),
     p_role: role as "member" | "coach",
     p_parent_id: parentId,
   });

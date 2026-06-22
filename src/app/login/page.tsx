@@ -61,8 +61,20 @@ function LoginForm() {
     setLoading(true);
     setError(null);
     const supabase = createClient();
+
+    // Allow login by email OR user id (username). Resolve username -> email.
+    let loginEmail = email.trim();
+    if (loginEmail && !loginEmail.includes("@")) {
+      const { data, error: rpcErr } = await supabase.rpc("get_login_email", {
+        p_identifier: loginEmail,
+      });
+      if (rpcErr) return fail(rpcErr.message);
+      if (!data) return fail("Is user id se koi account nahi mila.");
+      loginEmail = data as string;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: loginEmail,
       password,
     });
     if (error) return fail(error.message);
@@ -171,14 +183,15 @@ function LoginForm() {
         {method === "password" && (
           <div className="flex flex-col gap-3.5">
             <label className="flex flex-col gap-1.5">
-              <span className="text-[13px] font-semibold text-ink-2">Email</span>
+              <span className="text-[13px] font-semibold text-ink-2">Email ya User ID</span>
               <div className="relative">
                 <svg className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-3" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
                   <rect x="3" y="5" width="18" height="14" rx="3" />
                   <path d="m4 7 8 6 8-6" strokeLinecap="round" />
                 </svg>
                 <input
-                  type="email"
+                  type="text"
+                  autoCapitalize="none"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className={`${fieldBase} pl-11`}

@@ -3,6 +3,13 @@
 Append-only delta log. Newest at top. Workers read the top entries + `CONTEXT_PACK.md`
 instead of re-deriving. Keep entries one-liners; compress with `caveman-compress` when long.
 
+## 2026-06-22 — registration: username / email-validation / mandatory+valid phone / whatsapp
+- DB (applied + migration 20260622010000): users.username (unique, lower) + users.whatsapp_phone; register_user_v2(name,username,email,phone,whatsapp,role,parent) — username defaults to email when blank; get_login_email(identifier) SECURITY DEFINER (anon) for username->email at login.
+- Validation: src/lib/validate.ts isEmail + isE164. register action validates email + E.164 phone (mandatory) + whatsapp (if diff). RegisterForm: added User ID field (optional), phone now mandatory+validated, "Yeh number WhatsApp pe hai" checkbox + separate validated WhatsApp field.
+- Login: accepts email OR user id (username) — resolves via get_login_email; login field type text, label "Email ya User ID", placeholder kept "you@example.com" (e2e-stable).
+- Tests: e2e/register.spec.ts (safe — submits invalid data only, validation blocks before signUp; full happy-path signup deliberately not automated: creates real auth users + email rate limits + approval).
+- NOTE: "email rate limit exceeded" = Supabase Auth email cap (signup confirmation), not a code bug — configure custom SMTP in Supabase or wait.
+
 ## 2026-06-22 — delete thread (initiator)
 - Feature: initiator can delete a whole broadcast/direct/group thread (removes from ALL recipients). RLS migration `chat_threads_delete` (coach_id = app_user_id()) APPLIED to prod + saved supabase/migrations/20260622000000_chat_thread_delete.sql. FK cascade already removes messages/reads/members/reactions.
 - `deleteThread(threadId)` action (initiator-only guard) in messages/actions.ts. New DeleteThreadButton.tsx (confirm dialog). Wired: messages list rows (only when thread.coachId===myId) + thread detail header (initiator). clearThread (delete messages only) kept separate.
