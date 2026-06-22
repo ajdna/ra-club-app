@@ -3,6 +3,10 @@
 Append-only delta log. Newest at top. Workers read the top entries + `CONTEXT_PACK.md`
 instead of re-deriving. Keep entries one-liners; compress with `caveman-compress` when long.
 
+## 2026-06-22 — delete thread (initiator)
+- Feature: initiator can delete a whole broadcast/direct/group thread (removes from ALL recipients). RLS migration `chat_threads_delete` (coach_id = app_user_id()) APPLIED to prod + saved supabase/migrations/20260622000000_chat_thread_delete.sql. FK cascade already removes messages/reads/members/reactions.
+- `deleteThread(threadId)` action (initiator-only guard) in messages/actions.ts. New DeleteThreadButton.tsx (confirm dialog). Wired: messages list rows (only when thread.coachId===myId) + thread detail header (initiator). clearThread (delete messages only) kept separate.
+
 ## 2026-06-22 — live test:e2e
 - features.spec.ts: 6/6 PASS (account menu, Profile nav, Help panel, Plan->followup, /log, Logout). App features verified working live.
 - Fixed STALE specs (false failures, not app bugs): login redesign changed button "Login"->"Log in" and replaced text heading with logo. Updated authed.spec.ts + public.spec.ts to `/^log in$/i` and tagline check.

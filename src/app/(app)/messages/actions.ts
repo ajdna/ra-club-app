@@ -409,6 +409,26 @@ export async function clearThread(threadId: string): Promise<{ error?: string }>
   return {};
 }
 
+/**
+ * Delete a whole thread (broadcast / direct / group) — initiator only.
+ * RLS (chat_threads_delete) restricts this to coach_id = app_user_id(); FK
+ * cascades remove messages/reads/members/reactions for every participant.
+ */
+export async function deleteThread(threadId: string): Promise<{ error?: string }> {
+  const me = await getCurrentUser();
+  if (!me || typeof me === "string") return { error: "Not signed in" };
+
+  const supabase = await createClient();
+  const { data: thread } = await supabase.from("chat_threads").select("coach_id").eq("id", threadId).single();
+  if (!thread) return { error: "Thread not found" };
+  if (thread.coach_id !== me.id) return { error: "Sirf initiator hi delete kar sakta hai." };
+
+  const { error: delErr } = await supabase.from("chat_threads").delete().eq("id", threadId);
+  if (delErr) return { error: delErr.message };
+  revalidatePath("/messages");
+  return {};
+}
+
 // ââ Kept for backward compat ââââââââââââââââââââââââââââââââââââââââââââââââââ
 export async function getMyMembers() {
   const contacts = await getMyContacts();

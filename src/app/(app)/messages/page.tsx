@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { getThreads } from "./actions";
 import { PushSubscribeButton } from "./PushSubscribeButton";
+import { DeleteThreadButton } from "./DeleteThreadButton";
 
 export const dynamic = "force-dynamic";
 
@@ -84,17 +85,17 @@ export default async function MessagesPage() {
 
       {broadcasts.length > 0 && (
         <Section title="Broadcasts">
-          {broadcasts.map((t) => <ThreadRow key={t.id} thread={t} />)}
+          {broadcasts.map((t) => <ThreadRow key={t.id} thread={t} myId={me.id} />)}
         </Section>
       )}
       {groups.length > 0 && (
         <Section title="Groups">
-          {groups.map((t) => <ThreadRow key={t.id} thread={t} />)}
+          {groups.map((t) => <ThreadRow key={t.id} thread={t} myId={me.id} />)}
         </Section>
       )}
       {directs.length > 0 && (
         <Section title="Direct">
-          {directs.map((t) => <ThreadRow key={t.id} thread={t} />)}
+          {directs.map((t) => <ThreadRow key={t.id} thread={t} myId={me.id} />)}
         </Section>
       )}
     </main>
@@ -110,16 +111,18 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function ThreadRow({ thread }: { thread: Awaited<ReturnType<typeof getThreads>>[number] }) {
+function ThreadRow({ thread, myId }: { thread: Awaited<ReturnType<typeof getThreads>>[number]; myId: string }) {
   const hasUnread = thread.unread > 0;
+  const canDelete = thread.coachId === myId;
   const av =
     thread.type === "broadcast" ? "bg-terra-soft text-terra"
     : thread.type === "group" ? "bg-emerald-soft text-emerald"
     : "bg-sage/15 text-sage-d";
   return (
+    <div className="flex items-center gap-1">
     <Link
       href={`/messages/${thread.id}`}
-      className={`flex items-center gap-3 rounded-[16px] p-3 transition ${
+      className={`flex flex-1 items-center gap-3 rounded-[16px] p-3 transition ${
         hasUnread ? "bg-emerald-soft" : "hover:bg-cream-2"
       }`}
     >
@@ -143,5 +146,7 @@ function ThreadRow({ thread }: { thread: Awaited<ReturnType<typeof getThreads>>[
         </div>
       </div>
     </Link>
+      {canDelete && <DeleteThreadButton threadId={thread.id} />}
+    </div>
   );
 }

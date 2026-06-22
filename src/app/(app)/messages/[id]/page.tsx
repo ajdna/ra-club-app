@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getThread, getMessages, getThreads } from "../actions";
 import { ChatClient } from "./ChatClient";
 import { ClearChatButton } from "./ClearChatButton";
+import { DeleteThreadButton } from "../DeleteThreadButton";
 
 const CAN_CLEAR = ["club_owner", "nco", "jco", "coach"];
 
@@ -41,6 +42,9 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
         </div>
         {CAN_CLEAR.includes(me.role) && (
           <ClearChatButton threadId={id} />
+        )}
+        {thread.coachId === me.id && (
+          <DeleteThreadButton threadId={id} redirectTo="/messages" />
         )}
       </header>
 
