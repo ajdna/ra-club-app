@@ -4,6 +4,7 @@ Append-only delta log. Newest at top. Workers read the top entries + `CONTEXT_PA
 instead of re-deriving. Keep entries one-liners; compress with `caveman-compress` when long.
 
 ## 2026-06-22
+- Bottom nav 5th slot (Profile moved to top-bar menu): coaches -> "Plan" (/followup); members -> "Log" (new /log page = self weight + mark-present, reusing logMyWeight/markMyAttendance from my-progress/actions). BottomNav.tsx + new src/app/(app)/log/page.tsx.
 - AppBar: top-bar logo now blends (no white tile/box). Added account dropdown right of theme toggle -> Profile (/profile), Help (modal: upline coaches name+role+tel call, "contact your coach" msg), Logout (supabase signOut). Upline chain computed in (app)/layout.tsx and passed as `coaches`.
 - New brand logo (transparent source `public/logo-new.png`): cropped full -> `logo-home.png` (login) + emblem -> `logo-icon.png` (AppBar, on white tile, consistent both themes) + regenerated `icon-192/512/72.png`. Dark login variant `logo-home-dark.png` (cream wordmark) regenerated. AppBar img now `bg-white ... ring-1 ring-line`.
 - Login logo dark variant: generated `public/logo-home-dark.png` (light/cream wordmark, emblem kept) via PIL region recolor; login swaps logo-home (light) <-> logo-home-dark (dark) by theme via `.brand-logo-light/.brand-logo-dark` CSS. globals.css + login/page.tsx.

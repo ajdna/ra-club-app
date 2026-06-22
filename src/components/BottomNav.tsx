@@ -27,7 +27,7 @@ const COACH_ITEMS: Item[] = [
   { href: "/members", label: "Members", icon: <Icon d="M17 20v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M10 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm11 9v-1a4 4 0 0 0-3-3.8M16 4.2a3.5 3.5 0 0 1 0 6.6" /> },
   { href: "/messages", label: "Chat", center: true, icon: <Icon d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /> },
   { href: "/alerts", label: "Alerts", icon: <Icon d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0" /> },
-  { href: "/profile", label: "Profile", icon: <Icon d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" /> },
+  { href: "/followup", label: "Plan", icon: <Icon d="M9 5h6a1 1 0 0 1 1 1v1H8V6a1 1 0 0 1 1-1ZM8 7H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2M9 14l2 2 4-4" /> },
 ];
 
 const MEMBER_ITEMS: Item[] = [
@@ -35,7 +35,7 @@ const MEMBER_ITEMS: Item[] = [
   { href: "/my-progress", label: "Progress", icon: <Icon d="M3 3v18h18M8 17l4-4 4 4 4-4" /> },
   { href: "/messages", label: "Chat", center: true, icon: <Icon d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /> },
   { href: "/alerts", label: "Alerts", icon: <Icon d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0" /> },
-  { href: "/profile", label: "Profile", icon: <Icon d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" /> },
+  { href: "/log", label: "Log", icon: <Icon d="M9 5h6a1 1 0 0 1 1 1v1H8V6a1 1 0 0 1 1-1ZM8 7H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2M12 12v5M9.5 14.5h5" /> },
 ];
 
 export function BottomNav({
