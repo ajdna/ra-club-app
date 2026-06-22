@@ -4,6 +4,7 @@ Append-only delta log. Newest at top. Workers read the top entries + `CONTEXT_PA
 instead of re-deriving. Keep entries one-liners; compress with `caveman-compress` when long.
 
 ## 2026-06-22
+- Profile screen: tightened identity block in `src/app/(app)/profile/page.tsx` to match `Profile.dc.html` avatar/badge styling (terra-soft avatar circle, Fraunces name, emerald role pill); JSX/className only, no data/logic changes; lint clean (0 errors), `tsc --noEmit` clean; `npm run build` hit a sandbox "Bus error" unrelated to the diff (env/binary issue, not verified on this pass — recommend re-running build in a normal dev machine before merge).
 - Architecture: added CONTEXT_PACK.md (shared brief), QA_AGENT.md (test role), this log. Orchestration policy in AGENTS.md + ORCHESTRATION_WORKFLOW.md.
 - Design rollout DONE (light+dark tokens): login, home, members, messages, profile. Brand = "Ruby Nutrition Center". Logos transparent: logo-home (login only), logo-icon (AppBar).
 - Messages screen polished via Sonnet sub-agent, Opus-reviewed (clean).

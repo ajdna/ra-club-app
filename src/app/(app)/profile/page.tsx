@@ -48,15 +48,15 @@ export default async function ProfilePage() {
     <main className="px-4 pb-8 pt-5">
       <h1 className="mb-4 px-1 font-display text-[26px] font-medium tracking-tight text-ink">Profile</h1>
 
-      {/* Identity card */}
-      <div className="rounded-[18px] border border-line bg-card p-5">
-        <div className="flex items-center gap-4">
-          <span className="grid h-16 w-16 place-items-center rounded-full bg-emerald text-xl font-semibold text-white">
-            {initials(me.name)}
-          </span>
-          <div className="min-w-0">
-            <div className="truncate font-display text-[20px] font-medium text-ink">{me.name}</div>
-            <span className="mt-1 inline-flex items-center rounded-full bg-emerald-soft px-2.5 py-0.5 text-[12px] font-semibold text-emerald">
+      {/* Identity */}
+      <div className="flex items-center gap-[15px] px-1">
+        <span className="grid h-[66px] w-[66px] shrink-0 place-items-center rounded-[22px] bg-terra-soft text-[24px] font-semibold text-terra">
+          {initials(me.name)}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="truncate font-display text-[25px] font-medium leading-[1.05] tracking-tight text-ink">{me.name}</div>
+          <div className="mt-1.5 flex items-center gap-[7px]">
+            <span className="inline-flex h-[21px] items-center rounded-full bg-emerald-soft px-2.5 text-[11.5px] font-semibold text-emerald">
               {ROLE_LABEL[me.role] ?? me.role}
             </span>
           </div>
@@ -81,7 +81,7 @@ export default async function ProfilePage() {
       {me.role === "club_owner" && (
         <Link
           href="/admin"
-          className="mt-4 flex items-center justify-between rounded-[16px] border border-line bg-card p-4 transition hover:border-emerald/40"
+          className="mt-4 flex items-center justify-between rounded-[18px] border border-line bg-card p-[18px] transition hover:border-emerald/40"
         >
           <span className="font-semibold text-ink">Admin Console</span>
           <span className="flex items-center gap-1 text-[13px] font-semibold text-emerald">
@@ -92,7 +92,7 @@ export default async function ProfilePage() {
       )}
 
       {/* Appearance */}
-      <div className="mt-4 rounded-[16px] border border-line bg-card p-4">
+      <div className="mt-4 rounded-[18px] border border-line bg-card p-[18px]">
         <div className="flex items-center justify-between">
           <div>
             <div className="font-semibold text-ink">Appearance</div>
