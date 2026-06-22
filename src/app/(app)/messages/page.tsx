@@ -35,26 +35,37 @@ export default async function MessagesPage() {
 
   return (
     <main className="px-4 pb-24 pt-5">
-      <header className="mb-4 flex items-end justify-between px-1">
-        <h1 className="font-display text-[26px] font-medium tracking-tight text-ink">Messages</h1>
+      <header className="mb-5 flex items-end justify-between px-1">
+        <h1 className="font-display text-[28px] font-medium tracking-tight text-ink">Messages</h1>
         <Link
           href="/messages/new"
           aria-label="New message"
           className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-emerald text-white shadow-[0_8px_18px_var(--emerald-soft)] transition hover:bg-emerald-2"
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
         </Link>
       </header>
 
       {canBroadcast && (
-        <div className="mb-4 flex gap-2">
-          <Link href="/messages/broadcast" className="flex flex-1 items-center justify-center gap-2 rounded-[14px] border border-line bg-card py-2.5 text-[13px] font-semibold text-ink transition hover:border-emerald/40">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 11v2a1 1 0 0 0 1 1h3l4 4V6L7 10H4a1 1 0 0 0-1 1ZM16 8a5 5 0 0 1 0 8" /></svg>
-            Broadcast
+        <div className="mb-4 flex flex-col gap-1">
+          <Link href="/messages/broadcast" className="flex items-center gap-3 rounded-[16px] bg-emerald-soft p-3 transition hover:bg-emerald-soft/70">
+            <span className="grid h-[50px] w-[50px] shrink-0 place-items-center rounded-[16px] bg-emerald text-white">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 11v2a1 1 0 0 0 1 1h3l4 4V6L7 10H4a1 1 0 0 0-1 1ZM16 8a5 5 0 0 1 0 8" /></svg>
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[15px] font-semibold text-emerald">New broadcast</span>
+              <span className="block text-[13px] font-medium text-ink-2">Message everyone at once</span>
+            </span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-emerald" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
           </Link>
-          <Link href="/messages/group/new" className="flex flex-1 items-center justify-center gap-2 rounded-[14px] border border-line bg-card py-2.5 text-[13px] font-semibold text-ink transition hover:border-emerald/40">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3" /><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.2a3 3 0 0 1 0 5.6M18 19a5.5 5.5 0 0 0-2-4.3" /></svg>
-            Group
+          <Link href="/messages/group/new" className="flex items-center gap-3 rounded-[16px] p-3 transition hover:bg-cream-2">
+            <span className="grid h-[50px] w-[50px] shrink-0 place-items-center rounded-full bg-sage/15 text-sage-d">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3" /><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.2a3 3 0 0 1 0 5.6M18 19a5.5 5.5 0 0 0-2-4.3" /></svg>
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[15px] font-semibold text-ink">New group</span>
+              <span className="block text-[13px] font-medium text-ink-2">Start a group conversation</span>
+            </span>
           </Link>
         </div>
       )}
@@ -93,8 +104,8 @@ export default async function MessagesPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mb-5">
-      <p className="mb-2.5 px-1 text-[12px] font-semibold uppercase tracking-[0.14em] text-sage-d">{title}</p>
-      <div className="flex flex-col gap-2.5">{children}</div>
+      <p className="mb-2 px-1 text-[12.5px] font-semibold text-ink-2">{title}</p>
+      <div className="flex flex-col gap-1">{children}</div>
     </section>
   );
 }
@@ -108,27 +119,29 @@ function ThreadRow({ thread }: { thread: Awaited<ReturnType<typeof getThreads>>[
   return (
     <Link
       href={`/messages/${thread.id}`}
-      className={`flex items-center gap-3 rounded-[16px] border p-3.5 transition ${
-        hasUnread ? "border-emerald/40 bg-emerald-soft" : "border-line bg-card hover:border-emerald/40"
+      className={`flex items-center gap-3 rounded-[16px] p-3 transition ${
+        hasUnread ? "bg-emerald-soft" : "hover:bg-cream-2"
       }`}
     >
-      <span className={`grid h-[46px] w-[46px] shrink-0 place-items-center rounded-full text-[16px] font-semibold ${av}`}>
+      <span className={`grid h-[50px] w-[50px] shrink-0 place-items-center rounded-full text-[16px] font-semibold ${av}`}>
         {thread.type === "broadcast" ? "📢" : thread.type === "group" ? "👥" : initials(thread.otherName)}
       </span>
       <div className="min-w-0 flex-1">
-        <div className="flex items-baseline justify-between gap-2">
+        <div className="flex items-center justify-between gap-2">
           <span className={`truncate text-[15px] font-semibold ${hasUnread ? "text-emerald" : "text-ink"}`}>
             {thread.otherName}
           </span>
-          <span className="shrink-0 text-[11px] font-medium text-ink-3">{timeAgo(thread.lastAt)}</span>
+          <span className="shrink-0 text-[11.5px] font-medium text-ink-3">{timeAgo(thread.lastAt)}</span>
         </div>
-        <p className="mt-0.5 truncate text-[13px] text-ink-2">{thread.lastMessage}</p>
+        <div className="mt-0.5 flex items-center justify-between gap-2">
+          <p className="truncate text-[13.5px] text-ink-2">{thread.lastMessage}</p>
+          {hasUnread && (
+            <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-emerald px-1 text-[11px] font-bold text-white">
+              {thread.unread > 9 ? "9+" : thread.unread}
+            </span>
+          )}
+        </div>
       </div>
-      {hasUnread && (
-        <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-emerald px-1 text-[11px] font-bold text-white">
-          {thread.unread > 9 ? "9+" : thread.unread}
-        </span>
-      )}
     </Link>
   );
 }
