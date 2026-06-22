@@ -3,6 +3,10 @@
 Append-only delta log. Newest at top. Workers read the top entries + `CONTEXT_PACK.md`
 instead of re-deriving. Keep entries one-liners; compress with `caveman-compress` when long.
 
+## 2026-06-22 — live test:e2e
+- features.spec.ts: 6/6 PASS (account menu, Profile nav, Help panel, Plan->followup, /log, Logout). App features verified working live.
+- Fixed STALE specs (false failures, not app bugs): login redesign changed button "Login"->"Log in" and replaced text heading with logo. Updated authed.spec.ts + public.spec.ts to `/^log in$/i` and tagline check.
+
 ## 2026-06-22 — QA pass (account menu / nav / log page)
 QA agent, static verification (source read directly, no live build/dev/Playwright run — see note). All 4 features PASS, no e2e selector mismatches found.
 

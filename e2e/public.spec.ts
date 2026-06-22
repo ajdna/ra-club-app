@@ -5,10 +5,10 @@ import { test, expect } from "@playwright/test";
 
 test("login page renders with the email + password form", async ({ page }) => {
   await page.goto("/login");
-  await expect(page.getByRole("heading", { name: /ruby ankur/i })).toBeVisible();
+  await expect(page.getByText(/sehat, streak aur saath/i)).toBeVisible();
   await expect(page.getByPlaceholder("you@example.com")).toBeVisible();
   await expect(page.locator('input[type="password"]')).toBeVisible();
-  await expect(page.getByRole("button", { name: /^login$/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^log in$/i })).toBeVisible();
 });
 
 test("register page loads", async ({ page }) => {
