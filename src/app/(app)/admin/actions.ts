@@ -72,9 +72,9 @@ export async function updateUserRole(formData: FormData): Promise<Result> {
   const { error } = await supabase.rpc("update_user_role", {
     p_user_id: userId,
     p_new_role: role as VRole,
-    p_new_parent_id: parentId,
-    p_membership: membership,
-    p_status: status,
+    p_new_parent_id: parentId ?? undefined,
+    p_membership: membership ?? undefined,
+    p_status: status ?? undefined,
   });
   if (error) return { ok: false, error: error.message };
 
