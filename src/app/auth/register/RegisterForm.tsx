@@ -46,26 +46,53 @@ export function RegisterForm({
     if (!parentId) return setError("Apna coach / upline choose karein.");
 
     setLoading(true);
-    const supabase = createClient();
+    try {
+      const supabase = createClient();
 
-    const { error: signUpErr } = await supabase.auth.signUp({
-      email: email.trim().toLowerCase(),
-      password,
-    });
-    if (signUpErr) {
+      // Pre-flight: make sure email / user id / phone are free BEFORE we create
+      // an auth user. Avoids orphaned auth users and shows a clear reason.
+      const rpc = supabase.rpc as unknown as (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: string | null; error: { message: string } | null }>;
+      const { data: unavailable, error: chkErr } = await rpc(
+        "check_registration_available",
+        {
+          p_email: email.trim().toLowerCase(),
+          p_username: username.trim(),
+          p_phone: phone.trim(),
+        },
+      );
+      if (chkErr) throw new Error(chkErr.message);
+      if (unavailable) {
+        setError(unavailable);
+        return;
+      }
+
+      const { error: signUpErr } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+      if (signUpErr) {
+        setError(signUpErr.message);
+        return;
+      }
+
+      const res = await registerUser(name, username, email, phone, waNumber, role, parentId);
+      if (!res.ok) {
+        // Roll back the just-created auth session so a retry is clean.
+        await supabase.auth.signOut().catch(() => {});
+        setError(res.error);
+        return;
+      }
+
+      router.push("/pending");
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Kuch galat ho gaya. Dobara try karein.");
+    } finally {
       setLoading(false);
-      return setError(signUpErr.message);
     }
-
-    const res = await registerUser(name, username, email, phone, waNumber, role, parentId);
-    if (!res.ok) {
-      await supabase.auth.signOut();
-      setLoading(false);
-      return setError(res.error);
-    }
-
-    router.push("/pending");
-    router.refresh();
   }
 
   return (

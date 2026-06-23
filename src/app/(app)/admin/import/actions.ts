@@ -163,12 +163,12 @@ export async function importMembers(formData: FormData): Promise<ImportResult> {
           p_upline_id: uplineId,
           p_role: mapping.system_role as "member" | "coach" | "supervisor" | "jco" | "nco",
           p_gets_members_row: mapping.gets_members_row,
-          p_phone: String(row.phone ?? "").trim() || null,
-          p_email: String(row.email ?? "").trim() || null,
-          p_membership: membership,
+          p_phone: String(row.phone ?? "").trim() || undefined,
+          p_email: String(row.email ?? "").trim() || undefined,
+          p_membership: membership ?? undefined,
           p_join_date: startDate.toISOString().split("T")[0],
-          p_ideal_weight: idealWeight !== null && !isNaN(idealWeight) ? idealWeight : null,
-          p_cur_weight: curWeight !== null && !isNaN(curWeight) ? curWeight : null,
+          p_ideal_weight: idealWeight !== null && !isNaN(idealWeight) ? idealWeight : undefined,
+          p_cur_weight: curWeight !== null && !isNaN(curWeight) ? curWeight : undefined,
         },
       );
 

@@ -99,9 +99,9 @@ export async function updateUserDetails(formData: FormData): Promise<Result> {
   const supabase = await createClient();
   const { error } = await supabase.rpc("update_user_details", {
     p_user_id: userId,
-    p_name: name,
-    p_phone: phone,
-    p_address: address,
+    p_name: name ?? undefined,
+    p_phone: phone ?? undefined,
+    p_address: address ?? undefined,
   });
   if (error) return { ok: false, error: error.message };
 
