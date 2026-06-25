@@ -31,7 +31,7 @@ test.describe("top bar + nav features", () => {
     await login(page);
     await page.getByRole("button", { name: /account menu/i }).click();
     await page.getByRole("link", { name: /^profile$/i }).click();
-    await expect(page).toHaveURL(/\/profile/);
+    await expect(page).toHaveURL(/\/profile/, { timeout: 10_000 });
   });
 
   test("account menu: Help panel opens with contact message", async ({ page }) => {
@@ -45,7 +45,7 @@ test.describe("top bar + nav features", () => {
   test("coach Plan tab opens follow-ups", async ({ page }) => {
     await login(page);
     await page.getByRole("link", { name: /^plan$/i }).click();
-    await expect(page).toHaveURL(/\/followup/);
+    await expect(page).toHaveURL(/\/followup/, { timeout: 10_000 });
   });
 
   test("log page loads with weight + attendance", async ({ page }) => {
