@@ -44,6 +44,10 @@ yarn-error.log*
 # supabase cli temp
 supabase/.temp/
 
+# e2e local run artifacts
+/e2e-result.txt
+/nul
+
 # vercel
 .vercel
 

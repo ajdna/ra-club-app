@@ -39,7 +39,7 @@ export default defineConfig({
   webServer: process.env.BASE_URL
     ? undefined
     : {
-        command: process.env.CI ? "npm run start" : "npm run dev",
+        command: process.env.CI ? "npm run start" : "npx next dev --webpack",
         url: "http://localhost:3000",
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
