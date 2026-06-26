@@ -1,119 +1,153 @@
-# Ruby Ankur Wellness — Club App
+# Ruby Nutrition Center — Club App
 
-Club management platform for Ruby Ankur Wellness (organization **2A**, club code
-**RA**). This is the **Level 1A scaffold**: a clean, runnable Next.js + Supabase
-foundation. No features are built yet — see the Build Guide for the step-by-step
-sequence (this is "Step 1 — Project scaffold").
+Mobile-first PWA for **Ruby Nutrition Center** (organization **2A**, club code
+**RA**). Used by the club owner, supervisors/coaches, and members to manage
+members, track weight & attendance, run 90-day follow-ups, and message each
+other. Copy is **Hinglish**. Built with Next.js 16, React 19, Supabase, and
+Capacitor (Android).
 
-- **Framework:** Next.js 16 (App Router) + React 19 + TypeScript
-- **Styling:** Tailwind CSS v4, warm-earth design tokens from the prototypes
-- **Backend:** Supabase (Postgres + Auth + Storage + Realtime)
+> **Status: production-ready for first field trial.** 29 pages built, 17/17 E2E
+> tests pass, lint + build clean. See `HANDOFF.md` for full state.
 
-The source docs (`Business Brief`, `Technical Architecture`, `Build Guide`) and
-the HTML prototypes live in the **parent folder** (`..`).
+---
+
+## What's built
+
+### Core flows (all live)
+- **Auth** — email/password + username login, registration with email/phone/WhatsApp validation, password reset, pending-approval state
+- **Home dashboard** — role-aware: coaches see follow-ups + stats, members see streak/weight/today's tasks
+- **Members** — searchable, filterable directory; per-member detail, intake form (24 fields), and progress report
+- **Messaging** — direct, group, and broadcast threads; replies, reactions, pinned messages, read receipts, thread delete
+- **Follow-ups** — 90-day Consumer Follow-Up Planner (Month 1 intensive → Month 2 weekly → Month 3+ repeating)
+- **Self-logging** — members log weight + mark attendance; my-progress view with streaks
+- **Admin console** — owner-only: users, roles, bulk import, analytics, push management, rules-engine config
+- **Notifications** — 9 notification types (milestone, recharge-due, drop-off, reminders…), in-app feed + web push
+- **Calendar, search, alerts** — full secondary screens
+
+### Stack
+- **Framework:** Next.js 16 (App Router, RSC) · React 19 · TypeScript
+- **Styling:** Tailwind CSS v4, warm-earth design tokens (emerald / terra / cream), light + dark
+- **Backend:** Supabase (Postgres + Auth + Realtime + Storage), 18 tables, closure-table hierarchy with RLS, 9 roles
+- **Mobile:** PWA + Capacitor (Android) · web push via VAPID
+- **Bundler:** Webpack (Turbopack is broken on Windows — vercel/next.js#90860)
 
 ---
 
 ## 1. Prerequisites
 
-- **Node.js 18+** (you have v26). On this machine Node is installed at
-  `C:\Program Files\nodejs` but is **not on your PATH**, so a bare `node` /
-  `npm` command won't be found. Two options:
-  - **Easiest:** add `C:\Program Files\nodejs` to your Windows PATH
-    (Start → "Edit the system environment variables" → Path → New), then open a
-    **new** terminal.
-  - **Or** prefix commands for the current PowerShell session only:
-    ```powershell
-    $env:Path = "C:\Program Files\nodejs;" + $env:Path
-    ```
+- **Node.js 18+** (this machine has v26). If `node`/`npm` aren't on your PATH,
+  add `C:\Program Files\nodejs` or prefix your session:
+  ```powershell
+  $env:Path = "C:\Program Files\nodejs;" + $env:Path
+  ```
 
-All commands below are run from inside this `club-app` folder.
+All commands run from inside this `club-app` folder.
 
 ## 2. Run it locally
 
-Dependencies are already installed. Just start the dev server:
-
 ```powershell
-npm run dev
+npm install      # first time only
+npm run dev      # NOTE: on Windows, use `npx next dev --webpack` (Turbopack is broken)
 ```
 
-Open **http://localhost:3000**. You should see the branded scaffold page with a
-module map and a Supabase status indicator (amber until you add keys in step 3).
-
-Other scripts:
+Open **http://localhost:3000**. You'll be redirected to `/login`.
 
 ```powershell
-npm run build   # production build
-npm run start   # serve the production build
-npm run lint    # eslint
+npm run build      # production build
+npm run start      # serve the production build
+npm run lint       # eslint (flat config)
+npm run test:e2e   # Playwright (auto-starts the dev server)
 ```
 
-## 3. Set up Supabase
+## 3. Environment
 
-The app runs without Supabase, but auth/data features need it. One-time setup:
+All keys live in **`.env.local`** (git-ignored). Copy from `.env.example` and fill in:
 
-1. Go to **https://supabase.com** → sign in → **New project**.
-   - Pick a name (e.g. `ruby-ankur`), set a database password (save it), choose
-     a region close to your users (e.g. **Mumbai / South Asia**).
-   - Wait ~2 minutes for it to provision.
-2. In the project, open **Project Settings → API** and copy:
-   - **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
-   - **anon / public** key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-3. Paste them into **`.env.local`** in this folder (it's git-ignored):
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=https://YOUR-ref.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-public-key
-   ```
-4. Stop the dev server (Ctrl+C) and run `npm run dev` again. The Supabase status
-   dot on the home page should turn green.
+```
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...          # server-only — never expose to browser
+CRON_SECRET=...
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=...       # web push
+VAPID_PRIVATE_KEY=...
+VAPID_EMAIL=...
+PUSH_WEBHOOK_SECRET=...
+```
 
-> Phone/OTP login (Build Guide Step 3): later, enable it under
-> **Authentication → Sign In / Providers → Phone** and connect an SMS provider.
-> The `service_role` key (Settings → API) is **server-only** — never commit it or
-> expose it to the browser; it's used for migrations/seed scripts.
+Get Supabase keys from **Project Settings → API**. The `service_role` key is
+**server-only** — never commit it or ship it to the browser. Database migrations
+live in `supabase/migrations/` (28 applied to prod).
+
+### E2E tests
+Copy `.env.test.example` → `.env.test` and set a **dedicated test account**
+(never your real admin login):
+```
+TEST_EMAIL=...
+TEST_PASSWORD=...
+```
+Create the account in Supabase Dashboard → Authentication → Users, then approve
+it in the app if needed. Without these, the logged-in tests auto-skip.
 
 ## 4. Project structure
 
 ```
 club-app/
-├─ .env.local              # your Supabase keys (git-ignored)
-├─ .env.example            # template for the above
-└─ src/
-   ├─ app/                 # App Router (layout, home page, global styles)
-   │  ├─ layout.tsx        # Fraunces + Manrope fonts, metadata
-   │  ├─ page.tsx          # scaffold landing / module map
-   │  └─ globals.css       # warm-earth design tokens + Tailwind
-   ├─ proxy.ts             # Next 16 "Proxy" (was Middleware) — refreshes auth
-   ├─ lib/
-   │  ├─ supabase/         # browser + server clients, session refresh
-   │  └─ types.ts          # core domain types (User, Member, closure table…)
-   └─ modules/             # one folder per architecture module — see its README
-      ├─ identity/  hierarchy/  members/   health-score/
-      ├─ dmo/       followup/   treasury/  recognition/
-      ├─ marathon/  comms/      rules-engine/  notifications/
+├─ src/
+│  ├─ app/
+│  │  ├─ login/  auth/  pending/        # auth flow
+│  │  ├─ (app)/                          # authenticated shell
+│  │  │  ├─ page.tsx                     # home / command center
+│  │  │  ├─ members/  messages/  followup/  log/
+│  │  │  ├─ my-progress/  calendar/  search/  alerts/  profile/  add/
+│  │  │  └─ admin/                       # owner-only (users, roles, import, analytics, push)
+│  │  ├─ api/                            # push, cron (morning/evening/chat-clear), keepalive
+│  │  └─ globals.css                     # design tokens (source of truth)
+│  ├─ components/                        # AppBar, BottomNav, DarkModeToggle, InactivityTimer, push…
+│  ├─ lib/                               # auth, supabase clients, followup-planner, health, validate, types, database.types
+│  └─ modules/                           # rules-engine, notifications, members (real); 9 planned stubs
+├─ e2e/                                  # Playwright specs (17 tests)
+├─ supabase/migrations/                  # 28 SQL migrations
+├─ design/                               # screen prototypes (.dc.html) + tokens.json
+├─ HANDOFF.md                            # ← read this first if continuing work
+├─ CONTEXT_PACK.md                       # compact brief for sub-agents
+└─ PROGRESS.md                           # append-only delta log
 ```
 
-`src/modules/README.md` maps each module to the architecture and the 14 "killer
-features." Modules are empty placeholders (`export {};`) for now — they get
-filled in as you work through the Build Guide.
+### Modules (`src/modules/`)
+**3 real** (have working Supabase logic): `rules-engine`, `notifications`, `members`.
+**9 planned stubs** (`export {};` with JSDoc): `followup`, `health-score`,
+`hierarchy`, `identity`, `comms`, `dmo`, `marathon`, `recognition`, `treasury`.
+Their logic currently lives inline in route pages + `src/lib/` — the stubs are
+the intended future home. See `docs/superpowers/specs/` for the build roadmap.
 
-## 5. Next steps (Build Guide)
+## 5. Field-trial checklist
 
-This scaffold is **Step 1**. Continue with:
+Before putting real users on it:
+- [x] Lint clean (0 errors), build passes, 17/17 E2E tests pass
+- [x] All env vars set, schema applied to prod
+- [ ] **Deploy to Vercel** — coaches need a live URL (not `localhost`)
+- [ ] **Create + approve role accounts** in Supabase (owner + coach + member)
+- [ ] Configure custom SMTP in Supabase if expecting many signups (avoids Auth email rate limits)
 
-- **Step 2 — Database schema:** users + `parent_id`, members, the **closure
-  table** (downline / sideline isolation), follow-up tasks, DMO entries, and the
-  `rule_config` table for the Rules Engine.
-- **Step 3 — Login:** phone + OTP via Supabase Auth, role + tree position,
-  server-side visibility enforcement.
-- **Steps 4–6:** core screens (Morning Command Center, Members), Admin Console,
-  notifications.
-- **Step 7:** test with sample data and deploy to Vercel.
+## 6. Known limitations (v1)
+- **Health score** is a 2-signal proxy (overdue/due-today → Red/Yellow/Green), not the full 5-signal composite
+- **No food/meal logging** yet — biggest gap vs HealthifyMe (planned, see spec)
+- **~15 features lack E2E coverage** (admin, member detail, messaging compose, calendar, search) — they work but aren't regression-protected
+- **9 modules are stubs** — functionally fine via inline code, not yet refactored into the module layer
+
+## 7. Continuing work / handoff
+
+If resuming in a new AI session or with another developer, read these **in order**:
+1. **`HANDOFF.md`** — single source of truth for current state, test status, pipeline
+2. **`CONTEXT_PACK.md`** — compact brief (stack, brand tokens, key files, hard rules)
+3. **`PROGRESS.md`** — recent delta log
+4. **`docs/superpowers/specs/`** — feature roadmap + test plan
+
+Hard rules (see `CONTEXT_PACK.md`): never change data/logic when restyling;
+RLS/auth/schema changes flag for owner; gate = `npm run lint && npm run build`;
+UI changes must work in **both light and dark**.
 
 ## Notes on this stack version
-
-- **Next.js 16** renamed `middleware.ts` → **`proxy.ts`** (same functionality);
-  that's why auth-session refresh lives in `src/proxy.ts`.
-- **Tailwind v4** is configured via CSS (`@theme` in `globals.css`), not a
-  `tailwind.config.js`. Brand colors are exposed as utilities like `bg-terra`,
-  `text-sage-d`, `border-line`.
+- **Next.js 16** renamed `middleware.ts` → **`proxy.ts`** — auth-session refresh lives in `src/proxy.ts`.
+- **Tailwind v4** is configured via CSS (`@theme` in `globals.css`), not `tailwind.config.js`. Brand colors are utilities like `bg-terra`, `text-sage-d`, `border-line`.
+- **React-Compiler eslint rules are OFF**; `rules-of-hooks` + `exhaustive-deps` are ON. `.claude/**` and `design/**` are lint-ignored.
