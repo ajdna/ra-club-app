@@ -157,7 +157,7 @@ export default async function CommandCenter() {
 
   // ── NCO/JCO/OWNER/COACH HOME ───────────────────────────────────────────────
   const [usersRes, membersRes, tasksRes, dmoRes, labelRes, memLabels] = await Promise.all([
-    supabase.from("users").select("id, name, role"),
+    supabase.from("users").select("id, name, role, status"),
     supabase.from("members").select("user_id, membership_type, stage, current_weight, join_date, coach_id"),
     supabase.from("follow_up_tasks").select("id, member_id, coach_id, activity, due_date, status, day_number, cycle"),
     supabase.from("dmo_entries").select("total").eq("coach_id", me.id).eq("entry_date", today).maybeSingle(),
@@ -190,6 +190,11 @@ export default async function CommandCenter() {
 
   const recentMembers = [...members].sort((a, b) => (b.join_date ?? "").localeCompare(a.join_date ?? "")).slice(0, 3);
 
+  // Pending registrations awaiting the club owner's approval.
+  const pendingApprovals = me.role === "club_owner"
+    ? users.filter((u) => (u as { status?: string }).status === "pending").length
+    : 0;
+
   const roleLabel =
     me.role === "club_owner" ? "Club Owner"
     : me.role === "nco" ? "NCO — Team Leader"
@@ -215,6 +220,25 @@ export default async function CommandCenter() {
           <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-sage-d">{roleLabel}</p>
         )}
       </header>
+
+      {/* action required — pending approvals (owner only) */}
+      {pendingApprovals > 0 && (
+        <Link
+          href="/admin/users"
+          className="mb-4 flex items-center gap-3 rounded-[16px] border border-terra/40 bg-terra-soft px-4 py-3.5 transition hover:border-terra"
+        >
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-terra text-white">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2" /><path d="M3.5 19a5.5 5.5 0 0 1 11 0" /><path d="m16 11 2 2 4-4" /></svg>
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[14.5px] font-semibold text-terra-d">
+              {pendingApprovals} naya registration{pendingApprovals > 1 ? "s" : ""} approval ke liye pending
+            </div>
+            <div className="text-[12.5px] text-ink-2">Review karke approve ya reject karein</div>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-terra" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+        </Link>
+      )}
 
       {/* hero — today's follow-ups */}
       <Link

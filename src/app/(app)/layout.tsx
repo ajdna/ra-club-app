@@ -36,15 +36,22 @@ export default async function AppLayout({
       "session_timers",
       { inactivity_logout_minutes: 90, inactivity_warn_minutes: 2 },
     ),
-    supabase.from("users").select("id, name, role, parent_id, phone"),
+    supabase.from("users").select("id, name, role, parent_id, phone, status"),
   ]);
   const unreadMessages = (msgResult.data as number) ?? 0;
   const timeoutMinutes = timers.inactivity_logout_minutes ?? 90;
   const warnMinutes    = timers.inactivity_warn_minutes    ?? 2;
 
   // Upline coach chain (me -> ... -> club owner) for the Help menu.
-  type UplineUser = { id: string; name: string; role: string; parent_id: string | null; phone: string | null };
-  const byId = new Map(((usersRes.data as UplineUser[] | null) ?? []).map((u) => [u.id, u]));
+  type UplineUser = { id: string; name: string; role: string; parent_id: string | null; phone: string | null; status: string };
+  const allUsers = (usersRes.data as UplineUser[] | null) ?? [];
+  const byId = new Map(allUsers.map((u) => [u.id, u]));
+
+  // Pending approvals — only the club owner approves (owner-gated action).
+  const isOwner = typeof me === "object" && me !== null && me.role === "club_owner";
+  const pendingApprovals = isOwner
+    ? allUsers.filter((u) => u.status === "pending").length
+    : 0;
   const upline: { name: string; role: string; phone: string | null }[] = [];
   let cursor = typeof me === "object" && me !== null ? me.parentId : null;
   let guard = 0;
@@ -61,7 +68,7 @@ export default async function AppLayout({
       <InactivityTimer timeoutMinutes={timeoutMinutes} warnMinutes={warnMinutes} />
       <PushPermission />
       <PushNavigator />
-      <AppBar coaches={upline} />
+      <AppBar coaches={upline} isOwner={isOwner} pendingApprovals={pendingApprovals} />
       <div className="flex-1 overflow-y-auto">{children}</div>
       <BottomNav
         unreadAlerts={unread}

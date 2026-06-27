@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { SignOutButton } from "@/components/SignOutButton";
@@ -76,20 +75,6 @@ export default async function ProfilePage() {
           email: userRow?.email ?? "",
         }}
       />
-
-      {/* Admin console shortcut */}
-      {me.role === "club_owner" && (
-        <Link
-          href="/admin"
-          className="mt-4 flex items-center justify-between rounded-[18px] border border-line bg-card p-[18px] transition hover:border-emerald/40"
-        >
-          <span className="font-semibold text-ink">Admin Console</span>
-          <span className="flex items-center gap-1 text-[13px] font-semibold text-emerald">
-            Rules &amp; Users
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
-          </span>
-        </Link>
-      )}
 
       {/* Appearance */}
       <div className="mt-4 rounded-[18px] border border-line bg-card p-[18px]">

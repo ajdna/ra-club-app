@@ -41,6 +41,11 @@
 **Infra added this session:** `post-commit` hook flags graph stale (`../graphify-out/.needs_update`);
 AGENTS.md + KNOWLEDGE_GRAPH.md codify the read-graph-first / update-handoff-last protocol.
 
+**Approvals surfacing + Admin Console move (2026-06-27):**
+- Home dashboard (owner): action banner "N naya registrations approval ke liye pending" → `/admin/users` (`src/app/(app)/page.tsx`). Chose non-intrusive action card + badge over a modal popup (current mobile best practice).
+- AppBar account button: red count badge when approvals pending; **Admin Console** moved INTO the account dropdown (owner-only) with the same count badge (`AppBar.tsx`, fed `isOwner`/`pendingApprovals` from `(app)/layout.tsx`).
+- Removed the Admin Console shortcut from the Profile page (`profile/page.tsx`).
+
 **Graph refreshed (2026-06-27):** ran `graphify update .` (code-only, AST, **0 tokens**) →
 now 4011 nodes / 4342 edges / 530 communities (was 1127/1799/108). Curated semantic graph
 backed up in `../graphify-out/2026-06-27/`. NOTE: AST pass does not nodalize `.sql` RPCs

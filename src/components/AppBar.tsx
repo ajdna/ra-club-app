@@ -24,7 +24,15 @@ function initials(name: string) {
  * Shared top app bar shown on every (app) screen.
  * Left: logo-icon.png brand mark + wordmark. Right: theme toggle + account menu.
  */
-export function AppBar({ coaches = [] }: { coaches?: Coach[] }) {
+export function AppBar({
+  coaches = [],
+  isOwner = false,
+  pendingApprovals = 0,
+}: {
+  coaches?: Coach[];
+  isOwner?: boolean;
+  pendingApprovals?: number;
+}) {
   const router = useRouter();
   const [isDark, setIsDark] = useState(false);
   const [menu, setMenu] = useState(false);
@@ -86,11 +94,16 @@ export function AppBar({ coaches = [] }: { coaches?: Coach[] }) {
             <button
               type="button"
               onClick={() => setMenu((o) => !o)}
-              aria-label="Account menu"
+              aria-label={pendingApprovals > 0 ? `Account menu — ${pendingApprovals} approvals pending` : "Account menu"}
               aria-expanded={menu}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-line bg-card text-ink-2 transition hover:bg-cream-2"
+              className="relative flex h-9 w-9 items-center justify-center rounded-full border border-line bg-card text-ink-2 transition hover:bg-cream-2"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.2" /><path d="M5 20a7 7 0 0 1 14 0" /></svg>
+              {pendingApprovals > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-terra px-1 text-[10px] font-bold leading-none text-white ring-2 ring-cream">
+                  {pendingApprovals > 9 ? "9+" : pendingApprovals}
+                </span>
+              )}
             </button>
 
             {menu && (
@@ -101,6 +114,17 @@ export function AppBar({ coaches = [] }: { coaches?: Coach[] }) {
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.2" /><path d="M5 20a7 7 0 0 1 14 0" /></svg>
                     Profile
                   </Link>
+                  {isOwner && (
+                    <Link href="/admin" onClick={() => setMenu(false)} className={`${item} text-ink`}>
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5l-8-3Z" /></svg>
+                      <span className="flex-1">Admin Console</span>
+                      {pendingApprovals > 0 && (
+                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-terra px-1.5 text-[11px] font-bold text-white">
+                          {pendingApprovals > 9 ? "9+" : pendingApprovals}
+                        </span>
+                      )}
+                    </Link>
+                  )}
                   <button type="button" onClick={() => { setMenu(false); setHelp(true); }} className={`${item} text-ink`}>
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2 2-2 3" /><circle cx="12" cy="16.5" r="0.6" fill="currentColor" /></svg>
                     Help
