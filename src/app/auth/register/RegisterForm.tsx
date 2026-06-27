@@ -33,6 +33,9 @@ export function RegisterForm({
   const [parentId, setParentId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [approver, setApprover] = useState("Club owner");
+  const [coachName, setCoachName] = useState("");
 
   async function submit() {
     setError(null);
@@ -86,7 +89,18 @@ export function RegisterForm({
         return;
       }
 
-      router.push("/pending");
+      // Success — capture who approves, sign out the half-session, clear form,
+      // and show a clear confirmation (instead of a silent redirect).
+      const ownerName = coaches.find((c) => c.role === "club_owner")?.name ?? "Club owner";
+      const myCoach = coaches.find((c) => c.id === parentId)?.name ?? "";
+      await supabase.auth.signOut().catch(() => {});
+      setApprover(ownerName);
+      setCoachName(myCoach);
+      setName(""); setUsername(""); setEmail(""); setPassword("");
+      setPhone("+91"); setWhatsapp("+91"); setWaSame(true);
+      setRole("member"); setParentId("");
+      setError(null);
+      setSuccess(true);
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Kuch galat ho gaya. Dobara try karein.");
@@ -109,6 +123,22 @@ export function RegisterForm({
           </p>
         </div>
 
+        {success ? (
+          <div className="space-y-3 rounded-2xl border border-emerald/30 bg-card p-6 text-center shadow-sm">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-soft text-2xl">✅</div>
+            <h2 className="font-display text-xl font-semibold text-emerald">Account ban gaya!</h2>
+            <p className="text-sm leading-relaxed text-ink">
+              Aapka registration <span className="font-semibold">{approver}</span> (club owner) ke paas approval ke liye chala gaya hai.
+              Approve hone ke baad hi aap login kar paayenge — <span className="font-semibold">kripya thodi der intezaar karein.</span>
+            </p>
+            {coachName && (
+              <p className="text-xs text-ink/60">Koi sawaal? Apne coach <span className="font-semibold">{coachName}</span> se sampark karein.</p>
+            )}
+            <Link href="/login" className="mt-2 inline-block w-full rounded-xl bg-terra px-4 py-3 font-semibold text-white transition hover:bg-terra-d">
+              Login page par jaayein
+            </Link>
+          </div>
+        ) : (
         <div className="space-y-4 rounded-2xl border border-line bg-card p-5 shadow-sm">
           {/* Name */}
           <label className="block text-sm">
@@ -194,6 +224,7 @@ export function RegisterForm({
             <Link href="/login" className="font-semibold text-terra-d underline">Login karein</Link>
           </p>
         </div>
+        )}
 
         <p className="mt-4 text-center text-xs text-ink/45">
           Registration ke baad club owner approve karenge — tab app use kar sakte hain.

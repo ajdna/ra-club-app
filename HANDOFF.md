@@ -28,7 +28,7 @@
 | Robust `submit()` — pre-check before signUp, try/catch/finally, errors always show, signOut non-blocking | `src/app/auth/register/RegisterForm.tsx` | ✅ Edited (needs commit) |
 | `null` → `undefined` for optional RPC args (post `gen:types`) | `admin/actions.ts` (update_user_role, update_user_details), `admin/import/actions.ts` (bulk_upsert_user) | ✅ Edited (needs commit) |
 | Freed stuck phone on leftover test row (non-destructive) | live DB row `a9782d36…` | ✅ Done |
-| **Detached-RPC `this` bug** — `const rpc = supabase.rpc` loses `this` → runtime "Cannot read properties of undefined (reading 'rest')". Caught by live deploy test (build gate can't see it). Fixed with `.bind(supabase)` | `RegisterForm.tsx`, `login/page.tsx`, `auth/register/actions.ts` | ✅ Edited (needs commit + redeploy + re-test) |
+| **Detached-RPC `this` bug** — `const rpc = supabase.rpc` loses `this` → runtime "Cannot read properties of undefined (reading 'rest')". Caught by live deploy test (build gate can't see it). Fixed with `.bind(supabase)` | `RegisterForm.tsx`, `login/page.tsx`, `auth/register/actions.ts` | ✅ Fixed + deployed (78e5255) + **live-tested PASS**: duplicate email → "Email already registered", no freeze, no crash |
 
 **Still open for the user to decide:**
 - 2 orphaned auth users (`raclubuser1@gmail.com`, `rubyankur30@gmail.com`) block re-using
