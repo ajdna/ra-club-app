@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { getCurrentUser } from "@/lib/auth";
 import { BottomNav } from "@/components/BottomNav";
 import { AppBar } from "@/components/AppBar";
@@ -16,8 +17,12 @@ export default async function AppLayout({
 }) {
   const me = await getCurrentUser();
 
-  // Not signed in -> login
-  if (me === null) redirect("/login");
+  // Not signed in -> login, preserving the target page so a tapped push
+  // notification lands on the right screen after re-login.
+  if (me === null) {
+    const path = (await headers()).get("x-pathname") || "/";
+    redirect(`/login?next=${encodeURIComponent(path)}`);
+  }
 
   // Registered but waiting for approval
   if (me === "pending") redirect("/pending");

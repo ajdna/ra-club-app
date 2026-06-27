@@ -10,7 +10,9 @@ type Method = "otp" | "password";
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get("next") || "/";
+  // Only allow internal paths (block open-redirects + protocol-relative URLs).
+  const rawNext = params.get("next") || "/";
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
   const rejected = params.get("error") === "rejected";
 
   // Phone OTP is hidden until enabled (needs an SMS provider configured in
