@@ -6,7 +6,37 @@
 
 ---
 
-## 🆕 SESSION 3 (2026-06-27) — Registration hardening
+## 🆕 SESSION 4 (2026-06-27) — E2E coverage expansion + single blocker
+
+**What was done:**
+- Added 4 new E2E spec files: `admin.spec.ts`, `members.spec.ts`, `messaging.spec.ts`,
+  `misc-features.spec.ts` (role-gated; auto-skip without `ADMIN_EMAIL`/`TEST_EMAIL`).
+- Updated `.env.test.example` with `ADMIN_EMAIL`/`ADMIN_PASSWORD`/`TEST_*` role env vars.
+- Ran full suite against Vercel prod: **31 pass / 9 fail**.
+
+**The 9 failures share ONE root cause (not 9 bugs):**
+`e2e-bot@rubyankur.test` is a Supabase **Auth** user with **no `users` row** →
+`getCurrentUser()` returns `"unlinked"` (`src/lib/auth.ts`) → app shows the
+"Almost there" screen → every member/messaging/misc test logging in as e2e-bot fails.
+
+The existing `20260608100000_auth_auto_link.sql` trigger only links when a matching
+`users` row already exists (by email/phone). e2e-bot has none, so re-firing it is a no-op.
+**Fix = create a `users` row pointing at the auth user.**
+
+**BLOCKER — user action required (auth/schema change, needs explicit confirmation):**
+- **Option A (Dashboard):** Table Editor → `users` → Insert: `auth_id` = e2e-bot uuid,
+  `email`, `role=member`, `status=active`, `name`.
+- **Option B (script, added this session):** `scripts/link_test_account.sql` — edit the
+  `v_email`/`v_role` CONFIG values, paste into Supabase SQL Editor, run. Idempotent, fails
+  loudly if auth user missing, auto-attaches under existing `club_owner`, `ON CONFLICT`
+  back-fills `auth_id`. After running → re-run E2E → expect **40/40 pass**.
+
+**Why I can't do it:** linking requires Supabase admin creds + is an auth/schema action
+→ paused per AGENTS.md destructive-action policy.
+
+---
+
+## SESSION 3 (2026-06-27) — Registration hardening
 
 **Symptom:** new-user registration spinner froze ("Register ho raha hai…"), no success/error.
 
@@ -79,16 +109,22 @@ The Supabase Email provider was **disabled** in the dashboard. The user has sinc
 
 ## 🧪 Current Test Status
 
-**Run 2 (this session): 17/17 pass (0 hard failures, 2 flaky-passed on retry)**
+**Latest run (session 4, vs Vercel prod): 31 pass / 9 fail — all 9 share one root cause**
 
 | File | Tests | Result |
 |------|-------|--------|
 | `public.spec.ts` | 3 | ✅ All pass |
 | `register.spec.ts` | 4 | ✅ All pass |
 | `authed.spec.ts` | 4 | ✅ All pass |
-| `features.spec.ts` | 6 | ✅ All pass (2 flaky — fixed) |
+| `features.spec.ts` | 6 | ✅ All pass |
+| `admin.spec.ts` | 3 (new) | ✅ All pass |
+| `members.spec.ts` | ~5 (new) | ❌ Fail — e2e-bot unlinked (see Session 4 blocker) |
+| `messaging.spec.ts` | ~3 (new) | ❌ Fail — e2e-bot unlinked |
+| `misc-features.spec.ts` | ~5 (new) | ❌ Fail — e2e-bot unlinked |
 
-### Flaky tests (fixed)
+**Fix the single blocker (`scripts/link_test_account.sql`) → expect 40/40 pass.**
+
+### Earlier flaky tests (fixed in session 2)
 Two tests in `features.spec.ts` had intermittent navigation timeouts (Next.js client-side routing slower than 5s default):
 - `account menu: Profile navigates to /profile` (line 34)
 - `coach Plan tab opens follow-ups` (line 48)
@@ -265,10 +301,10 @@ Two tests in `features.spec.ts` had intermittent navigation timeouts (Next.js cl
 
 ## 🔄 Git & Remote Status
 
-- **Branch:** `main` (0 ahead, 0 behind `origin`)
-- **Remote:** `https://github.com/ajdna/ra-club-app.git`
-- **Last commit:** `004a56f fix: use webpack for local dev (turbopack broken on Windows, #90860)`
-- **Uncommitted changes:** `e2e/features.spec.ts` (flaky test timeout fix)
+- **Branch:** `main`
+- **Remote:** `https://github.com/ajdna/ra-club-s-projects.vercel.app` deploys from `main`
+- **Last commit:** `0699adb fix: create message_reactions table in cloud DB + regen types`
+- **Uncommitted (this session):** `scripts/link_test_account.sql` (new), `HANDOFF.md` (Session 4)
 - **`gh` CLI:** Not installed on this machine
 
 ---
