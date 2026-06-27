@@ -51,7 +51,7 @@ export function RegisterForm({
 
       // Pre-flight: make sure email / user id / phone are free BEFORE we create
       // an auth user. Avoids orphaned auth users and shows a clear reason.
-      const rpc = supabase.rpc as unknown as (
+      const rpc = supabase.rpc.bind(supabase) as unknown as (
         fn: string,
         args: Record<string, unknown>,
       ) => Promise<{ data: string | null; error: { message: string } | null }>;

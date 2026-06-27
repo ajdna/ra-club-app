@@ -65,7 +65,7 @@ function LoginForm() {
     // Allow login by email OR user id (username). Resolve username -> email.
     let loginEmail = email.trim();
     if (loginEmail && !loginEmail.includes("@")) {
-      const rpc = supabase.rpc as unknown as (
+      const rpc = supabase.rpc.bind(supabase) as unknown as (
         fn: string,
         args: Record<string, unknown>,
       ) => Promise<{ data: string | null; error: { message: string } | null }>;
