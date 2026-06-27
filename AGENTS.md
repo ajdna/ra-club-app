@@ -33,3 +33,44 @@ Destructive/irreversible actions (deploys, deletes, payments, auth/schema change
   backs up the original). Workers read pack + recent deltas only.
 - Net intent: lower cost + longer context, with quality preserved because compression is
   confined to low-risk surfaces and the verify gate still judges correctness.
+
+# Project memory: knowledge graph + handoff (READ FIRST, WRITE LAST)
+
+Two persistent memories exist so a new session never re-reads the whole tree:
+
+- **`HANDOFF.md`** (this repo root) — current state, recent fixes, next steps. Prose
+  source of truth for "what's going on right now".
+- **Graphify knowledge graph** at `../graphify-out/` (one level up, in `CLUB APP/`, NOT in
+  git). `graph.json` (1100+ nodes), `GRAPH_REPORT.md` (god nodes, communities), built by
+  the `graphify` skill over the whole `CLUB APP` folder.
+
+## On session START (every session, before touching code)
+1. Read `HANDOFF.md` first. It tells you current state + next steps — usually enough to
+   start without grepping.
+2. For "where is X / what calls Y / how does Z work" questions, **query the graph instead
+   of grepping the tree**: `graphify query "<question>"` (run from `CLUB APP/`, the graph
+   root). The graph already maps the codebase — `getCurrentUser` and `createClient()` are
+   the top hub nodes; communities map 1:1 to features. This is far cheaper than re-reading
+   files. Only open files the graph points you to.
+
+## On session END / after any non-trivial change (before declaring done)
+1. **Update `HANDOFF.md`** — what changed, why, current state, next steps. Always. This is
+   non-negotiable; it is how the next agent avoids re-deriving context.
+2. **Mark the graph stale** so it gets refreshed: the `post-commit` hook writes
+   `../graphify-out/.needs_update` automatically. When code/docs changed materially, run
+   `/graphify ../  --update` (incremental — re-extracts only changed files, cheap). Run
+   it reliably on the user's machine via **Claude Code** (graphify is installed there);
+   a throwaway Cowork sandbox has no persistent graphify install.
+
+## Delegating these two jobs (parallel sub-agents)
+When a change is done and you want context maintained without burning the main context
+window, dispatch BOTH in one message (they are independent):
+
+- **handoff-curator** — updates/reads `HANDOFF.md`. Cheapest model that writes clean prose
+  (`sonnet`, or `haiku` for a small delta). Works in any environment.
+- **graphify-updater** — runs the incremental graph refresh. Needs graphify installed →
+  Claude Code on the user's machine. In Cowork it can only flag staleness.
+
+Exact dispatch prompts + model tiers live in `KNOWLEDGE_GRAPH.md`. Keep their returned
+output compressed (findings only). Never spawn them for trivial edits — flag-and-defer is
+cheaper; the hook already handles staleness.

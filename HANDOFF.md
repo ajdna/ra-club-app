@@ -1,13 +1,64 @@
 # HANDOFF — Club App Test & Fix Pipeline
 
 > **Read this first if continuing in a new chat/AI app.**
-> Last updated: 2026-06-24 (session 2). Previous session ran a 5-agent pipeline. This file is the single source of truth for current state.
+> Last updated: 2026-06-27 (session 3). This file is the single source of truth for current state.
+> Project memory: read this, then query the graph (`../graphify-out`) instead of grepping. See `KNOWLEDGE_GRAPH.md`.
 
 ---
 
-## ✅ IMMEDIATE BLOCKER RESOLVED
+## 🆕 SESSION 3 (2026-06-27) — Registration hardening
 
-The Supabase Email provider was **disabled** in the dashboard. The user has since enabled it. All 17 e2e tests now pass.
+**Symptom:** new-user registration spinner froze ("Register ho raha hai…"), no success/error.
+
+**Root causes (diagnosed via Supabase logs + live DB):**
+1. Supabase Auth "Confirm email" was ON with a custom SMTP whose creds failed → `535` /
+   "Error sending confirmation email". User turned confirmation **OFF** → signup now logs
+   in immediately (`immediate_login_after_signup`). Correct fix: access is gated by
+   club-owner approval, so email verification is redundant.
+2. Phone `+919592839444` was already on a leftover inactive test row (`123@gmai.com`), so
+   `register_user_v2` raised "Phone already registered".
+3. `RegisterForm.submit()` had no try/catch/finally and ran `signOut()` before `setError`,
+   so the real error never surfaced → frozen spinner.
+4. Each failed attempt left an **orphaned auth user** (signup ok, profile insert failed).
+
+**Fixes applied this session:**
+| Fix | File / object | Status |
+|-----|---------------|--------|
+| New pre-check RPC `check_registration_available(email,username,phone)` (anon-callable) | `supabase/migrations/20260623000000_registration_precheck.sql` | ✅ Applied to live DB + migration file |
+| Robust `submit()` — pre-check before signUp, try/catch/finally, errors always show, signOut non-blocking | `src/app/auth/register/RegisterForm.tsx` | ✅ Edited (needs commit) |
+| `null` → `undefined` for optional RPC args (post `gen:types`) | `admin/actions.ts` (update_user_role, update_user_details), `admin/import/actions.ts` (bulk_upsert_user) | ✅ Edited (needs commit) |
+| Freed stuck phone on leftover test row (non-destructive) | live DB row `a9782d36…` | ✅ Done |
+
+**Still open for the user to decide:**
+- 2 orphaned auth users (`raclubuser1@gmail.com`, `rubyankur30@gmail.com`) block re-using
+  those exact emails. Delete them in Supabase → Authentication → Users, OR test with a
+  fresh email. (Permanent delete → user action.)
+- Commit + push the code changes: `npm run verify` then commit `RegisterForm.tsx`,
+  `admin/actions.ts`, `admin/import/actions.ts`, the new migration, `AGENTS.md`,
+  `KNOWLEDGE_GRAPH.md`, `.githooks/post-commit`.
+
+**Infra added this session:** `post-commit` hook flags graph stale (`../graphify-out/.needs_update`);
+AGENTS.md + KNOWLEDGE_GRAPH.md codify the read-graph-first / update-handoff-last protocol.
+
+**Graph refreshed (2026-06-27):** ran `graphify update .` (code-only, AST, **0 tokens**) →
+now 4011 nodes / 4342 edges / 530 communities (was 1127/1799/108). Curated semantic graph
+backed up in `../graphify-out/2026-06-27/`. NOTE: AST pass does not nodalize `.sql` RPCs
+(`register_user_v2`, `check_registration_available`) or design/doc concepts — that needs the
+LLM semantic `/graphify --update` (costs tokens, optional). In a Cowork sandbox the manifest
+root changes each session so `update` full-rebuilds (still free); on the user's machine via
+Claude Code it will be truly incremental.
+
+**Semantic top-up (2026-06-27):** added the registration DB layer as first-class nodes and
+reclustered → 4019 nodes / 4355 edges / 529 communities. New nodes (all connected, queryable
+via `graphify explain`/`query`): `register_user_v2`, `check_registration_available`,
+`get_login_email`, `users.username`, `users.whatsapp_phone`, `users` table, + the two
+migration nodes — wired to `RegisterForm.tsx`, `registerUser()`, `LoginForm()`.
+
+---
+
+## ✅ EARLIER BLOCKER RESOLVED (session 2)
+
+The Supabase Email provider was **disabled** in the dashboard. The user has since enabled it. All 17 e2e tests passed in session 2.
 
 ---
 

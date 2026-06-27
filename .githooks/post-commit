@@ -1,0 +1,33 @@
+#!/bin/sh
+# post-commit: keep project memory honest without blocking commits.
+# 1) Flag the graphify knowledge graph as stale (graph lives in ../graphify-out,
+#    one level up, outside this repo). The next Claude Code session runs
+#    `/graphify ./ --update` from the CLUB APP folder to refresh it incrementally.
+# 2) Remind to keep HANDOFF.md current.
+# This hook never fails a commit (always exits 0).
+
+set +e
+
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+GRAPHIFY_OUT="$REPO_ROOT/../graphify-out"
+SHA=$(git rev-parse --short HEAD 2>/dev/null)
+CHANGED=$(git diff-tree --no-commit-id --name-only -r HEAD 2>/dev/null)
+
+if [ -d "$GRAPHIFY_OUT" ]; then
+  {
+    echo "stale_since=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    echo "commit=$SHA"
+    echo "changed_files<<EOF"
+    echo "$CHANGED"
+    echo "EOF"
+  } > "$GRAPHIFY_OUT/.needs_update" 2>/dev/null
+  echo "graphify: graph marked stale (.needs_update). Run '/graphify ./ --update' from CLUB APP/ in Claude Code to refresh."
+fi
+
+# HANDOFF reminder if it wasn't touched in this commit.
+case "$CHANGED" in
+  *HANDOFF.md*) : ;;
+  *) echo "reminder: HANDOFF.md not updated in $SHA — update it if this commit changed behavior/state." ;;
+esac
+
+exit 0
