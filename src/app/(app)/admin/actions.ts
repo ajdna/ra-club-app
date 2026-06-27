@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
+import { notifyNewDownlineMember } from "@/lib/notify";
 
 type Result = { ok: true } | { ok: false; error: string };
 
@@ -22,6 +23,9 @@ export async function approveUser(userId: string): Promise<Result> {
   const supabase = await createClient();
   const { error } = await supabase.rpc("approve_user", { p_user_id: userId });
   if (error) return { ok: false, error: error.message };
+
+  // Best-effort: notify the new member's direct upline that their team grew.
+  await notifyNewDownlineMember(userId);
 
   revalidatePath("/admin/users");
   revalidatePath("/admin");

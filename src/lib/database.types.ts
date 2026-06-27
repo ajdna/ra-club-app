@@ -585,45 +585,6 @@ export type Database = {
           },
         ]
       }
-      message_reactions: {
-        Row: {
-          created_at: string
-          emoji: string
-          id: string
-          message_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          emoji: string
-          id?: string
-          message_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          emoji?: string
-          id?: string
-          message_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "message_reactions_message_id_fkey"
-            columns: ["message_id"]
-            isOneToOne: false
-            referencedRelation: "chat_messages"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "message_reactions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       notifications: {
         Row: {
           body: string | null
@@ -928,6 +889,10 @@ export type Database = {
       }
       can_see: { Args: { target: string }; Returns: boolean }
       can_see_thread: { Args: { p_thread_id: string }; Returns: boolean }
+      check_registration_available: {
+        Args: { p_email: string; p_phone: string; p_username: string }
+        Returns: string
+      }
       create_member: {
         Args: {
           p_membership: Database["public"]["Enums"]["membership_type"]
@@ -1004,6 +969,10 @@ export type Database = {
         | "followup_reminder"
         | "followup_overdue"
         | "dmo_reminder"
+        | "message_received"
+        | "broadcast_received"
+        | "approval_request"
+        | "new_downline_member"
       user_role:
         | "upline"
         | "club_owner"
@@ -1154,6 +1123,10 @@ export const Constants = {
         "followup_reminder",
         "followup_overdue",
         "dmo_reminder",
+        "message_received",
+        "broadcast_received",
+        "approval_request",
+        "new_downline_member",
       ],
       user_role: [
         "upline",

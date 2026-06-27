@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { isEmail, isE164 } from "@/lib/validate";
+import { notifyApprovalRequest } from "@/lib/notify";
 
 type RegisterResult = { ok: true } | { ok: false; error: string };
 
@@ -44,5 +45,9 @@ export async function registerUser(
   });
 
   if (error) return { ok: false, error: error.message };
+
+  // Best-effort: notify the club owner that an approval is waiting.
+  await notifyApprovalRequest(name.trim());
+
   return { ok: true };
 }

@@ -41,6 +41,15 @@
 **Infra added this session:** `post-commit` hook flags graph stale (`../graphify-out/.needs_update`);
 AGENTS.md + KNOWLEDGE_GRAPH.md codify the read-graph-first / update-handoff-last protocol.
 
+**Cross-platform push notifications (2026-06-27):** decided web-push (WhatsApp-style), iPhone via installed PWA, build 5 triggers on existing infra.
+- New `src/lib/notify.ts` — `notify()` writes in-app row + sends web push; `notifyApprovalRequest()`, `notifyNewDownlineMember()`.
+- Migration `20260627000000_notification_types_push.sql` — enum adds: message_received, broadcast_received, approval_request, new_downline_member (applied to live DB).
+- #3 Messages + #4 Broadcasts: already pushed by existing `push-notify` DB trigger on chat_messages (both create chat_messages). Left as-is to avoid double-notify.
+- #5 Approval request → club owner: wired in `auth/register/actions.ts` (`notifyApprovalRequest`).
+- #6 New downline member → direct upline: wired in `admin/actions.ts approveUser` (`notifyNewDownlineMember`).
+- #7 Today's tasks: `api/cron/morning` now also web-pushes members (weight log) + coaches (follow-ups), not just in-app rows.
+- TODO: re-run `npm run gen:types` so new enum values are typed (then drop the `as "info"` cast in notify.ts). iPhone needs Add-to-Home-Screen + notification permission inside installed PWA (PushPermission component). Native FCM/APNs = future phase for guaranteed background delivery in the Capacitor WebView.
+
 **Approvals surfacing + Admin Console move (2026-06-27):**
 - Home dashboard (owner): action banner "N naya registrations approval ke liye pending" → `/admin/users` (`src/app/(app)/page.tsx`). Chose non-intrusive action card + badge over a modal popup (current mobile best practice).
 - AppBar account button: red count badge when approvals pending; **Admin Console** moved INTO the account dropdown (owner-only) with the same count badge (`AppBar.tsx`, fed `isOwner`/`pendingApprovals` from `(app)/layout.tsx`).
