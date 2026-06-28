@@ -6,11 +6,20 @@
 import webpush from "web-push";
 import { createServiceClient } from "@/lib/supabase/service";
 
-webpush.setVapidDetails(
-  process.env.VAPID_EMAIL!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!,
-);
+// Lazy, guarded VAPID init — never call setVapidDetails at module load, so a
+// missing env var (e.g. on a preview deploy without the keys) can't crash the
+// build during page-data collection. Push simply no-ops when unconfigured.
+let vapidReady = false;
+function ensureVapid(): boolean {
+  if (vapidReady) return true;
+  const email = process.env.VAPID_EMAIL;
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  if (!email || !publicKey || !privateKey) return false;
+  webpush.setVapidDetails(email, publicKey, privateKey);
+  vapidReady = true;
+  return true;
+}
 
 export interface PushPayload {
   title: string;
@@ -34,6 +43,9 @@ export async function sendPushToUser(
   userId: string,
   payload: PushPayload,
 ): Promise<PushResult> {
+  if (!ensureVapid()) {
+    return { sent: 0, failed: 0, removed: 0, errors: ["VAPID not configured"] };
+  }
   const supabase = createServiceClient();
 
   const { data: subs, error: dbErr } = await supabase
