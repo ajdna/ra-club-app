@@ -159,7 +159,10 @@ Every candidate feature is scored 1–5 on four axes. Final score = weighted sum
 |---|---|---|
 | 1 | members list renders rows | `/members` shows at least one row or empty state |
 | 2 | member detail opens | click a member → URL `/members/[id]`, profile visible |
-| 3 | member intake tab | navigate to `/members/[id]/intake`, fields visible |
+| 3 | intake (1st home visit) form renders for coach | `/members/[id]/intake` shows fields (visit_date, health_challenge, etc.) |
+| 3a | intake blocked for member role | member account → submit action rejected (auth guard: coaching roles only) |
+| 3b | intake submit validation | invalid/empty `visit_date` blocked before write (no real mutation) |
+| 3c | *(fixme)* intake submit anchors schedule | with `ff_followup_v2` on + isolated test member → 90-day schedule generated from `visit_date`; mark `test.fixme` (mutates data) |
 | 4 | member report tab | navigate to `/members/[id]/report`, renders |
 | 5 | add-member form validation | `/add` rejects invalid phone (no real submit) |
 | 6 | search page works | `/search`, type query, results or empty state |

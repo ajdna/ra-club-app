@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { INTAKE_FIELDS } from "@/modules/members/intake";
-import { regenerateForMember } from "@/modules/followup";
+import { generateForMember, regenerateForMember } from "@/modules/followup";
 import { isFeatureEnabled } from "@/lib/flags";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
@@ -142,13 +142,14 @@ export async function saveIntake(
 
   const supabase = await createClient();
 
-  // Verify can_see: RLS on members enforces tree visibility
+  // Verify can_see (RLS enforces tree visibility) and grab the assigned coach.
   const { data: memberRow } = await supabase
     .from("members")
-    .select("user_id")
+    .select("user_id, coach_id")
     .eq("user_id", memberId)
     .maybeSingle();
   if (!memberRow) return { ok: false, error: "Member not found or not in your team." };
+  const coachId: string = (memberRow as { coach_id?: string | null }).coach_id ?? me.id;
 
   // Build the row from the shared field registry.
   const row: Record<string, unknown> = {
@@ -188,12 +189,32 @@ export async function saveIntake(
     await supabase.from("members").update(memberUpdate).eq("user_id", memberId);
   }
 
-  // If followup_v2 flag is on and visit_date was provided, (re)generate schedule
+  // If followup_v2 flag is on and visit_date was provided, generate/regenerate schedule.
   const visitDateStr = row.visit_date as string | null;
   if (visitDateStr && (await isFeatureEnabled("followup_v2"))) {
     const visitDate = new Date(visitDateStr);
     if (!isNaN(visitDate.getTime())) {
-      await regenerateForMember(memberId, me.id, visitDate);
+      // Fetch prior intake visit_date and whether any tasks exist.
+      const [prevIntake, taskCount] = await Promise.all([
+        supabase
+          .from("member_intake")
+          .select("visit_date")
+          .eq("member_id", memberId)
+          .maybeSingle()
+          .then((r) => (r.data?.visit_date as string | null) ?? null),
+        supabase
+          .from("follow_up_tasks")
+          .select("id", { count: "exact", head: true })
+          .eq("member_id", memberId)
+          .then((r) => r.count ?? 0),
+      ]);
+
+      if (taskCount === 0) {
+        await generateForMember(memberId, coachId, visitDate);
+      } else if (prevIntake !== visitDateStr) {
+        await regenerateForMember(memberId, coachId, visitDate);
+      }
+      // visit_date unchanged and tasks exist → no-op
     }
   }
 
