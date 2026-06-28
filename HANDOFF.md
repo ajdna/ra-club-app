@@ -71,6 +71,8 @@ The existing `20260608100000_auth_auto_link.sql` trigger only links when a match
 **Infra added this session:** `post-commit` hook flags graph stale (`../graphify-out/.needs_update`);
 AGENTS.md + KNOWLEDGE_GRAPH.md codify the read-graph-first / update-handoff-last protocol.
 
+**feat/followup-module (1A) — in review→merge (2026-06-27):** module extracted (`src/modules/followup/`), generation DRY'd, cadence from `rule_config.followup_cadence` (seeded {months:12}), 1st-home-visit intake form drives generation anchored at `member_intake.visit_date`, gated `ff_followup_v2` (OFF). Review fixes applied: (1) VAPID lazy/guarded init in `push.server.ts` (was crashing preview build with no env); (2) tasks route to member's `coach_id` not the form-filler; (3) regen-on-visit_date-change now reads the prior date BEFORE upsert (was always-equal → never regenerated). Pending: commit fixes + push → merge to main (flag OFF = no behavior change) → flip `ff_followup_v2` for pilot + live-test with a coach account. 1B (health pointers) AI-deferred.
+
 **Execution plan (2026-06-27):** `docs/PROJECT_EXECUTION_PLAN.md` — per-feature pipeline (10 stages, model/agent per stage), version mgmt (per-feature branch + tag + Vercel rollback + reversible migrations + `rule_config` feature flags), go-live + sustainment routine, Cowork/Code/ZCode tool split + token discipline. Scope locked: Phase 1 = followup/health-score/identity/hierarchy + approval queue; food-logging deferred; treasury cut. Awaiting owner review before Phase 0.
 
 **Cross-platform push notifications (2026-06-27):** decided web-push (WhatsApp-style), iPhone via installed PWA, build 5 triggers on existing infra.

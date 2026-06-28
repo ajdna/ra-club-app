@@ -167,6 +167,14 @@ export async function saveIntake(
     }
   }
 
+  // Capture the previous visit_date BEFORE upserting, so a changed date is detectable.
+  const { data: priorIntake } = await supabase
+    .from("member_intake")
+    .select("visit_date")
+    .eq("member_id", memberId)
+    .maybeSingle();
+  const prevVisitDate = (priorIntake?.visit_date as string | null) ?? null;
+
   const { error } = await supabase
     .from("member_intake")
     .upsert(row as never, { onConflict: "member_id" });
@@ -194,24 +202,14 @@ export async function saveIntake(
   if (visitDateStr && (await isFeatureEnabled("followup_v2"))) {
     const visitDate = new Date(visitDateStr);
     if (!isNaN(visitDate.getTime())) {
-      // Fetch prior intake visit_date and whether any tasks exist.
-      const [prevIntake, taskCount] = await Promise.all([
-        supabase
-          .from("member_intake")
-          .select("visit_date")
-          .eq("member_id", memberId)
-          .maybeSingle()
-          .then((r) => (r.data?.visit_date as string | null) ?? null),
-        supabase
-          .from("follow_up_tasks")
-          .select("id", { count: "exact", head: true })
-          .eq("member_id", memberId)
-          .then((r) => r.count ?? 0),
-      ]);
+      const { count: taskCount } = await supabase
+        .from("follow_up_tasks")
+        .select("id", { count: "exact", head: true })
+        .eq("member_id", memberId);
 
-      if (taskCount === 0) {
+      if ((taskCount ?? 0) === 0) {
         await generateForMember(memberId, coachId, visitDate);
-      } else if (prevIntake !== visitDateStr) {
+      } else if (prevVisitDate !== visitDateStr) {
         await regenerateForMember(memberId, coachId, visitDate);
       }
       // visit_date unchanged and tasks exist → no-op
