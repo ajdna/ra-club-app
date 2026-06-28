@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { getCurrentUser } from "@/lib/auth";
 import { INTAKE_FIELDS } from "@/modules/members/intake";
 import { generateForMember, regenerateForMember } from "@/modules/followup";
@@ -202,7 +203,7 @@ export async function saveIntake(
   if (visitDateStr && (await isFeatureEnabled("followup_v2"))) {
     const visitDate = new Date(visitDateStr);
     if (!isNaN(visitDate.getTime())) {
-      const { count: taskCount } = await supabase
+      const { count: taskCount } = await createServiceClient()
         .from("follow_up_tasks")
         .select("id", { count: "exact", head: true })
         .eq("member_id", memberId);

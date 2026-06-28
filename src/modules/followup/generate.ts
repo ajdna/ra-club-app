@@ -1,13 +1,18 @@
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { generateFollowupTasks } from "@/lib/followup-planner";
 import { getConfigValue } from "@/modules/rules-engine";
+
+// Schedule generation is a system write (authorization is enforced by the
+// caller, e.g. saveIntake). Use the service client so the delete+insert in
+// regeneration is not silently filtered by RLS — a filtered delete would leave
+// the old schedule behind and duplicate it.
 
 export async function generateForMember(
   memberId: string,
   coachId: string,
   startDate: Date,
 ): Promise<void> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   // Idempotent: skip if pending tasks already exist for this member
   const { count } = await supabase
@@ -44,7 +49,7 @@ export async function regenerateForMember(
   coachId: string,
   startDate: Date,
 ): Promise<void> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   await supabase
     .from("follow_up_tasks")
