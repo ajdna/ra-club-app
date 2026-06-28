@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
-import { generateFollowupTasks } from "@/lib/followup-planner";
+import { generateForMember, regenerateForMember } from "@/modules/followup";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const XLSX = require("xlsx") as typeof import("xlsx");
 
@@ -188,18 +188,9 @@ export async function importMembers(formData: FormData): Promise<ImportResult> {
       // Follow-up tasks
       if (mapping.gets_followup) {
         if (action === "inserted") {
-          // New user — generate full 12-month schedule
-          await generateAndInsertTasks(supabase, userId, uplineId, startDate);
-
+          await generateForMember(userId, uplineId, startDate);
         } else if (action === "updated" && date_changed) {
-          // Start date changed — delete pending tasks and regenerate
-          await supabase
-            .from("follow_up_tasks")
-            .delete()
-            .eq("member_id", userId)
-            .eq("status", "pending");
-
-          await generateAndInsertTasks(supabase, userId, uplineId, startDate);
+          await regenerateForMember(userId, uplineId, startDate);
         }
         // action === "skipped" or updated with no date change → leave tasks alone
       }
@@ -214,26 +205,4 @@ export async function importMembers(formData: FormData): Promise<ImportResult> {
   }
 
   return result;
-}
-
-async function generateAndInsertTasks(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  memberId: string,
-  coachId: string,
-  startDate: Date,
-) {
-  const tasks = generateFollowupTasks(startDate, 12);
-  const taskRows = tasks.map((t) => ({
-    member_id: memberId,
-    coach_id: coachId,
-    day_number: t.day_number,
-    cycle: t.cycle,
-    activity: t.activity,
-    title: t.title,
-    due_date: t.due_date,
-    status: "pending" as const,
-  }));
-
-  const { error } = await supabase.from("follow_up_tasks").insert(taskRows);
-  if (error) throw new Error(`Follow-up tasks failed: ${error.message}`);
 }

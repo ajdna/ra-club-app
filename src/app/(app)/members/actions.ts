@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { INTAKE_FIELDS } from "@/modules/members/intake";
+import { regenerateForMember } from "@/modules/followup";
+import { isFeatureEnabled } from "@/lib/flags";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -126,6 +128,8 @@ export async function completeStage(memberId: string): Promise<ActionResult> {
   return { ok: true };
 }
 
+const COACHING_ROLES = ["club_owner", "nco", "jco", "supervisor", "coach"] as const;
+
 /** Save (upsert) a member's 1st-Home-Visit intake profile. */
 export async function saveIntake(
   memberId: string,
@@ -133,8 +137,18 @@ export async function saveIntake(
 ): Promise<ActionResult> {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return { ok: false, error: "Not signed in." };
+  if (!(COACHING_ROLES as readonly string[]).includes(me.role))
+    return { ok: false, error: "Only coaches/supervisors may fill the intake form." };
 
   const supabase = await createClient();
+
+  // Verify can_see: RLS on members enforces tree visibility
+  const { data: memberRow } = await supabase
+    .from("members")
+    .select("user_id")
+    .eq("user_id", memberId)
+    .maybeSingle();
+  if (!memberRow) return { ok: false, error: "Member not found or not in your team." };
 
   // Build the row from the shared field registry.
   const row: Record<string, unknown> = {
@@ -172,6 +186,15 @@ export async function saveIntake(
   }
   if (Object.keys(memberUpdate).length) {
     await supabase.from("members").update(memberUpdate).eq("user_id", memberId);
+  }
+
+  // If followup_v2 flag is on and visit_date was provided, (re)generate schedule
+  const visitDateStr = row.visit_date as string | null;
+  if (visitDateStr && (await isFeatureEnabled("followup_v2"))) {
+    const visitDate = new Date(visitDateStr);
+    if (!isNaN(visitDate.getTime())) {
+      await regenerateForMember(memberId, me.id, visitDate);
+    }
   }
 
   revalidatePath(`/members/${memberId}`);

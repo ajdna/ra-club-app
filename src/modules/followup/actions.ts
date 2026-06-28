@@ -3,26 +3,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-import {
-  markTaskDone as _markTaskDone,
-  clearOverdueTasks as _clearOverdueTasks,
-} from "@/modules/followup/actions";
 
 export async function markTaskDone(
   taskId: string,
   note?: string,
-): Promise<{ error?: string }> {
-  return _markTaskDone(taskId, note);
-}
-
-export async function clearOverdueTasks(): Promise<{ error?: string }> {
-  return _clearOverdueTasks();
-}
-
-export async function scheduleHomeVisit(
-  taskId: string,
-  scheduledAt: string,
-  meetingLink?: string,
 ): Promise<{ error?: string }> {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return { error: "Not signed in" };
@@ -31,34 +15,36 @@ export async function scheduleHomeVisit(
   const { error } = await supabase
     .from("follow_up_tasks")
     .update({
-      scheduled_at: scheduledAt,
-      ...(meetingLink !== undefined ? { meeting_link: meetingLink } : {}),
-    })
+      status: "done",
+      completed_at: new Date().toISOString(),
+      ...(note ? { completion_note: note } : {}),
+      // completion_note exists in the DB but is missing from the generated
+      // Supabase types — run `npm run gen:types` to drop this cast.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any)
     .eq("id", taskId)
     .eq("coach_id", me.id);
 
   if (error) return { error: error.message };
   revalidatePath("/followup");
-  revalidatePath("/calendar");
+  revalidatePath("/");
   return {};
 }
 
-export async function setMeetingLink(
-  taskId: string,
-  link: string,
-): Promise<{ error?: string }> {
+export async function clearOverdueTasks(): Promise<{ error?: string }> {
   const me = await getCurrentUser();
   if (!me || typeof me === "string") return { error: "Not signed in" };
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("follow_up_tasks")
-    .update({ meeting_link: link })
-    .eq("id", taskId)
-    .eq("coach_id", me.id);
+    .update({ status: "skipped" })
+    .eq("coach_id", me.id)
+    .eq("status", "pending")
+    .lt("due_date", new Date().toISOString().split("T")[0]);
 
   if (error) return { error: error.message };
   revalidatePath("/followup");
-  revalidatePath("/calendar");
+  revalidatePath("/");
   return {};
 }
