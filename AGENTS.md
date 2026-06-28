@@ -74,3 +74,23 @@ window, dispatch BOTH in one message (they are independent):
 Exact dispatch prompts + model tiers live in `KNOWLEDGE_GRAPH.md`. Keep their returned
 output compressed (findings only). Never spawn them for trivial edits — flag-and-defer is
 cheaper; the hook already handles staleness.
+
+# Run-together convention (Cowork + Code + ZCode)
+
+Full plan: `docs/PROJECT_EXECUTION_PLAN.md`. Quick rules:
+
+- **Tool split:** orchestration/DB-migrations/deploys/live-tests/review/doc-upkeep → Cowork.
+  Code writing + `npm run verify` + git + `graphify --update` → Claude Code (GSD hooks +
+  cheapest edits). ZCode → optional, isolated boilerplate only; never auth/RLS/migrations.
+- **Ownership tags** on every handoff: 🟢 Cowork does it · 🔵 run in Claude Code · 🟡 user-only
+  (approvals, destructive/irreversible).
+- **3 checkpoints per feature:** spec approve → pre-merge review → go-live (flip `rule_config` flag).
+- **Model/effort:** `haiku` = locate/mechanical/bulk (low effort) · `sonnet` = default build
+  (medium) · `opus` = RLS/auth/migration/cross-file + final high-risk review (high effort,
+  "think hard"/"ultrathink"). Effort scales to **blast radius** — a god-node touch
+  (`getCurrentUser`, `createClient`) is high-effort even if the diff is small.
+- **graphify first:** answer "where/what-calls/impact" via `graphify query` before grepping;
+  keep it fresh with incremental `--update` (free for code). Map, not ground truth — verify
+  against the file before relying on it.
+- **Version/restore:** per-feature branch + tag + Vercel instant rollback + reversible
+  migrations (`-- DOWN:` block) + `rule_config` feature flag as no-redeploy kill switch.

@@ -71,6 +71,8 @@ The existing `20260608100000_auth_auto_link.sql` trigger only links when a match
 **Infra added this session:** `post-commit` hook flags graph stale (`../graphify-out/.needs_update`);
 AGENTS.md + KNOWLEDGE_GRAPH.md codify the read-graph-first / update-handoff-last protocol.
 
+**Execution plan (2026-06-27):** `docs/PROJECT_EXECUTION_PLAN.md` — per-feature pipeline (10 stages, model/agent per stage), version mgmt (per-feature branch + tag + Vercel rollback + reversible migrations + `rule_config` feature flags), go-live + sustainment routine, Cowork/Code/ZCode tool split + token discipline. Scope locked: Phase 1 = followup/health-score/identity/hierarchy + approval queue; food-logging deferred; treasury cut. Awaiting owner review before Phase 0.
+
 **Cross-platform push notifications (2026-06-27):** decided web-push (WhatsApp-style), iPhone via installed PWA, build 5 triggers on existing infra.
 - New `src/lib/notify.ts` — `notify()` writes in-app row + sends web push; `notifyApprovalRequest()`, `notifyNewDownlineMember()`.
 - Migration `20260627000000_notification_types_push.sql` — enum adds: message_received, broadcast_received, approval_request, new_downline_member (applied to live DB).
