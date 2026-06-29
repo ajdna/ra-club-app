@@ -26,6 +26,7 @@ export interface PushPayload {
   body: string;
   url: string;
   tag?: string;
+  urgency?: "normal" | "high";
 }
 
 export interface PushResult {
@@ -67,7 +68,7 @@ export async function sendPushToUser(
       const res = await webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
         JSON.stringify(payload),
-        { TTL: 86400 },
+        { TTL: 86400, urgency: payload.urgency ?? "normal" },
       );
       console.log(`[push] sent to ${sub.endpoint.slice(-20)} — status ${res.statusCode}`);
     }),

@@ -11,6 +11,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendPushToUser, sendPushToUsers } from "@/lib/push.server";
+import { isEnabled, disabledUserIds } from "@/modules/notifications/prefs";
 
 function truncate(s: string, max = 120) {
   return s.length > max ? s.slice(0, max) + "…" : s;
@@ -77,13 +78,14 @@ export async function POST(req: Request) {
       // Recipient is whichever participant is NOT the sender
       const recipientId =
         thread.coach_id === sender_id ? thread.member_id : thread.coach_id;
-      if (recipientId) {
+      if (recipientId && (await isEnabled(recipientId, "message_received"))) {
         console.log(`[push/notify] direct → sending to ${recipientId}`);
         await sendPushToUser(recipientId, {
           title: `💬 ${senderName}`,
           body: truncate(body as string),
           url: deepUrl,
           tag: `msg-${thread_id}`,
+          urgency: "high",
         });
       }
     } else if (thread.type === "broadcast") {
@@ -96,11 +98,14 @@ export async function POST(req: Request) {
 
       if (descErr) console.error("[push/notify] hierarchy_closure error:", descErr.message);
 
-      const recipientIds = (descendants ?? [])
+      const allRecipients = (descendants ?? [])
         .map((d) => d.descendant_id)
         .filter((id) => id !== sender_id);
 
-      console.log(`[push/notify] broadcast → ${recipientIds.length} recipients`);
+      const disabled = await disabledUserIds(allRecipients, "broadcast_received");
+      const recipientIds = allRecipients.filter((id) => !disabled.has(id));
+
+      console.log(`[push/notify] broadcast → ${recipientIds.length} recipients (${disabled.size} opted out)`);
 
       if (recipientIds.length) {
         await sendPushToUsers(recipientIds, {
@@ -108,6 +113,7 @@ export async function POST(req: Request) {
           body: truncate(body as string),
           url: deepUrl,
           tag: `broadcast-${thread_id}`,
+          urgency: "high",
         });
       }
     }
@@ -138,6 +144,7 @@ export async function POST(req: Request) {
       body: `Coach ne visit schedule kiya: ${dateStr}${meeting_link ? " — meeting link added" : ""}`,
       url: `/followup`,
       tag: `visit-${id}`,
+      urgency: "high",
     });
   }
 
