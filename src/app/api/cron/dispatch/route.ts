@@ -154,9 +154,9 @@ export async function POST(req: Request) {
       .eq("key", "club_timings")
       .maybeSingle();
 
-    const timings = (timingsRow?.value as { morning?: string; evening?: string }) ?? {};
-    const morningTime = timings.morning ?? "06:00";
-    const eveningTime = timings.evening ?? "18:00";
+    const timings = (timingsRow?.value as { club_morning_time?: string; club_evening_time?: string }) ?? {};
+    const morningTime = timings.club_morning_time ?? "06:00";
+    const eveningTime = timings.club_evening_time ?? "18:00";
 
     function toMinutes(hhmm: string): number {
       const [h = "0", m = "0"] = hhmm.slice(0, 5).split(":");

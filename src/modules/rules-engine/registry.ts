@@ -109,8 +109,8 @@ export const SECTIONS: Section[] = [
     description:
       "IST start times for morning and evening club sessions. The dispatch cron sends push reminders in the 15-min window after each time.",
     fields: [
-      { path: "morning", label: "Morning club time", type: "time", hint: "e.g. 06:00" },
-      { path: "evening", label: "Evening club time", type: "time", hint: "e.g. 18:00" },
+      { path: "club_morning_time", label: "Morning club time", type: "time", hint: "e.g. 06:00" },
+      { path: "club_evening_time", label: "Evening club time", type: "time", hint: "e.g. 18:00" },
     ],
   },
   {
