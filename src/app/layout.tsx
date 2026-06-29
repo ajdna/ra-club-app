@@ -39,6 +39,9 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  // Extend under the notch / Dynamic Island / Android cutouts so safe-area
+  // insets resolve to real values (the AppBar/BottomNav pad for them).
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

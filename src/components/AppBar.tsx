@@ -69,7 +69,7 @@ export function AppBar({
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-cream/85 px-4 backdrop-blur-md">
+      <header className="sticky top-0 z-30 flex min-h-14 items-center justify-between border-b border-line bg-cream/85 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-md">
         <Link href="/" className="flex items-center gap-2.5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-icon.png" alt="Ruby Nutrition Center" width={36} height={36} className="h-9 w-9 object-contain" />
