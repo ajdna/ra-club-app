@@ -18,6 +18,7 @@ export type Section = {
   description: string;
   raw?: boolean; // edit the whole value as JSON
   fields?: Field[];
+  component?: string; // custom editor component key
 };
 
 export const SECTIONS: Section[] = [
@@ -104,20 +105,11 @@ export const SECTIONS: Section[] = [
     raw: true,
   },
   {
-    key: "club_timings",
-    title: "Club session times",
+    key: "club_schedule",
+    title: "Club weekly schedule",
     description:
-      "IST start times for morning and evening club sessions. The dispatch cron sends push reminders in the 15-min window after each time.",
-    fields: [
-      { path: "club_morning_time", label: "Morning club time", type: "time", hint: "e.g. 06:00" },
-      { path: "club_evening_time", label: "Evening club time", type: "time", hint: "e.g. 18:00" },
-      {
-        path: "club_reminder_lead_min",
-        label: "Pre-reminder lead time (min)",
-        type: "number",
-        hint: "Minutes before club start to send the pre-reminder push. Default: 15.",
-      },
-    ],
+      "Per-day morning/evening session times, Zoom links, and dates to skip. Lead time controls when the pre-reminder fires (minutes before the session).",
+    component: "club_schedule",
   },
   {
     key: "session_timers",

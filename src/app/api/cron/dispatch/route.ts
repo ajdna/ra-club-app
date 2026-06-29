@@ -15,10 +15,12 @@ const DIGEST_TYPES = ["daily_followup_summary", "weight_log_reminder", "evening_
 
 function getISTDateAndTime() {
   const istMs = Date.now() + 5.5 * 60 * 60 * 1000;
-  const iso = new Date(istMs).toISOString();
+  const d = new Date(istMs);
+  const iso = d.toISOString();
   return {
-    todayIST: iso.slice(0, 10),   // YYYY-MM-DD
-    timeIST: iso.slice(11, 16),   // HH:MM
+    todayIST: iso.slice(0, 10),    // YYYY-MM-DD
+    timeIST: iso.slice(11, 16),    // HH:MM
+    weekdayIST: d.getUTCDay(),     // 0=Sun…6=Sat in IST
   };
 }
 
@@ -33,7 +35,7 @@ export async function POST(req: Request) {
   }
 
   const sb = createServiceClient();
-  const { todayIST, timeIST } = getISTDateAndTime();
+  const { todayIST, timeIST, weekdayIST } = getISTDateAndTime();
   // Compare HH:MM:59 against stored HH:MM:SS so "09:15" covers "09:15:00"–"09:15:59"
   const timeWithSec = `${timeIST}:59`;
 
@@ -148,141 +150,178 @@ export async function POST(req: Request) {
 
   // ── Club reminders (ff_club_reminders) ──────────────────────────────────
   if (await isFeatureEnabled("club_reminders")) {
-    const { data: timingsRow } = await sb
+    type DaySession = { on?: boolean; time?: string };
+    type ClubSchedule = {
+      lead_min?: number;
+      morning_link?: string;
+      evening_link?: string;
+      days?: Record<string, { morning?: DaySession; evening?: DaySession }>;
+      skip_dates?: string[];
+    };
+
+    // Prefer club_schedule; fall back to legacy club_timings
+    const { data: scheduleRow } = await sb
       .from("rule_config")
       .select("value")
-      .eq("key", "club_timings")
+      .eq("key", "club_schedule")
       .maybeSingle();
 
-    const timings = (timingsRow?.value as {
-      club_morning_time?: string;
-      club_evening_time?: string;
-      club_reminder_lead_min?: number;
-    }) ?? {};
-    const morningTime = timings.club_morning_time ?? "06:00";
-    const eveningTime = timings.club_evening_time ?? "18:00";
-    const leadMin =
-      typeof timings.club_reminder_lead_min === "number"
-        ? timings.club_reminder_lead_min
-        : 15;
-
-    function toMinutes(hhmm: string): number {
-      const [h = "0", m = "0"] = hhmm.slice(0, 5).split(":");
-      return parseInt(h, 10) * 60 + parseInt(m, 10);
+    let schedule: ClubSchedule;
+    if (scheduleRow?.value) {
+      schedule = scheduleRow.value as ClubSchedule;
+    } else {
+      const { data: legacyRow } = await sb
+        .from("rule_config")
+        .select("value")
+        .eq("key", "club_timings")
+        .maybeSingle();
+      const leg = (legacyRow?.value as {
+        club_morning_time?: string;
+        club_evening_time?: string;
+        club_reminder_lead_min?: number;
+      }) ?? {};
+      const mt = leg.club_morning_time ?? "06:00";
+      const et = leg.club_evening_time ?? "18:00";
+      const days: NonNullable<ClubSchedule["days"]> = {};
+      for (let d = 0; d < 7; d++) {
+        days[String(d)] = {
+          morning: { on: true, time: mt },
+          evening: { on: true, time: et },
+        };
+      }
+      schedule = {
+        lead_min: typeof leg.club_reminder_lead_min === "number" ? leg.club_reminder_lead_min : 15,
+        morning_link: "",
+        evening_link: "",
+        days,
+        skip_dates: [],
+      };
     }
 
-    const nowMins = toMinutes(timeIST);
+    // Skip entire date (festivals, etc.)
+    if (schedule.skip_dates?.includes(todayIST)) {
+      results.push("club_reminders: skip_date");
+    } else {
+      const leadMin = schedule.lead_min ?? 15;
+      const dayKey = String(weekdayIST);
+      const dayConfig = schedule.days?.[dayKey];
 
-    // All active users regardless of role
-    const { data: activeUsers } = await sb
-      .from("users")
-      .select("id")
-      .eq("status", "active");
-    const allUserIds = (activeUsers ?? []).map((u) => u.id);
-
-    if (allUserIds.length > 0) {
-      // Batch-fetch user-facing opt-out prefs (morning_club / evening_club)
-      const { data: optOutRows } = await sb
-        .from("notification_prefs")
-        .select("user_id, type, enabled")
-        .in("type", ["morning_club", "evening_club"])
-        .in("user_id", allUserIds);
-
-      const disabledByPrefType = new Map<string, Set<string>>();
-      for (const p of optOutRows ?? []) {
-        if (!p.enabled) {
-          if (!disabledByPrefType.has(p.type))
-            disabledByPrefType.set(p.type, new Set());
-          disabledByPrefType.get(p.type)!.add(p.user_id);
-        }
+      function toMinutes(hhmm: string): number {
+        const [h = "0", m = "0"] = hhmm.slice(0, 5).split(":");
+        return parseInt(h, 10) * 60 + parseInt(m, 10);
       }
+      const nowMins = toMinutes(timeIST);
 
       type ClubStage = {
         internalType: string;
         prefType: string;
         title: string;
         body: string;
+        url: string;
       };
 
-      const periods: {
-        label: "Morning" | "Evening";
-        clubMins: number;
-        displayTime: string;
-        prefType: string;
-      }[] = [
-        {
-          label: "Morning",
-          clubMins: toMinutes(morningTime),
-          displayTime: morningTime.slice(0, 5),
-          prefType: "morning_club",
-        },
-        {
-          label: "Evening",
-          clubMins: toMinutes(eveningTime),
-          displayTime: eveningTime.slice(0, 5),
-          prefType: "evening_club",
-        },
+      const periods = [
+        { session: "morning" as const, prefType: "morning_club", link: schedule.morning_link ?? "" },
+        { session: "evening" as const, prefType: "evening_club", link: schedule.evening_link ?? "" },
       ];
 
       const activeStages: ClubStage[] = [];
-      for (const p of periods) {
-        const preStart = p.clubMins - leadMin;
+      for (const pc of periods) {
+        const ses = dayConfig?.[pc.session];
+        if (!ses?.on || !ses.time) continue;
+
+        const clubMins = toMinutes(ses.time);
+        const displayTime = ses.time.slice(0, 5);
+        const label = pc.session === "morning" ? "Morning" : "Evening";
+        const url = pc.link || "/";
+        const preStart = clubMins - leadMin;
+
         if (nowMins >= preStart && nowMins < preStart + 15) {
           activeStages.push({
-            internalType: `${p.label.toLowerCase()}_pre`,
-            prefType: p.prefType,
-            title: `${p.label} club reminder`,
-            body: `${p.label} club ${p.displayTime} baje shuru hoga — taiyaar ho jao.`,
+            internalType: `${pc.session}_pre`,
+            prefType: pc.prefType,
+            title: `${label} club reminder`,
+            body: `${label} club ${displayTime} baje shuru hoga — taiyaar ho jao.`,
+            url,
           });
         }
-        if (nowMins >= p.clubMins && nowMins < p.clubMins + 15) {
+        if (nowMins >= clubMins && nowMins < clubMins + 15) {
           activeStages.push({
-            internalType: `${p.label.toLowerCase()}_start`,
-            prefType: p.prefType,
-            title: `${p.label} club shuru ho gaya`,
-            body: `${p.label} club shuru ho gaya — jaldi join karo.`,
+            internalType: `${pc.session}_start`,
+            prefType: pc.prefType,
+            title: `${label} club shuru ho gaya`,
+            body: `${label} club shuru ho gaya — jaldi join karo.`,
+            url,
           });
         }
       }
 
-      for (const stage of activeStages) {
-        const disabled = disabledByPrefType.get(stage.prefType) ?? new Set<string>();
-        const optInIds = allUserIds.filter((id) => !disabled.has(id));
-        if (!optInIds.length) continue;
+      if (activeStages.length > 0) {
+        const { data: activeUsers } = await sb
+          .from("users")
+          .select("id")
+          .eq("status", "active");
+        const allUserIds = (activeUsers ?? []).map((u) => u.id);
 
-        // Dedupe via internal type rows (enabled field ignored here)
-        const { data: dedupeRows } = await sb
-          .from("notification_prefs")
-          .select("user_id, last_sent_on")
-          .eq("type", stage.internalType)
-          .in("user_id", optInIds);
+        if (allUserIds.length > 0) {
+          const { data: optOutRows } = await sb
+            .from("notification_prefs")
+            .select("user_id, type, enabled")
+            .in("type", ["morning_club", "evening_club"])
+            .in("user_id", allUserIds);
 
-        const sentToday = new Set<string>();
-        for (const r of dedupeRows ?? []) {
-          if (r.last_sent_on && r.last_sent_on >= todayIST) sentToday.add(r.user_id);
+          const disabledByPrefType = new Map<string, Set<string>>();
+          for (const p of optOutRows ?? []) {
+            if (!p.enabled) {
+              if (!disabledByPrefType.has(p.type))
+                disabledByPrefType.set(p.type, new Set());
+              disabledByPrefType.get(p.type)!.add(p.user_id);
+            }
+          }
+
+          for (const stage of activeStages) {
+            const disabled = disabledByPrefType.get(stage.prefType) ?? new Set<string>();
+            const optInIds = allUserIds.filter((id) => !disabled.has(id));
+            if (!optInIds.length) continue;
+
+            const { data: dedupeRows } = await sb
+              .from("notification_prefs")
+              .select("user_id, last_sent_on")
+              .eq("type", stage.internalType)
+              .in("user_id", optInIds);
+
+            const sentToday = new Set<string>();
+            for (const r of dedupeRows ?? []) {
+              if (r.last_sent_on && r.last_sent_on >= todayIST) sentToday.add(r.user_id);
+            }
+
+            const toSend = optInIds.filter((id) => !sentToday.has(id));
+            if (!toSend.length) continue;
+
+            await Promise.allSettled(
+              toSend.map((uid) =>
+                sendPushToUser(uid, {
+                  title: stage.title,
+                  body: stage.body,
+                  url: stage.url,
+                }),
+              ),
+            );
+
+            await sb
+              .from("notification_prefs")
+              .upsert(
+                toSend.map((uid) => ({
+                  user_id: uid,
+                  type: stage.internalType,
+                  last_sent_on: todayIST,
+                })),
+                { onConflict: "user_id,type" },
+              );
+
+            results.push(`${stage.internalType}: ${toSend.length}`);
+          }
         }
-
-        const toSend = optInIds.filter((id) => !sentToday.has(id));
-        if (!toSend.length) continue;
-
-        await Promise.allSettled(
-          toSend.map((uid) =>
-            sendPushToUser(uid, { title: stage.title, body: stage.body, url: "/" }),
-          ),
-        );
-
-        await sb
-          .from("notification_prefs")
-          .upsert(
-            toSend.map((uid) => ({
-              user_id: uid,
-              type: stage.internalType,
-              last_sent_on: todayIST,
-            })),
-            { onConflict: "user_id,type" },
-          );
-
-        results.push(`${stage.internalType}: ${toSend.length}`);
       }
     }
   }

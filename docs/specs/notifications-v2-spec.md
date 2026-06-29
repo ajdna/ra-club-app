@@ -24,6 +24,33 @@
 - Two stages (owner-configurable lead, default 15 min): **pre** "{period} club {HH:MM} baje shuru hoga — taiyaar ho jao" at `clubTime − lead`; **start** "{period} club shuru ho gaya — jaldi join karo" at `clubTime`. Each stage de-duped separately per day (internal `_pre`/`_start` markers); single user toggle controls both.
 - **Rollback:** flag off; drop the two pref types; delete config key.
 
+## 2C-ter — Club weekly schedule + Zoom links + skip days · `feat/club-weekly` · flag `ff_club_reminders` (existing)
+Extends club reminders from one fixed time to a **per-day schedule** with clickable session links.
+
+**Config — replace `club_timings` with `club_schedule`** (rule_config json):
+```json
+{
+  "lead_min": 15,
+  "morning_link": "https://zoom.us/j/MORNING",
+  "evening_link": "https://zoom.us/j/EVENING",
+  "days": {
+    "0": { "morning": {"on": true, "time":"06:00"}, "evening": {"on": false, "time":"18:00"} },
+    "1": { "morning": {"on": true, "time":"06:00"}, "evening": {"on": true, "time":"18:00"} }
+    // 0=Sun … 6=Sat (IST weekday). Missing day/session = off.
+  },
+  "skip_dates": ["2026-07-04"]   // festivals — skip all sessions that date
+}
+```
+- Assumption: **two links total** (one morning, one evening) reused across days; morning ≠ evening. (Per-day link override can be added later if needed.)
+- Migration: seed `club_schedule` from the current `club_timings` (all 7 days on at those times) so nothing breaks; keep reading `club_timings` as fallback.
+
+**Dispatcher:** compute IST date + weekday. If date ∈ `skip_dates` → skip. Else for each session whose `days[weekday][session].on` is true: use that session's `time` + the matching `morning_link`/`evening_link`; run the existing pre/start windows + per-stage dedupe. **Set the push `url` = the session's Zoom link.**
+
+**Notification click → Zoom:** in `public/sw.js notificationclick`, if `data.url` is an **absolute http(s) URL**, always `openWindow(url)` (don't `postMessage` it to the in-app router). Internal paths keep current behavior.
+
+**Admin UI:** a weekly schedule editor (7 days × morning/evening: on/off + time), the two Zoom links, and a skip-dates list — saved to `club_schedule` via `setConfig`.
+- **Rollback:** flag off; restore `club_timings` read.
+
 ## 2D — Coach qualification levels + hierarchy-scoped groups + reminders · `feat/coach-reminders` · flag `ff_coach_reminders`
 **Qualification taxonomy (editable list):**
 - `rule_config.qualification_levels` — ordered list, default `["WCO","Qualified coach","Supervisor","Active Supervisor","JCO","NCO"]`. Owner can **add / remove / rename** levels in Admin (like `role_mappings`).

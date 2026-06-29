@@ -1,7 +1,7 @@
 # HANDOFF — Club App Test & Fix Pipeline
 
 > **Read this first if continuing in a new chat/AI app.**
-> Last updated: 2026-06-27 (session 3). This file is the single source of truth for current state.
+> Last updated: 2026-06-29. This file is the single source of truth for current state.
 > Project memory: read this, then query the graph (`../graphify-out`) instead of grepping. See `KNOWLEDGE_GRAPH.md`.
 
 ---
@@ -73,7 +73,18 @@ AGENTS.md + KNOWLEDGE_GRAPH.md codify the read-graph-first / update-handoff-last
 
 **feat/followup-module (1A) — in review→merge (2026-06-27):** module extracted (`src/modules/followup/`), generation DRY'd, cadence from `rule_config.followup_cadence` (seeded {months:12}), 1st-home-visit intake form drives generation anchored at `member_intake.visit_date`, gated `ff_followup_v2` (OFF). Review fixes applied: (1) VAPID lazy/guarded init in `push.server.ts` (was crashing preview build with no env); (2) tasks route to member's `coach_id` not the form-filler; (3) regen-on-visit_date-change now reads the prior date BEFORE upsert (was always-equal → never regenerated). Pilot test (ff on) found a **duplication bug**: regeneration used the user/RLS client, so its DELETE was silently filtered (filler can't delete those rows) → old schedule kept + new one inserted = 2× tasks at both old & new visit dates. **Fix:** `src/modules/followup/generate.ts` now uses `createServiceClient` (system write; auth already enforced in saveIntake), and saveIntake's task-count check uses service client too. Cleaned the test member's 284 dup tasks. Pending: commit + push → re-test reschedule (should delete+replace cleanly, single set). 1B (health pointers) AI-deferred.
 
-**Notifications v2 (2026-06-29, in progress):** spec `docs/specs/notifications-v2-spec.md`. 2B (priority urgency:high + honor on/off for messages/broadcasts/home-visit) merged `v0.2.1`. 2A (sound/vibration toggle → silent push) reviewed GREEN, merging. Next: 2C club reminders → 2D coach levels+groups+reminders → 2E deep links → 2F telegram bot.
+**Notifications v2 (2026-06-29):** spec `docs/specs/notifications-v2-spec.md`. Status:
+- **2B** priority (urgency:high) + honor on/off for messages/broadcasts/home-visit — MERGED `v0.2.1`. ✅
+- **2A** sound/vibration toggle → silent push — MERGED `v0.2.2`. ✅
+- **2C** club reminders — MERGED: owner-config times `v0.2.3`, then two-stage (pre+start, configurable lead `club_reminder_lead_min`, **all active roles**) `v0.2.4`. **Pilot-verified** (iPhone+laptop). `ff_club_reminders` = ON. Dispatch via `*/15` GH Actions → `/api/cron/dispatch`.
+- **2C-ter** club WEEKLY schedule (per-day times, skip days/festivals, morning/evening Zoom links, notification deep-link to Zoom; replaces `club_timings`→`club_schedule`; SW external-URL openWindow) — SPEC done, branch `feat/club-weekly` = **building next**.
+- **2D-i** coach qualification levels (editable list `rule_config.qualification_levels`, per-coach `users.qualification`, hierarchy-scoped audience resolver) — **schema already applied** (`users.qualification` col + `qualification_levels` seeded) + migration file `20260629100000_coach_qualification.sql`; build NOT started yet (handoff was given on branch `feat/coach-levels`). Then 2D-ii (send-reminder screen + `scheduled_reminders`).
+- **2E** contact deep links (wa.me/t.me/tel), **2F** Telegram bot — not started.
+
+**GSD (get-shit-done):** intentionally **inactive** — not worth the setup for a solo flag-gated build. `.claude/settings.json` hooks reference paths that may not exist; the `npm run verify` gate + Cowork checkpoint reviews + HANDOFF/graph cover the same ground. Revisit only for multi-dev or long unattended Claude Code runs.
+
+**Flags state:** `ff_followup_v2`=ON, `ff_notif_prefs`=ON, `ff_club_reminders`=ON. `ff_coach_reminders` not set (off).
+**Release tags:** v0.1.1-followup, v0.2.0-notif-prefs, v0.2.1-notif-priority, v0.2.2-notif-sound, v0.2.3-club-reminders, v0.2.4-club-two-stage.
 
 **feat/notif-prefs (2026-06-29) — SHIPPED + pilot-verified:** merged to main, `ff_notif_prefs` ON. Full custom-time chain verified end-to-end (push received on iPhone + Windows, `last_sent_on` stamped, dedupe holds). **Systemic fix found during pilot:** `isFeatureEnabled` read `rule_config` via the anon client, but that table's RLS is `auth.uid() IS NOT NULL` → ALL feature flags silently read false in cron/no-auth contexts. Fixed `src/lib/flags.ts` to use the service client. Test pref cleaned up. (Optional later: strip dispatch diagnostic logs — already reverted in working copy.)
 

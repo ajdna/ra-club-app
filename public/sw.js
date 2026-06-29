@@ -39,8 +39,15 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  const path = event.notification.data?.url ?? "/";
-  const fullUrl = new URL(path, self.location.origin).href;
+  const url = event.notification.data?.url ?? "/";
+
+  // External URLs (Zoom, etc.) always open a new window; skip in-app router.
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    event.waitUntil(self.clients.openWindow(url));
+    return;
+  }
+
+  const fullUrl = new URL(url, self.location.origin).href;
 
   event.waitUntil(
     self.clients
@@ -54,7 +61,7 @@ self.addEventListener("notificationclick", (event) => {
         if (appClient) {
           // App is open — tell it to navigate via the router
           appClient.focus();
-          appClient.postMessage({ type: "PUSH_NAV", url: path });
+          appClient.postMessage({ type: "PUSH_NAV", url });
           return;
         }
 
