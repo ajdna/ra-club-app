@@ -8,7 +8,7 @@
 export type Field = {
   path: string; // dot-path within the config value
   label: string;
-  type: "text" | "number" | "textarea" | "csvnum";
+  type: "text" | "number" | "textarea" | "csvnum" | "time";
   hint?: string;
 };
 
@@ -102,6 +102,16 @@ export const SECTIONS: Section[] = [
     title: "Ambassador tiers",
     description: "Consumer-count ranges per tier.",
     raw: true,
+  },
+  {
+    key: "club_timings",
+    title: "Club session times",
+    description:
+      "IST start times for morning and evening club sessions. The dispatch cron sends push reminders in the 15-min window after each time.",
+    fields: [
+      { path: "morning", label: "Morning club time", type: "time", hint: "e.g. 06:00" },
+      { path: "evening", label: "Evening club time", type: "time", hint: "e.g. 18:00" },
+    ],
   },
   {
     key: "session_timers",

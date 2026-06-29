@@ -176,6 +176,15 @@ function FieldInput({
         className={base}
       />
     );
+  } else if (field.type === "time") {
+    control = (
+      <input
+        type="time"
+        value={typeof value === "string" ? value : ""}
+        onChange={(e) => onChange(e.target.value)}
+        className={base}
+      />
+    );
   } else {
     control = (
       <input

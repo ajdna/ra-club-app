@@ -40,9 +40,10 @@ export default async function ProfilePage() {
   if (me === "pending" || me === "rejected") redirect("/pending");
 
   const supabase = await createClient();
-  const [{ data: userRow }, notifPrefsEnabled] = await Promise.all([
+  const [{ data: userRow }, notifPrefsEnabled, clubRemindersEnabled] = await Promise.all([
     supabase.from("users").select("name, phone, address, email").eq("id", me.id).maybeSingle(),
     isFeatureEnabled("notif_prefs"),
+    isFeatureEnabled("club_reminders"),
   ]);
   const initialPrefs = notifPrefsEnabled ? await getPrefs(me.id) : [];
 
@@ -85,7 +86,7 @@ export default async function ProfilePage() {
           <h2 className="mb-2.5 mt-6 px-1 text-[12px] font-semibold uppercase tracking-[0.14em] text-sage-d">
             Notifications
           </h2>
-          <NotificationsCard initialPrefs={initialPrefs} />
+          <NotificationsCard initialPrefs={initialPrefs} showClubReminders={clubRemindersEnabled} />
         </>
       )}
 

@@ -17,10 +17,15 @@ const EVENT_TYPES: { type: string; label: string }[] = [
   { type: "new_downline_member", label: "New team member" },
 ];
 
+const CLUB_TYPES: { type: string; label: string }[] = [
+  { type: "morning_club", label: "Morning club reminder" },
+  { type: "evening_club", label: "Evening club reminder" },
+];
+
 function buildState(prefs: NotifPref[]) {
   const map = new Map(prefs.map((p) => [p.type, p]));
   const state: Record<string, { enabled: boolean; sendTime: string }> = {};
-  for (const { type } of [...DIGEST_TYPES, ...EVENT_TYPES, { type: "sound" }]) {
+  for (const { type } of [...DIGEST_TYPES, ...EVENT_TYPES, ...CLUB_TYPES, { type: "sound" }]) {
     state[type] = {
       enabled: map.get(type)?.enabled ?? true,
       sendTime: map.get(type)?.send_time?.slice(0, 5) ?? "",
@@ -29,7 +34,13 @@ function buildState(prefs: NotifPref[]) {
   return state;
 }
 
-export function NotificationsCard({ initialPrefs }: { initialPrefs: NotifPref[] }) {
+export function NotificationsCard({
+  initialPrefs,
+  showClubReminders,
+}: {
+  initialPrefs: NotifPref[];
+  showClubReminders: boolean;
+}) {
   const [state, setState] = useState(() => buildState(initialPrefs));
   const [pending, startTransition] = useTransition();
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -128,7 +139,7 @@ export function NotificationsCard({ initialPrefs }: { initialPrefs: NotifPref[] 
         Event notifications
       </p>
 
-      {EVENT_TYPES.map(({ type, label }) => (
+      {[...EVENT_TYPES, ...(showClubReminders ? CLUB_TYPES : [])].map(({ type, label }) => (
         <div key={type} className="flex items-center gap-3">
           <label className="relative inline-flex cursor-pointer items-center">
             <input

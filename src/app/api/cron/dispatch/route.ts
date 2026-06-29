@@ -146,5 +146,98 @@ export async function POST(req: Request) {
     );
   }
 
+  // ── Club reminders (ff_club_reminders) ──────────────────────────────────
+  if (await isFeatureEnabled("club_reminders")) {
+    const { data: timingsRow } = await sb
+      .from("rule_config")
+      .select("value")
+      .eq("key", "club_timings")
+      .maybeSingle();
+
+    const timings = (timingsRow?.value as { morning?: string; evening?: string }) ?? {};
+    const morningTime = timings.morning ?? "06:00";
+    const eveningTime = timings.evening ?? "18:00";
+
+    function toMinutes(hhmm: string): number {
+      const [h = "0", m = "0"] = hhmm.slice(0, 5).split(":");
+      return parseInt(h, 10) * 60 + parseInt(m, 10);
+    }
+
+    const nowMins = toMinutes(timeIST);
+
+    const slots: {
+      type: "morning_club" | "evening_club";
+      startMins: number;
+      title: string;
+      body: string;
+    }[] = [
+      {
+        type: "morning_club",
+        startMins: toMinutes(morningTime),
+        title: "Morning club shuru — aa jao 💪",
+        body: "Aaj ka morning session shuru ho gaya. Club mein aa jao!",
+      },
+      {
+        type: "evening_club",
+        startMins: toMinutes(eveningTime),
+        title: "Evening club shuru — aa jao 🌙",
+        body: "Aaj ka evening session shuru ho gaya. Club mein aa jao!",
+      },
+    ];
+
+    for (const slot of slots) {
+      // Only fire in the 15-min window after the club time
+      if (nowMins < slot.startMins || nowMins >= slot.startMins + 15) continue;
+
+      const { data: allMembers } = await sb
+        .from("users")
+        .select("id")
+        .eq("role", "member")
+        .eq("status", "active");
+
+      const memberIds = (allMembers ?? []).map((m) => m.id);
+      if (!memberIds.length) continue;
+
+      // Fetch prefs: disabled + already sent today
+      const { data: prefs } = await sb
+        .from("notification_prefs")
+        .select("user_id, enabled, last_sent_on")
+        .eq("type", slot.type)
+        .in("user_id", memberIds);
+
+      const disabledSet = new Set<string>();
+      const sentTodaySet = new Set<string>();
+      for (const p of prefs ?? []) {
+        if (!p.enabled) disabledSet.add(p.user_id);
+        if (p.last_sent_on && p.last_sent_on >= todayIST) sentTodaySet.add(p.user_id);
+      }
+
+      const eligible = memberIds.filter(
+        (id) => !disabledSet.has(id) && !sentTodaySet.has(id),
+      );
+      if (!eligible.length) continue;
+
+      await Promise.allSettled(
+        eligible.map((uid) =>
+          sendPushToUser(uid, { title: slot.title, body: slot.body, url: "/" }),
+        ),
+      );
+
+      // Stamp last_sent_on (upsert: new rows get enabled=true default)
+      await sb
+        .from("notification_prefs")
+        .upsert(
+          eligible.map((uid) => ({
+            user_id: uid,
+            type: slot.type,
+            last_sent_on: todayIST,
+          })),
+          { onConflict: "user_id,type" },
+        );
+
+      results.push(`${slot.type}: ${eligible.length}`);
+    }
+  }
+
   return NextResponse.json({ ok: true, todayIST, timeIST, results });
 }
