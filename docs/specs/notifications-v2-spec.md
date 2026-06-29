@@ -20,7 +20,8 @@
 ## 2C — Morning/evening club reminders (members) · `feat/club-reminders` · flag `ff_club_reminders`
 - Owner sets **club-wide times** in Admin → `rule_config.club_timings = {"morning":"06:00","evening":"18:00"}`.
 - Two new digest types `morning_club` / `evening_club` in Personalization (members toggle on/off; **time is the club's, not per-user**).
-- Delivery: the existing `*/15` dispatcher also checks club times — when current IST matches a club time (±15 min slot) and the member hasn't disabled it and `last_sent_on < today`, push "Morning club shuru — aa jao 💪" / evening equivalent. Dedupe via `last_sent_on` (per type).
+- Audience: **all active users, any role** (owner/nco/jco/supervisor/coach/member) — everyone attends the club. Filter `status='active'` only, no role filter.
+- Two stages (owner-configurable lead, default 15 min): **pre** "{period} club {HH:MM} baje shuru hoga — taiyaar ho jao" at `clubTime − lead`; **start** "{period} club shuru ho gaya — jaldi join karo" at `clubTime`. Each stage de-duped separately per day (internal `_pre`/`_start` markers); single user toggle controls both.
 - **Rollback:** flag off; drop the two pref types; delete config key.
 
 ## 2D — Coach qualification levels + hierarchy-scoped groups + reminders · `feat/coach-reminders` · flag `ff_coach_reminders`

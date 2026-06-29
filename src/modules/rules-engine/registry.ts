@@ -111,6 +111,12 @@ export const SECTIONS: Section[] = [
     fields: [
       { path: "club_morning_time", label: "Morning club time", type: "time", hint: "e.g. 06:00" },
       { path: "club_evening_time", label: "Evening club time", type: "time", hint: "e.g. 18:00" },
+      {
+        path: "club_reminder_lead_min",
+        label: "Pre-reminder lead time (min)",
+        type: "number",
+        hint: "Minutes before club start to send the pre-reminder push. Default: 15.",
+      },
     ],
   },
   {
