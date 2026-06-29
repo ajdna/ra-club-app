@@ -5,6 +5,7 @@
 
 import webpush from "web-push";
 import { createServiceClient } from "@/lib/supabase/service";
+import { isEnabled, disabledUserIds } from "@/modules/notifications/prefs";
 
 // Lazy, guarded VAPID init — never call setVapidDetails at module load, so a
 // missing env var (e.g. on a preview deploy without the keys) can't crash the
@@ -27,6 +28,8 @@ export interface PushPayload {
   url: string;
   tag?: string;
   urgency?: "normal" | "high";
+  /** Overrides the per-user sound pref when explicitly set. */
+  silent?: boolean;
 }
 
 export interface PushResult {
@@ -62,12 +65,17 @@ export async function sendPushToUser(
     return { sent: 0, failed: 0, removed: 0, errors: [] };
   }
 
+  // Resolve silent from explicit payload field or per-user sound pref.
+  const silent =
+    payload.silent !== undefined ? payload.silent : !(await isEnabled(userId, "sound"));
+  const wirePayload = { ...payload, silent };
+
   const staleIds: string[] = [];
   const results = await Promise.allSettled(
     subs.map(async (sub) => {
       const res = await webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-        JSON.stringify(payload),
+        JSON.stringify(wirePayload),
         { TTL: 86400, urgency: payload.urgency ?? "normal" },
       );
       console.log(`[push] sent to ${sub.endpoint.slice(-20)} — status ${res.statusCode}`);
@@ -106,5 +114,13 @@ export async function sendPushToUsers(
   userIds: string[],
   payload: PushPayload,
 ): Promise<void> {
-  await Promise.allSettled(userIds.map((id) => sendPushToUser(id, payload)));
+  // Batch sound-pref lookup so we don't do N individual queries.
+  const muted = payload.silent !== undefined
+    ? new Set<string>()  // caller already fixed silent; respect it for all
+    : await disabledUserIds(userIds, "sound");
+  await Promise.allSettled(
+    userIds.map((id) =>
+      sendPushToUser(id, { ...payload, silent: payload.silent ?? muted.has(id) }),
+    ),
+  );
 }

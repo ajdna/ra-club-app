@@ -20,7 +20,7 @@ const EVENT_TYPES: { type: string; label: string }[] = [
 function buildState(prefs: NotifPref[]) {
   const map = new Map(prefs.map((p) => [p.type, p]));
   const state: Record<string, { enabled: boolean; sendTime: string }> = {};
-  for (const { type } of [...DIGEST_TYPES, ...EVENT_TYPES]) {
+  for (const { type } of [...DIGEST_TYPES, ...EVENT_TYPES, { type: "sound" }]) {
     state[type] = {
       enabled: map.get(type)?.enabled ?? true,
       sendTime: map.get(type)?.send_time?.slice(0, 5) ?? "",
@@ -61,6 +61,31 @@ export function NotificationsCard({ initialPrefs }: { initialPrefs: NotifPref[] 
 
   return (
     <div className="rounded-2xl border border-line bg-card p-5 shadow-sm space-y-4">
+      {/* Sound & vibration — single toggle, always visible */}
+      <div className="flex items-center gap-3 pb-1 border-b border-line">
+        <label className="relative inline-flex cursor-pointer items-center">
+          <input
+            type="checkbox"
+            className="sr-only"
+            checked={state["sound"].enabled}
+            disabled={pending}
+            onChange={(e) => toggleEnabled("sound", e.target.checked)}
+          />
+          <span
+            className={`h-[26px] w-[46px] rounded-full transition-colors ${
+              state["sound"].enabled ? "bg-terra" : "bg-line"
+            }`}
+          >
+            <span
+              className={`block h-[22px] w-[22px] translate-y-[2px] rounded-full bg-white shadow transition-transform ${
+                state["sound"].enabled ? "translate-x-[22px]" : "translate-x-[2px]"
+              }`}
+            />
+          </span>
+        </label>
+        <span className="text-sm font-medium text-ink">Sound &amp; vibration</span>
+      </div>
+
       <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-sage-d">
         Digest notifications
       </p>

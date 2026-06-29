@@ -15,7 +15,7 @@ self.addEventListener("push", (event) => {
     payload = { title: "RA Club", body: event.data.text(), url: "/" };
   }
 
-  const { title = "RA Club", body = "", url = "/", tag } = payload;
+  const { title = "RA Club", body = "", url = "/", tag, silent = false } = payload;
 
   event.waitUntil(
     self.registration.showNotification(title, {
@@ -25,7 +25,8 @@ self.addEventListener("push", (event) => {
       tag: tag ?? url,
       renotify: true,
       data: { url },
-      vibrate: [150, 60, 150],
+      silent,
+      ...(silent ? {} : { vibrate: [150, 60, 150] }),
     }),
   );
 });
