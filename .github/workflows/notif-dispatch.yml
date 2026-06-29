@@ -1,0 +1,21 @@
+name: notif-dispatch
+
+# Free scheduled trigger for per-user custom-time digest notifications.
+# Runs every 15 min and pings the dispatch endpoint, which decides who is due.
+# (Avoids Vercel Hobby's once-daily cron limit. Scheduled jobs run on the
+# default branch only, so this must be on main to fire.)
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping dispatch endpoint
+        run: |
+          curl -sS -X POST "https://ra-club-app.vercel.app/api/cron/dispatch" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            --fail-with-body
