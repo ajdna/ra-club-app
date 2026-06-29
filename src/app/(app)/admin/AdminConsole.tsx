@@ -217,8 +217,6 @@ type DaySession = { on: boolean; time: string };
 type DayConfig = { morning: DaySession; evening: DaySession };
 type ClubSchedule = {
   lead_min: number;
-  morning_link: string;
-  evening_link: string;
   days: Record<string, DayConfig>;
   skip_dates: string[];
 };
@@ -231,7 +229,7 @@ function defaultSchedule(): ClubSchedule {
       evening: { on: true, time: "18:00" },
     };
   }
-  return { lead_min: 15, morning_link: "", evening_link: "", days, skip_dates: [] };
+  return { lead_min: 15, days, skip_dates: [] };
 }
 
 function parseSchedule(raw: unknown): ClubSchedule {
@@ -261,8 +259,6 @@ function parseSchedule(raw: unknown): ClubSchedule {
   }
   return {
     lead_min: typeof r.lead_min === "number" ? r.lead_min : 15,
-    morning_link: typeof r.morning_link === "string" ? r.morning_link : "",
-    evening_link: typeof r.evening_link === "string" ? r.evening_link : "",
     days,
     skip_dates: Array.isArray(r.skip_dates)
       ? (r.skip_dates as unknown[]).filter((s): s is string => typeof s === "string")
@@ -345,28 +341,8 @@ function ClubScheduleEditor({
       <h2 className="font-display text-base font-semibold text-ink">{section.title}</h2>
       <p className="mt-0.5 text-xs text-ink/55">{section.description}</p>
 
-      {/* Zoom links + lead time */}
-      <div className="mt-4 space-y-3">
-        <label className="block text-sm">
-          <span className="text-sage-d">Morning Zoom link</span>
-          <input
-            type="url"
-            value={schedule.morning_link}
-            onChange={(e) => setSchedule((s) => ({ ...s, morning_link: e.target.value }))}
-            placeholder="https://zoom.us/j/…"
-            className={`mt-1 w-full ${inputBase}`}
-          />
-        </label>
-        <label className="block text-sm">
-          <span className="text-sage-d">Evening Zoom link</span>
-          <input
-            type="url"
-            value={schedule.evening_link}
-            onChange={(e) => setSchedule((s) => ({ ...s, evening_link: e.target.value }))}
-            placeholder="https://zoom.us/j/…"
-            className={`mt-1 w-full ${inputBase}`}
-          />
-        </label>
+      {/* Lead time */}
+      <div className="mt-4">
         <label className="block text-sm">
           <span className="text-sage-d">Pre-reminder lead time (min)</span>
           <input

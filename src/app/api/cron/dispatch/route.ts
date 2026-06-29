@@ -153,8 +153,6 @@ export async function POST(req: Request) {
     type DaySession = { on?: boolean; time?: string };
     type ClubSchedule = {
       lead_min?: number;
-      morning_link?: string;
-      evening_link?: string;
       days?: Record<string, { morning?: DaySession; evening?: DaySession }>;
       skip_dates?: string[];
     };
@@ -191,8 +189,6 @@ export async function POST(req: Request) {
       }
       schedule = {
         lead_min: typeof leg.club_reminder_lead_min === "number" ? leg.club_reminder_lead_min : 15,
-        morning_link: "",
-        evening_link: "",
         days,
         skip_dates: [],
       };
@@ -221,8 +217,8 @@ export async function POST(req: Request) {
       };
 
       const periods = [
-        { session: "morning" as const, prefType: "morning_club", link: schedule.morning_link ?? "" },
-        { session: "evening" as const, prefType: "evening_club", link: schedule.evening_link ?? "" },
+        { session: "morning" as const, prefType: "morning_club" },
+        { session: "evening" as const, prefType: "evening_club" },
       ];
 
       const activeStages: ClubStage[] = [];
@@ -233,7 +229,7 @@ export async function POST(req: Request) {
         const clubMins = toMinutes(ses.time);
         const displayTime = ses.time.slice(0, 5);
         const label = pc.session === "morning" ? "Morning" : "Evening";
-        const url = pc.link || "/";
+        const url = `/club/${pc.session}`;
         const preStart = clubMins - leadMin;
 
         if (nowMins >= preStart && nowMins < preStart + 15) {

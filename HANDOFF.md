@@ -77,7 +77,7 @@ AGENTS.md + KNOWLEDGE_GRAPH.md codify the read-graph-first / update-handoff-last
 - **2B** priority (urgency:high) + honor on/off for messages/broadcasts/home-visit — MERGED `v0.2.1`. ✅
 - **2A** sound/vibration toggle → silent push — MERGED `v0.2.2`. ✅
 - **2C** club reminders — MERGED: owner-config times `v0.2.3`, then two-stage (pre+start, configurable lead `club_reminder_lead_min`, **all active roles**) `v0.2.4`. **Pilot-verified** (iPhone+laptop). `ff_club_reminders` = ON. Dispatch via `*/15` GH Actions → `/api/cron/dispatch`.
-- **2C-ter** club WEEKLY schedule (per-day times, skip days/festivals, morning/evening Zoom links, notification deep-link to Zoom; replaces `club_timings`→`club_schedule`; SW external-URL openWindow) — SPEC done, branch `feat/club-weekly` = **building next**.
+- **2C-ter** club WEEKLY schedule (per-day on/off+times, skip days/festivals, morning/evening Zoom links, notification deep-link → Zoom via SW openWindow; `club_schedule` config w/ legacy `club_timings` fallback; `ClubScheduleEditor` admin component) — reviewed GREEN, MERGING. Owner must set the weekly schedule + Zoom links in Admin (until saved, falls back to club_timings, links empty → url "/").
 - **2D-i** coach qualification levels (editable list `rule_config.qualification_levels`, per-coach `users.qualification`, hierarchy-scoped audience resolver) — **schema already applied** (`users.qualification` col + `qualification_levels` seeded) + migration file `20260629100000_coach_qualification.sql`; build NOT started yet (handoff was given on branch `feat/coach-levels`). Then 2D-ii (send-reminder screen + `scheduled_reminders`).
 - **2E** contact deep links (wa.me/t.me/tel), **2F** Telegram bot — not started.
 

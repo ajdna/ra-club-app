@@ -271,6 +271,41 @@ export type Database = {
           },
         ]
       }
+      club_sessions: {
+        Row: {
+          details: string | null
+          link: string | null
+          period: string
+          session_date: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          details?: string | null
+          link?: string | null
+          period: string
+          session_date: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          details?: string | null
+          link?: string | null
+          period?: string
+          session_date?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_sessions_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dmo_entries: {
         Row: {
           calls_made: number
@@ -816,6 +851,7 @@ export type Database = {
           name: string
           parent_id: string | null
           phone: string | null
+          qualification: string | null
           role: Database["public"]["Enums"]["user_role"]
           status: string
           timezone: string | null
@@ -834,6 +870,7 @@ export type Database = {
           name: string
           parent_id?: string | null
           phone?: string | null
+          qualification?: string | null
           role: Database["public"]["Enums"]["user_role"]
           status?: string
           timezone?: string | null
@@ -852,6 +889,7 @@ export type Database = {
           name?: string
           parent_id?: string | null
           phone?: string | null
+          qualification?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           status?: string
           timezone?: string | null
