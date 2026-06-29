@@ -28,7 +28,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!(await isFeatureEnabled("notif_prefs"))) {
+  const flagOn = await isFeatureEnabled("notif_prefs");
+  console.log("[dispatch] ff_notif_prefs:", flagOn);
+  if (!flagOn) {
     return NextResponse.json({ ok: true, skipped: "ff_notif_prefs OFF" });
   }
 
@@ -37,7 +39,7 @@ export async function POST(req: Request) {
   // Compare HH:MM:59 against stored HH:MM:SS so "09:15" covers "09:15:00"–"09:15:59"
   const timeWithSec = `${timeIST}:59`;
 
-  const { data: readyPrefs } = await sb
+  const { data: readyPrefs, error: rpErr } = await sb
     .from("notification_prefs")
     .select("user_id, type")
     .eq("enabled", true)
@@ -45,6 +47,9 @@ export async function POST(req: Request) {
     .not("send_time", "is", null)
     .lte("send_time", timeWithSec)
     .or(`last_sent_on.is.null,last_sent_on.lt.${todayIST}`);
+
+  console.log("[dispatch] todayIST", todayIST, "timeWithSec", timeWithSec,
+    "readyPrefs", readyPrefs?.length ?? 0, "err", rpErr?.message ?? null);
 
   if (!readyPrefs?.length) {
     return NextResponse.json({ ok: true, sent: 0, todayIST, timeIST });
