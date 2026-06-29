@@ -10,6 +10,7 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@/lib/database.types";
 import { sendPushToUser } from "@/lib/push.server";
+import { isFeatureEnabled } from "@/lib/flags";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,8 @@ export async function GET(req: Request) {
   const supabase = serviceClient();
   const today = new Date().toISOString().split("T")[0];
   const created: string[] = [];
+  // When dispatch cron owns digest pushes, skip them here to avoid double-notify.
+  const dispatchOwns = await isFeatureEnabled("notif_prefs");
 
   // ── 1. Weight log reminder → all active members ─────────────────────────
   const { data: members } = await supabase
@@ -53,16 +56,18 @@ export async function GET(req: Request) {
       .insert(weightNotifs);
     if (!error) created.push(`weight_reminder: ${members.length}`);
 
-    // Web push to each member's devices (best-effort).
-    await Promise.allSettled(
-      members.map((m) =>
-        sendPushToUser(m.id, {
-          title: "Aaj ka weight log karo 🌅",
-          body: "Apna weight record karo — progress track karna zaroori hai!",
-          url: "/my-progress",
-        }),
-      ),
-    );
+    // Web push — skipped when dispatch cron owns digest pushes.
+    if (!dispatchOwns) {
+      await Promise.allSettled(
+        members.map((m) =>
+          sendPushToUser(m.id, {
+            title: "Aaj ka weight log karo 🌅",
+            body: "Apna weight record karo — progress track karna zaroori hai!",
+            url: "/my-progress",
+          }),
+        ),
+      );
+    }
   }
 
   // ── 2. Follow-up brief → coaches with tasks today ───────────────────────
@@ -94,16 +99,18 @@ export async function GET(req: Request) {
       .insert(coachNotifs);
     if (!error) created.push(`followup_brief: ${coachNotifs.length} coaches`);
 
-    // Web push to each coach's devices (best-effort).
-    await Promise.allSettled(
-      Array.from(coachCounts.entries()).map(([coachId, count]) =>
-        sendPushToUser(coachId, {
-          title: `Aaj ke ${count} follow-up tasks ready hain 📋`,
-          body: "Follow-up section mein jaake complete karo.",
-          url: "/followup",
-        }),
-      ),
-    );
+    // Web push — skipped when dispatch cron owns digest pushes.
+    if (!dispatchOwns) {
+      await Promise.allSettled(
+        Array.from(coachCounts.entries()).map(([coachId, count]) =>
+          sendPushToUser(coachId, {
+            title: `Aaj ke ${count} follow-up tasks ready hain 📋`,
+            body: "Follow-up section mein jaake complete karo.",
+            url: "/followup",
+          }),
+        ),
+      );
+    }
   }
 
   return NextResponse.json({ ok: true, date: today, created });

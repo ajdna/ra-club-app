@@ -1,9 +1,12 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { isFeatureEnabled } from "@/lib/flags";
+import { getPrefs } from "@/modules/notifications/prefs";
 import { SignOutButton } from "@/components/SignOutButton";
 import { DarkModeToggle } from "@/components/DarkModeToggle";
 import { ProfileEditForm } from "./ProfileEditForm";
+import { NotificationsCard } from "./NotificationsCard";
 
 export const dynamic = "force-dynamic";
 
@@ -37,11 +40,11 @@ export default async function ProfilePage() {
   if (me === "pending" || me === "rejected") redirect("/pending");
 
   const supabase = await createClient();
-  const { data: userRow } = await supabase
-    .from("users")
-    .select("name, phone, address, email")
-    .eq("id", me.id)
-    .maybeSingle();
+  const [{ data: userRow }, notifPrefsEnabled] = await Promise.all([
+    supabase.from("users").select("name, phone, address, email").eq("id", me.id).maybeSingle(),
+    isFeatureEnabled("notif_prefs"),
+  ]);
+  const initialPrefs = notifPrefsEnabled ? await getPrefs(me.id) : [];
 
   return (
     <main className="px-4 pb-8 pt-5">
@@ -75,6 +78,16 @@ export default async function ProfilePage() {
           email: userRow?.email ?? "",
         }}
       />
+
+      {/* Notifications */}
+      {notifPrefsEnabled && (
+        <>
+          <h2 className="mb-2.5 mt-6 px-1 text-[12px] font-semibold uppercase tracking-[0.14em] text-sage-d">
+            Notifications
+          </h2>
+          <NotificationsCard initialPrefs={initialPrefs} />
+        </>
+      )}
 
       {/* Appearance */}
       <div className="mt-4 rounded-[18px] border border-line bg-card p-[18px]">

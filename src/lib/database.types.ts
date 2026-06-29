@@ -624,6 +624,41 @@ export type Database = {
           },
         ]
       }
+      notification_prefs: {
+        Row: {
+          enabled: boolean
+          last_sent_on: string | null
+          send_time: string | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          enabled?: boolean
+          last_sent_on?: string | null
+          send_time?: string | null
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          enabled?: boolean
+          last_sent_on?: string | null
+          send_time?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_prefs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           body: string | null

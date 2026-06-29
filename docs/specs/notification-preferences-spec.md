@@ -18,22 +18,23 @@ Each person controls, in a **Personalization** section (Profile), which notifica
 ## Data model
 New table `notification_prefs` (reversible — drop table to roll back):
 ```
-user_id     uuid  references users(id) on delete cascade
-type        text  -- one of the keys above
-enabled     boolean not null default true
-send_time   time  null   -- only for digest types; null for event types
-updated_at  timestamptz default now()
+user_id      uuid  references users(id) on delete cascade
+type         text  -- one of the keys above
+enabled      boolean not null default true
+send_time    time  null   -- any HH:MM the user picks; null for event types
+last_sent_on date  null   -- dedupe: a digest fires at most once per calendar day
+updated_at   timestamptz default now()
 primary key (user_id, type)
 ```
 Absence of a row = defaults (enabled, default time). RLS: a user reads/writes only their own rows.
 
 ## UI — Profile → Personalization
-- A "Notifications" card listing each type with a toggle; digest types also show a time picker.
+- A "Notifications" card listing each type with a toggle. Digest types also show a **native time picker** (`<input type="time">`) — on iPhone/Android this renders the OS wheel with AM/PM per the device locale; on desktop a HH:MM field. Any minute is selectable.
 - Saves via a `setNotificationPref(type, enabled, sendTime?)` server action (writes own row only).
 
 ## Respecting prefs
 - **Event push** (`notify()` + the chat `push-notify` path): before sending, check `notification_prefs` for that user+type; skip if disabled. (Move the chat/broadcast push through a pref check too.)
-- **Digest crons (the custom-time part):** replace the single 7 AM run with a **dispatcher cron that runs every 30 min** (`*/30 * * * *`). Each run sends a digest to users whose `send_time` (rounded to the half hour) == the current IST slot AND who have that digest enabled AND have matching content (e.g. tasks due today). 30-min granularity = custom times without per-user scheduling infra.
+- **Digest delivery (custom per-minute times):** a `/api/cron/dispatch` endpoint, pinged **every 15 min by a free GitHub Actions scheduled workflow** (repo is public → no cost; avoids Vercel Hobby's once-daily cron limit). Each run, for every digest pref that is `enabled`, where current IST time ≥ `send_time` and `last_sent_on` < today and the user has matching content (e.g. tasks due today): send the push, set `last_sent_on = today`. Result: users pick any HH:MM; the digest arrives within ~15 min, once per day. (If the project moves to Vercel **Pro**, swap the GitHub Action for a Vercel `*/15` cron — same endpoint.)
 
 ## Flag / rollback
 - `ff_notif_prefs` (default OFF): when OFF, current fixed-time behavior; when ON, prefs + dispatcher honored.
@@ -46,17 +47,14 @@ Absence of a row = defaults (enabled, default time). RLS: a user reads/writes on
 | `src/modules/notifications/prefs.ts` | NEW: read/write prefs + `isEnabled(userId,type)` + `dueAtSlot()` |
 | `src/lib/notify.ts` | check pref before push |
 | `src/app/api/push/notify` + chat path | check pref before push |
-| `src/app/api/cron/dispatch` | NEW every-30-min digest dispatcher (replaces fixed morning/evening sends, gated by flag) |
-| `vercel.json` | add `*/30 * * * *` dispatch cron |
+| `src/app/api/cron/dispatch` | NEW digest dispatcher (per-user time + `last_sent_on` dedupe), gated by flag |
+| `.github/workflows/notif-dispatch.yml` | NEW free scheduled workflow (`*/15`) → pings dispatch with `CRON_SECRET` |
 | `src/app/(app)/profile/*` | Personalization → Notifications card + `setNotificationPref` action |
 
-## The one decision for you
-Custom-time granularity vs cost:
-- **(a) Every 30 min (recommended)** — users pick any :00/:30 slot; ~48 cron hits/day. Best UX, still cheap.
-- **(b) Hourly** — top-of-hour only; ~24 hits/day. Leaner.
-- **(c) Fixed presets** (Morning/Afternoon/Evening) — 3 runs/day; cheapest, least flexible.
-
-(Vercel Hobby has cron limits; if we're on Hobby, (b)/(c) may be safer. I'll confirm the plan's cron allowance before building.)
+## Resolved (owner: per-minute custom times)
+- Users pick **any time** via the native time picker (AM/PM per device). Delivered within ~15 min by the **free GitHub Actions scheduler** → no cost, works on Vercel Hobby.
+- Pre-req: `CRON_SECRET` (already used by existing crons) guards `/api/cron/dispatch`; the workflow stores it as a GitHub Actions repo secret. (If we later move to Vercel Pro, swap to a `*/15` Vercel cron — same endpoint.)
+- Caveat: GitHub Actions scheduled runs can drift a few minutes under load — acceptable for digest reminders.
 
 ## Acceptance
 - [ ] Each user sets on/off per type; digest types set a time; saved per-user.

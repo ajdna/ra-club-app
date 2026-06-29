@@ -9,6 +9,7 @@
  */
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendPushToUser } from "@/lib/push.server";
+import { isEnabled } from "@/modules/notifications/prefs";
 
 type NotifyOpts = {
   userId: string;
@@ -27,9 +28,11 @@ export async function notify({ userId, type, title, body, url = "/" }: NotifyOpt
   } catch {
     /* best-effort */
   }
-  // Web push to all registered devices.
+  // Web push to all registered devices (skipped if user disabled this type).
   try {
-    await sendPushToUser(userId, { title, body, url });
+    if (await isEnabled(userId, type)) {
+      await sendPushToUser(userId, { title, body, url });
+    }
   } catch {
     /* best-effort */
   }
