@@ -5,8 +5,8 @@ name: notif-dispatch
 # (Avoids Vercel Hobby's once-daily cron limit. Scheduled jobs run on the
 # default branch only, so this must be on main to fire.)
 on:
-  schedule:
-    - cron: "*/15 * * * *"
+  # Scheduled trigger moved to Supabase pg_cron (reliable to the minute).
+  # Manual run kept for ad-hoc testing.
   workflow_dispatch: {}
 
 jobs:
